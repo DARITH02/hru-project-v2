@@ -15,15 +15,732 @@ use App\Models\Major;
 use App\Models\ClassGroup;
 use App\Models\ActivityLog;
 use App\Models\Attendance;
+use App\Models\AttendanceSession;
+use App\Models\TeacherAttendanceSession;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\SemesterAttendanceScoreService;
 use App\Services\TelegramService;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    public function mainDashboard(Request $request)
+    {
+        $academicYear = $request->get('academic_year', date('Y') . '-' . (date('Y') + 1));
+        $semester = (int) $request->get('semester', 1);
+        $selectedSubjectId = $request->integer('subject_id') ?: null;
+
+        $scoreQuery = DB::table('semester_assignment_scores')
+            ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester);
+
+        $averageScore = round($scoreQuery->avg('score') ?? 0, 1);
+        $passingCount = (clone $scoreQuery)->where('score', '>=', 50)->count();
+        $resultCount = (clone $scoreQuery)->count();
+        $passRate = $resultCount > 0 ? round(($passingCount / $resultCount) * 100) : 0;
+
+        $studentCount = Student::count();
+        $teacherCount = Teacher::count();
+        $classCount = ClassRoom::count();
+        $departmentCount = Department::count();
+        $subjectCount = Subject::count();
+        $attendanceIssueCount = $this->getAttendanceIssueDashboardCount($academicYear, $semester);
+        $attendanceOverview = $this->getDashboardAttendanceOverview($academicYear, $semester);
+        $attendanceRate = $attendanceOverview['attendance_rate'];
+        $attendanceLabels = $attendanceOverview['labels'];
+        $attendanceStudentSeries = $attendanceOverview['student_series'];
+        $attendanceTeacherSeries = $attendanceOverview['teacher_series'];
+        $gradeDistribution = $this->getDashboardGradeDistribution($academicYear, $semester);
+        $majorComparison = $this->getDashboardMajorComparison($academicYear, $semester);
+        $subjectPerformance = $this->getDashboardSubjectPerformance($academicYear, $semester);
+        $subjectOptions = $this->getDashboardSubjectOptions($academicYear, $semester);
+        $academicYears = DB::table('semester_assignments')
+            ->select('academic_year')
+            ->whereNotNull('academic_year')
+            ->distinct()
+            ->orderByDesc('academic_year')
+            ->pluck('academic_year');
+
+        if ($academicYears->isEmpty()) {
+            $academicYears = collect([$academicYear]);
+        } elseif (!$academicYears->contains($academicYear)) {
+            $academicYears = $academicYears->prepend($academicYear)->unique()->values();
+        }
+        $teacherRows = $this->getDashboardTeacherRows($academicYear, $semester);
+        $alerts = $this->getDashboardAlerts($academicYear, $semester);
+        $activityFeed = $this->getDashboardActivityFeed();
+        $enrollmentSeries = $this->getDashboardEnrollmentSeries();
+        $radarMetrics = $this->getDashboardRadarMetrics(
+            $passRate,
+            $attendanceRate,
+            $teacherCount,
+            $departmentCount,
+            $subjectCount,
+            $classCount,
+            $attendanceIssueCount,
+            $studentCount
+        );
+        $modules = collect([
+            [
+                'name' => 'Result & Grading',
+                'route' => route('admin.results'),
+                'eyebrow' => 'Assessment Hub',
+                'description' => 'Review semester performance, distribution trends, and grading output.',
+                'metric' => $averageScore . '/100',
+                'detail' => number_format($resultCount) . ' score records',
+                'accent' => 'var(--accent)',
+            ],
+            [
+                'name' => 'Attendance Issues',
+                'route' => route('admin.attendance-issues'),
+                'eyebrow' => 'Risk Monitor',
+                'description' => 'Track absence pressure, blacklist candidates, and attendance exceptions.',
+                'metric' => number_format($attendanceIssueCount),
+                'detail' => $attendanceRate . '% attendance rate',
+                'accent' => 'var(--red)',
+            ],
+        ]);
+
+        return view('admin.main_dashboard', compact(
+            'academicYear',
+            'semester',
+            'averageScore',
+            'passRate',
+            'resultCount',
+            'studentCount',
+            'teacherCount',
+            'classCount',
+            'departmentCount',
+            'subjectCount',
+            'attendanceIssueCount',
+            'attendanceRate',
+            'attendanceLabels',
+            'attendanceStudentSeries',
+            'attendanceTeacherSeries',
+            'academicYears',
+            'selectedSubjectId',
+            'gradeDistribution',
+            'majorComparison',
+            'subjectPerformance',
+            'subjectOptions',
+            'teacherRows',
+            'alerts',
+            'activityFeed',
+            'enrollmentSeries',
+            'radarMetrics',
+            'modules'
+        ));
+    }
+
+    private function getDashboardAttendanceOverview(string $academicYear, int $semester): array
+    {
+        $sessions = DB::table('attendance_sessions')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->whereExists(function ($query) use ($academicYear, $semester) {
+                $query->select(DB::raw(1))
+                    ->from('semester_assignments')
+                    ->whereColumn('semester_assignments.class_id', 'classes.id')
+                    ->where('semester_assignments.academic_year', $academicYear)
+                    ->where('semester_assignments.semester', $semester);
+            })
+            ->select(
+                'attendance_sessions.id',
+                'attendance_sessions.start_time',
+                'attendance_sessions.status',
+                'classes.teacher_id'
+            )
+            ->orderBy('attendance_sessions.start_time')
+            ->get();
+
+        if ($sessions->isEmpty()) {
+            return [
+                'attendance_rate' => 0,
+                'labels' => collect(range(1, 7))->map(fn($index) => 'Wk ' . $index)->all(),
+                'student_series' => array_fill(0, 7, 0),
+                'teacher_series' => array_fill(0, 7, 0),
+            ];
+        }
+
+        $sessionIds = $sessions->pluck('id');
+        $attendanceRows = DB::table('attendance')
+            ->whereIn('session_id', $sessionIds)
+            ->select(
+                'session_id',
+                DB::raw('COUNT(*) as total_records'),
+                DB::raw("SUM(CASE WHEN LOWER(status) IN ('present', 'late', 'excused') THEN 1 ELSE 0 END) as attended_records")
+            )
+            ->groupBy('session_id')
+            ->get()
+            ->keyBy('session_id');
+
+        $attendanceTotal = (int) $attendanceRows->sum('total_records');
+        $attendancePresent = (int) $attendanceRows->sum('attended_records');
+        $attendanceRate = $attendanceTotal > 0 ? round(($attendancePresent / $attendanceTotal) * 100) : 0;
+
+        $teacherRows = TeacherAttendanceSession::query()
+            ->whereDate('attendance_date', '>=', Carbon::parse($sessions->min('start_time'))->toDateString())
+            ->whereDate('attendance_date', '<=', Carbon::parse($sessions->max('start_time'))->toDateString())
+            ->select(
+                'attendance_date',
+                'attendance_status',
+                'attendance_percentage'
+            )
+            ->get()
+            ->groupBy(fn($row) => Carbon::parse($row->attendance_date)->format('Y-m-d'));
+
+        $presentTeacherStatuses = ['present', 'on_time', 'late', 'very_late', 'teaching', 'completed', 'early_leave'];
+
+        $dailyTrend = $sessions
+            ->groupBy(fn($session) => Carbon::parse($session->start_time)->format('Y-m-d'))
+            ->map(function ($daySessions, $date) use ($attendanceRows, $teacherRows, $presentTeacherStatuses) {
+                $sessionCount = $daySessions->count();
+                $dayAttendance = $daySessions->reduce(function ($carry, $session) use ($attendanceRows) {
+                    $stats = $attendanceRows->get($session->id);
+                    $carry['total'] += (int) ($stats->total_records ?? 0);
+                    $carry['attended'] += (int) ($stats->attended_records ?? 0);
+                    return $carry;
+                }, ['total' => 0, 'attended' => 0]);
+
+                $teacherDayRows = $teacherRows->get($date, collect());
+                $teacherRate = 0;
+
+                if ($teacherDayRows->isNotEmpty()) {
+                    $teacherRate = round(
+                        $teacherDayRows->filter(function ($row) use ($presentTeacherStatuses) {
+                            return in_array(strtolower((string) $row->attendance_status), $presentTeacherStatuses, true);
+                        })->count() / $teacherDayRows->count() * 100
+                    );
+                }
+
+                return [
+                    'label' => Carbon::parse($date)->format('M j'),
+                    'student_rate' => $dayAttendance['total'] > 0 ? round(($dayAttendance['attended'] / $dayAttendance['total']) * 100) : 0,
+                    'teacher_rate' => $teacherRate,
+                ];
+            })
+            ->values();
+
+        $trend = $dailyTrend->take(-7)->values();
+
+        return [
+            'attendance_rate' => $attendanceRate,
+            'labels' => $trend->pluck('label')->all(),
+            'student_series' => $trend->pluck('student_rate')->all(),
+            'teacher_series' => $trend->pluck('teacher_rate')->all(),
+        ];
+    }
+
+    private function getDashboardGradeDistribution(string $academicYear, int $semester): array
+    {
+        $scores = DB::table('semester_assignment_scores')
+            ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester)
+            ->pluck('semester_assignment_scores.score');
+
+        $total = $scores->count();
+        $bands = [
+            'A' => $scores->filter(fn($score) => $score >= 90)->count(),
+            'B' => $scores->filter(fn($score) => $score >= 80 && $score < 90)->count(),
+            'C' => $scores->filter(fn($score) => $score >= 70 && $score < 80)->count(),
+            'D' => $scores->filter(fn($score) => $score >= 60 && $score < 70)->count(),
+            'E' => $scores->filter(fn($score) => $score >= 50 && $score < 60)->count(),
+            'F' => $scores->filter(fn($score) => $score < 50)->count(),
+        ];
+
+        return collect($bands)->map(fn($count) => $total > 0 ? round(($count / $total) * 100) : 0)->all();
+    }
+
+    private function getDashboardMajorComparison(string $academicYear, int $semester)
+    {
+        return DB::table('semester_assignment_scores')
+            ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+            ->join('students', 'semester_assignment_scores.student_id', '=', 'students.id')
+            ->leftJoin('class_groups', 'students.group_id', '=', 'class_groups.id')
+            ->leftJoin('majors as direct_majors', 'students.major_id', '=', 'direct_majors.id')
+            ->leftJoin('majors as group_majors', 'class_groups.major_id', '=', 'group_majors.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester)
+            ->selectRaw("
+                COALESCE(direct_majors.id, group_majors.id) as major_id,
+                COALESCE(direct_majors.name, group_majors.name, 'Unassigned') as major_name,
+                ROUND(AVG(semester_assignment_scores.score), 1) as avg_score,
+                COUNT(DISTINCT students.id) as student_count,
+                COUNT(semester_assignment_scores.id) as score_count
+            ")
+            ->groupByRaw("COALESCE(direct_majors.id, group_majors.id), COALESCE(direct_majors.name, group_majors.name, 'Unassigned')")
+            ->orderByDesc('avg_score')
+            ->get()
+            ->values()
+            ->map(function ($major, $index) {
+                $tones = ['blue', 'emerald', 'purple', 'amber', 'rose', 'cyan', 'indigo'];
+
+                return [
+                    'id' => $major->major_id ? (int) $major->major_id : null,
+                    'name' => $major->major_name,
+                    'avg_score' => (float) $major->avg_score,
+                    'student_count' => (int) $major->student_count,
+                    'score_count' => (int) $major->score_count,
+                    'tone' => $tones[$index % count($tones)],
+                ];
+            });
+    }
+
+    private function getDashboardSubjectPerformance(string $academicYear, int $semester, ?int $selectedSubjectId = null)
+    {
+        $palette = ['blue', 'emerald', 'purple', 'amber', 'rose', 'cyan', 'indigo'];
+
+        $query = DB::table('semester_assignment_scores')
+            ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+            ->join('classes', 'semester_assignments.class_id', '=', 'classes.id')
+            ->join('subjects', 'classes.subject_id', '=', 'subjects.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester);
+
+        if ($selectedSubjectId) {
+            $query->where('subjects.id', $selectedSubjectId);
+        }
+
+        $subjects = $query
+            ->groupBy('subjects.id', 'subjects.name')
+            ->orderByDesc(DB::raw('AVG(semester_assignment_scores.score)'))
+            ->select(
+                'subjects.id',
+                'subjects.name',
+                DB::raw('ROUND(AVG(semester_assignment_scores.score), 1) as avg_score'),
+                DB::raw('COUNT(semester_assignment_scores.id) as score_count'),
+                DB::raw("ROUND((SUM(CASE WHEN semester_assignment_scores.score >= 50 THEN 1 ELSE 0 END) / NULLIF(COUNT(semester_assignment_scores.id), 0)) * 100) as pass_rate")
+            )
+            ->limit(7)
+            ->get()
+            ->values()
+            ->map(function ($subject, $index) use ($palette) {
+                return [
+                    'id' => (int) $subject->id,
+                    'name' => $subject->name,
+                    'avg_score' => (int) round($subject->avg_score ?? 0),
+                    'score_count' => (int) $subject->score_count,
+                    'pass_rate' => (int) round($subject->pass_rate ?? 0),
+                    'tone' => $palette[$index % count($palette)],
+                ];
+            });
+
+        if ($subjects->isNotEmpty()) {
+            return $subjects;
+        }
+
+        return Subject::orderBy('name')
+            ->when($selectedSubjectId, fn($query) => $query->where('id', $selectedSubjectId))
+            ->take(7)
+            ->get()
+            ->values()
+            ->map(function (Subject $subject, $index) use ($palette) {
+                return [
+                    'id' => $subject->id,
+                    'name' => $subject->name,
+                    'avg_score' => 0,
+                    'score_count' => 0,
+                    'pass_rate' => 0,
+                    'tone' => $palette[$index % count($palette)],
+                ];
+            });
+    }
+
+    private function getDashboardSubjectOptions(string $academicYear, int $semester)
+    {
+        return DB::table('semester_assignments')
+            ->join('classes', 'semester_assignments.class_id', '=', 'classes.id')
+            ->join('subjects', 'classes.subject_id', '=', 'subjects.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester)
+            ->select('subjects.id', 'subjects.name')
+            ->distinct()
+            ->orderBy('subjects.name')
+            ->get();
+    }
+
+    private function getDashboardTeacherRows(string $academicYear, int $semester)
+    {
+        $teachers = Teacher::with(['user', 'classes.subject', 'classes.groups'])
+            ->withCount('classes')
+            ->orderByDesc('classes_count')
+            ->orderBy('id')
+            ->take(5)
+            ->get();
+
+        return $teachers->map(function (Teacher $teacher, int $index) use ($academicYear, $semester) {
+            $classIds = $teacher->classes->pluck('id')->filter()->values();
+            $groupIds = $teacher->classes
+                ->flatMap(function (ClassRoom $class) {
+                    $groupIds = $class->groups->pluck('id');
+                    if ($groupIds->isEmpty() && $class->group_id) {
+                        $groupIds = collect([$class->group_id]);
+                    }
+
+                    return $groupIds;
+                })
+                ->filter()
+                ->unique()
+                ->values();
+
+            $studentCount = $groupIds->isNotEmpty()
+                ? Student::whereIn('group_id', $groupIds)->count()
+                : 0;
+
+            $avgScore = $classIds->isNotEmpty()
+                ? round(
+                    DB::table('semester_assignment_scores')
+                        ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+                        ->whereIn('semester_assignments.class_id', $classIds)
+                        ->where('semester_assignments.academic_year', $academicYear)
+                        ->where('semester_assignments.semester', $semester)
+                        ->avg('semester_assignment_scores.score') ?? 0
+                )
+                : 0;
+
+            $primarySubject = optional($teacher->classes->first()?->subject)->name ?? ($teacher->specialization ?: 'Unassigned');
+            $loadTone = $studentCount >= 45 ? 'warn' : ($studentCount >= 25 ? 'info' : 'online');
+            $loadLabel = $studentCount >= 45 ? 'High' : ($studentCount >= 25 ? 'Med' : 'Low');
+            $statusValue = strtolower((string) $teacher->status);
+            $statusTone = $statusValue === 'active' ? 'online' : ($statusValue === 'busy' ? 'busy' : 'offline');
+            $statusLabel = $statusValue === 'active' ? 'Active' : ($teacher->status ? ucfirst($teacher->status) : 'Offline');
+            $initials = collect(explode(' ', trim($teacher->user->name ?? 'T')))
+                ->filter()
+                ->take(2)
+                ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                ->join('');
+            $accent = ['blue', 'emerald', 'rose', 'amber', 'purple'][$index % 5];
+
+            return [
+                'initials' => $initials ?: 'T',
+                'name' => $teacher->user->name ?? 'Unknown Teacher',
+                'subject' => $primarySubject,
+                'students' => $studentCount,
+                'score' => (int) $avgScore,
+                'load' => $loadLabel,
+                'load_tone' => $loadTone,
+                'status' => $statusLabel,
+                'status_tone' => $statusTone,
+                'accent' => $accent,
+            ];
+        });
+    }
+
+    private function getDashboardAlerts(string $academicYear, int $semester)
+    {
+        $scoreAlerts = DB::table('semester_assignment_scores')
+            ->join('semester_assignments', 'semester_assignment_scores.assignment_id', '=', 'semester_assignments.id')
+            ->join('students', 'semester_assignment_scores.student_id', '=', 'students.id')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->leftJoin('class_groups', 'students.group_id', '=', 'class_groups.id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester)
+            ->groupBy('students.id', 'users.name', 'class_groups.name')
+            ->orderByRaw('AVG(semester_assignment_scores.score) asc')
+            ->select(
+                'students.id',
+                'users.name',
+                'class_groups.name as group_name',
+                DB::raw('ROUND(AVG(semester_assignment_scores.score), 1) as avg_score')
+            )
+            ->take(4)
+            ->get()
+            ->keyBy('id');
+
+        $attendanceAlerts = $this->getDashboardAttendanceRiskRows($academicYear, $semester)
+            ->take(4)
+            ->keyBy('student_id');
+
+        return $attendanceAlerts
+            ->map(function ($student) {
+                return [
+                    'initials' => $student['initials'],
+                    'name' => $student['name'],
+                    'sub' => $student['absences'] . ' absences',
+                    'value' => $student['attendance_rate'] . '%',
+                    'tone' => $student['attendance_rate'] <= 50 ? 'danger' : 'warn',
+                    'accent' => 'rose',
+                ];
+            })
+            ->merge(
+                $scoreAlerts->reject(fn($student, $id) => $attendanceAlerts->has($id))
+                    ->map(function ($student) {
+                        $initials = collect(explode(' ', trim($student->name)))
+                            ->filter()
+                            ->take(2)
+                            ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                            ->join('');
+
+                        return [
+                            'initials' => $initials ?: 'S',
+                            'name' => $student->name,
+                            'sub' => ($student->group_name ?: 'No group') . ' · avg score',
+                            'value' => (int) round($student->avg_score) . '%',
+                            'tone' => $student->avg_score < 50 ? 'danger' : 'warn',
+                            'accent' => 'blue',
+                        ];
+                    })
+            )
+            ->take(4)
+            ->values();
+    }
+
+    private function getDashboardActivityFeed()
+    {
+        $activityLogs = ActivityLog::query()
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function (ActivityLog $log) {
+                return [
+                    'title' => $log->action . ' — ' . $log->target,
+                    'meta' => $log->created_at?->format('M j · g:i A') ?? 'System',
+                    'accent' => 'blue',
+                ];
+            });
+
+        if ($activityLogs->isNotEmpty()) {
+            return $activityLogs;
+        }
+
+        return Attendance::query()
+            ->join('students', 'attendance.student_id', '=', 'students.id')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->join('attendance_sessions', 'attendance.session_id', '=', 'attendance_sessions.id')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->leftJoin('subjects', 'classes.subject_id', '=', 'subjects.id')
+            ->latest('attendance.created_at')
+            ->take(5)
+            ->get([
+                'users.name as student_name',
+                'attendance.status',
+                'subjects.name as subject_name',
+                'attendance.created_at',
+            ])
+            ->map(function ($item) {
+                $status = strtolower((string) $item->status);
+                $accent = $status === 'present' ? 'emerald' : ($status === 'late' ? 'amber' : 'rose');
+
+                return [
+                    'title' => ucfirst($status) . ' attendance — ' . ($item->student_name ?? 'Unknown student'),
+                    'meta' => ($item->subject_name ?: 'General') . ' · ' . Carbon::parse($item->created_at)->format('M j · g:i A'),
+                    'accent' => $accent,
+                ];
+            });
+    }
+
+    private function getDashboardEnrollmentSeries(): array
+    {
+        $months = collect(range(5, 0))
+            ->map(fn($offset) => now()->startOfMonth()->subMonths($offset))
+            ->values();
+
+        $enrolledByMonth = Student::query()
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, COUNT(*) as total")
+            ->where('created_at', '>=', now()->startOfMonth()->subMonths(5))
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $graduatedByMonth = Student::query()
+            ->selectRaw("DATE_FORMAT(updated_at, '%Y-%m') as month_key, COUNT(*) as total")
+            ->where('status', 'graduated')
+            ->where('updated_at', '>=', now()->startOfMonth()->subMonths(5))
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        return [
+            'labels' => $months->map(fn(Carbon $month) => $month->format('M'))->all(),
+            'enrolled' => $months->map(fn(Carbon $month) => (int) ($enrolledByMonth[$month->format('Y-m')] ?? 0))->all(),
+            'graduated' => $months->map(fn(Carbon $month) => (int) ($graduatedByMonth[$month->format('Y-m')] ?? 0))->all(),
+        ];
+    }
+
+    private function getDashboardRadarMetrics(
+        int $passRate,
+        int $attendanceRate,
+        int $teacherCount,
+        int $departmentCount,
+        int $subjectCount,
+        int $classCount,
+        int $attendanceIssueCount,
+        int $studentCount
+    ): array {
+        $teacherLoad = $teacherCount > 0 ? min(100, (int) round(($classCount / $teacherCount) * 20)) : 0;
+        $departmentReach = $departmentCount > 0 ? min(100, (int) round(($subjectCount / $departmentCount) * 12)) : 0;
+        $subjectReach = $classCount > 0 ? min(100, (int) round(($subjectCount / $classCount) * 100)) : 0;
+        $riskControl = $studentCount > 0 ? max(0, 100 - (int) round(($attendanceIssueCount / $studentCount) * 100)) : 100;
+
+        return [
+            'labels' => ['Results', 'Attendance', 'Teacher Load', 'Dept Reach', 'Subject Reach', 'Risk Control'],
+            'series' => [$passRate, $attendanceRate, $teacherLoad, $departmentReach, $subjectReach, $riskControl],
+            'target' => [85, 90, 75, 70, 70, 90],
+        ];
+    }
+
+    private function getDashboardAttendanceRiskRows(string $academicYear, int $semester)
+    {
+        $students = Student::with(['user', 'group'])
+            ->get(['id', 'user_id', 'group_id']);
+
+        if ($students->isEmpty()) {
+            return collect();
+        }
+
+        $groupIds = $students->pluck('group_id')->filter()->unique()->values();
+        if ($groupIds->isEmpty()) {
+            return collect();
+        }
+
+        $sessionQuery = DB::table('attendance_sessions')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->join('semester_assignments', 'classes.id', '=', 'semester_assignments.class_id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester);
+
+        if (\Schema::hasTable('class_class_group')) {
+            $sessionQuery
+                ->join('class_class_group', 'classes.id', '=', 'class_class_group.class_room_id')
+                ->whereIn('class_class_group.class_group_id', $groupIds);
+        } else {
+            $sessionQuery->whereIn('classes.group_id', $groupIds);
+        }
+
+        $sessionIds = $sessionQuery->distinct()->pluck('attendance_sessions.id');
+
+        if ($sessionIds->isEmpty()) {
+            return collect();
+        }
+
+        $attendanceByStudent = Attendance::whereIn('session_id', $sessionIds)
+            ->whereIn('student_id', $students->pluck('id'))
+            ->whereIn('status', ['present', 'late', 'PRESENT', 'LATE'])
+            ->select('student_id', DB::raw('COUNT(*) as attended_count'))
+            ->groupBy('student_id')
+            ->pluck('attended_count', 'student_id');
+
+        $sessionCountQuery = DB::table('attendance_sessions')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->whereIn('attendance_sessions.id', $sessionIds);
+
+        if (\Schema::hasTable('class_class_group')) {
+            $sessionCountByGroup = $sessionCountQuery
+                ->join('class_class_group', 'classes.id', '=', 'class_class_group.class_room_id')
+                ->whereIn('class_class_group.class_group_id', $groupIds)
+                ->select('class_class_group.class_group_id', DB::raw('COUNT(DISTINCT attendance_sessions.id) as session_count'))
+                ->groupBy('class_class_group.class_group_id')
+                ->pluck('session_count', 'class_class_group.class_group_id');
+        } else {
+            $sessionCountByGroup = $sessionCountQuery
+                ->whereIn('classes.group_id', $groupIds)
+                ->select('classes.group_id', DB::raw('COUNT(DISTINCT attendance_sessions.id) as session_count'))
+                ->groupBy('classes.group_id')
+                ->pluck('session_count', 'classes.group_id');
+        }
+
+        return $students->map(function (Student $student) use ($attendanceByStudent, $sessionCountByGroup) {
+            $groupSessionCount = (int) ($sessionCountByGroup[$student->group_id] ?? 0);
+            $attendedCount = (int) ($attendanceByStudent[$student->id] ?? 0);
+            $absences = max(0, $groupSessionCount - $attendedCount);
+            $rate = $groupSessionCount > 0 ? round(($attendedCount / $groupSessionCount) * 100) : 0;
+            $initials = collect(explode(' ', trim($student->user->name ?? 'S')))
+                ->filter()
+                ->take(2)
+                ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                ->join('');
+
+            return [
+                'student_id' => $student->id,
+                'name' => $student->user->name ?? 'Unknown Student',
+                'group_name' => $student->group?->name ?? 'No group',
+                'absences' => $absences,
+                'attendance_rate' => $rate,
+                'initials' => $initials ?: 'S',
+            ];
+        })
+            ->filter(fn($student) => $student['absences'] > 0)
+            ->sortByDesc('absences')
+            ->values();
+    }
+
+
+    private function getAttendanceIssueDashboardCount(string $academicYear, int $semester): int
+    {
+        $students = Student::with(['group'])
+            ->get(['id', 'group_id']);
+
+        if ($students->isEmpty()) {
+            return 0;
+        }
+
+        $groupIds = $students->pluck('group_id')->filter()->unique()->values();
+        if ($groupIds->isEmpty()) {
+            return 0;
+        }
+
+        $sessionQuery = DB::table('attendance_sessions')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->join('semester_assignments', 'classes.id', '=', 'semester_assignments.class_id')
+            ->where('semester_assignments.academic_year', $academicYear)
+            ->where('semester_assignments.semester', $semester);
+
+        if (\Schema::hasTable('class_class_group')) {
+            $sessionQuery
+                ->join('class_class_group', 'classes.id', '=', 'class_class_group.class_room_id')
+                ->whereIn('class_class_group.class_group_id', $groupIds);
+        } else {
+            $sessionQuery->whereIn('classes.group_id', $groupIds);
+        }
+
+        $sessionIds = $sessionQuery->distinct()->pluck('attendance_sessions.id');
+
+        if ($sessionIds->isEmpty()) {
+            return 0;
+        }
+
+        $attendanceByStudent = Attendance::whereIn('session_id', $sessionIds)
+            ->whereIn('student_id', $students->pluck('id'))
+            ->whereIn('status', ['present', 'late', 'PRESENT', 'LATE'])
+            ->select('student_id', DB::raw('COUNT(*) as attended_count'))
+            ->groupBy('student_id')
+            ->pluck('attended_count', 'student_id');
+
+        $sessionCountQuery = DB::table('attendance_sessions')
+            ->join('classes', 'attendance_sessions.class_id', '=', 'classes.id')
+            ->whereIn('attendance_sessions.id', $sessionIds);
+
+        if (\Schema::hasTable('class_class_group')) {
+            $sessionCountByGroup = $sessionCountQuery
+                ->join('class_class_group', 'classes.id', '=', 'class_class_group.class_room_id')
+                ->whereIn('class_class_group.class_group_id', $groupIds)
+                ->select('class_class_group.class_group_id', DB::raw('COUNT(DISTINCT attendance_sessions.id) as session_count'))
+                ->groupBy('class_class_group.class_group_id')
+                ->pluck('session_count', 'class_class_group.class_group_id');
+        } else {
+            $sessionCountByGroup = $sessionCountQuery
+                ->whereIn('classes.group_id', $groupIds)
+                ->select('classes.group_id', DB::raw('COUNT(DISTINCT attendance_sessions.id) as session_count'))
+                ->groupBy('classes.group_id')
+                ->pluck('session_count', 'classes.group_id');
+        }
+
+        return $students->filter(function (Student $student) use ($attendanceByStudent, $sessionCountByGroup) {
+            if (!$student->group_id) {
+                return false;
+            }
+
+            $groupSessionCount = (int) ($sessionCountByGroup[$student->group_id] ?? 0);
+            $attendedCount = (int) ($attendanceByStudent[$student->id] ?? 0);
+            $absences = max(0, $groupSessionCount - $attendedCount);
+
+            return $absences >= 10;
+        })->count();
+    }
+
+    
     public function instructors(Request $request)
     {
         $query = Teacher::with(['user', 'department'])
@@ -434,6 +1151,7 @@ class AdminController extends Controller
             'yearLevel'
         ));
     }
+
 
     public function exportResultsExcel(Request $request)
     {

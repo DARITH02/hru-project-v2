@@ -32,7 +32,7 @@ class RoleMiddleware
                 return redirect()->route('login')->with('error', 'Your account is pending approval.');
             }
 
-            return redirect()->route('admin.students.overview')->with('error', 'Unauthorized access');
+            return redirect()->route('admin.dashboard')->with('error', 'Unauthorized access');
         }
 
         return $next($request);

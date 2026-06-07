@@ -51,6 +51,20 @@
         <nav class="sidebar-nav">
             <div class="nav-section-label">Main</div>
 
+            <a href="{{ route('admin.dashboard') }}"
+                class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <span class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="3" width="7" height="11" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="18" width="7" height="3" rx="1.5" />
+                    </svg>
+                </span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+
             <a href="{{ route('admin.results') }}"
                 class="nav-link {{ request()->is('admin/results') ? 'active' : '' }}">
                 <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"

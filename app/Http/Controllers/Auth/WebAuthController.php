@@ -31,7 +31,7 @@ class WebAuthController extends Controller
             Auth::login($user);
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.students.overview'));
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
@@ -52,7 +52,7 @@ class WebAuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('admin.students.overview');
+        return redirect()->route('admin.dashboard');
     }
 
     public function showRegister() { return view('auth.register'); }
@@ -85,7 +85,7 @@ class WebAuthController extends Controller
         }
 
         Auth::login($user);
-        return redirect()->route('admin.students.overview');
+        return redirect()->route('admin.dashboard');
     }
 
     public function logout(Request $request)
