@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tracker | Thesis System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .background-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+            z-index: -1;
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-idle { color: var(--text-secondary); }
+        .status-loading { color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        .status-success { color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .status-error { color: var(--error); background: rgba(239, 68, 68, 0.1); }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-card {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            text-align: left;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .result-label { color: var(--text-secondary); }
+        .result-value { font-family: monospace; color: #e2e8f0; }
+
+        .map-link {
+            display: block;
+            margin-top: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .map-link:hover { color: #818cf8; text-decoration: underline; }
+
+        /* Spinner Animation */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-active .spinner { display: block; }
+        .loader-active .btn-text { display: none; }
+    </style>
+</head>
+<body>
+    <div class="background-glow"></div>
+
+    <div class="container">
+        <div id="statusBadge" class="status-badge status-idle">Ready</div>
+        <h1>Location Tracker</h1>
+        <p>Your coordinates will be securely saved to the session logs.</p>
+
+        <button id="trackBtn" class="btn">
+            <span class="spinner"></span>
+            <span class="btn-text">Share My Location</span>
+        </button>
+
+        <div id="resultCard" class="result-card">
+            <div class="result-item">
+                <span class="result-label">Latitude:</span>
+                <span id="latVal" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Longitude:</span>
+                <span id="lngVal" class="result-value">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Accuracy:</span>
+                <span id="accVal" class="result-value">-</span>
+            </div>
+            <a id="mapLink" href="#" target="_blank" class="map-link">View on Google Maps</a>
+        </div>
+
+        <div id="errorMessage" style="color: var(--error); margin-top: 1rem; font-size: 0.85rem; display: none;"></div>
+    </div>
+
+    <script>
+        const trackBtn = document.getElementById('trackBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const resultCard = document.getElementById('resultCard');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        const latVal = document.getElementById('latVal');
+        const lngVal = document.getElementById('lngVal');
+        const accVal = document.getElementById('accVal');
+        const mapLink = document.getElementById('mapLink');
+
+        trackBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                showError("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            setLoading(true);
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const data = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    updateUI(data);
+                    sendToServer(data);
+                },
+                (error) => {
+                    let msg = "Unknown error occurred.";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            msg = "Permission denied. Please allow access.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            msg = "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            msg = "The request to get user location timed out.";
+                            break;
+                    }
+                    showError(msg);
+                    setLoading(false);
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        });
+
+        async function sendToServer(data) {
+            try {
+                const response = await fetch('/api/location/record', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.status) {
+                    statusBadge.innerText = "Saved Successfully";
+                    statusBadge.className = "status-badge status-success";
+                } else {
+                    showError(result.message || "Failed to save to server.");
+                }
+            } catch (err) {
+                showError("Network error. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function updateUI(data) {
+            latVal.innerText = data.latitude.toFixed(6);
+            lngVal.innerText = data.longitude.toFixed(6);
+            accVal.innerText = data.accuracy.toFixed(1) + "m";
+            mapLink.href = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+            resultCard.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function setLoading(isActive) {
+            if (isActive) {
+                trackBtn.classList.add('loader-active');
+                trackBtn.disabled = true;
+                statusBadge.innerText = "Locating...";
+                statusBadge.className = "status-badge status-loading";
+                errorMessage.style.display = 'none';
+            } else {
+                trackBtn.classList.remove('loader-active');
+                trackBtn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            errorMessage.innerText = msg;
+            errorMessage.style.display = 'block';
+            statusBadge.innerText = "Error";
+            statusBadge.className = "status-badge status-error";
+        }
+    </script>
+</body>
+</html>
