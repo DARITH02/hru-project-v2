@@ -27,6 +27,35 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    private function isPostgres(): bool
+    {
+        return DB::getDriverName() === 'pgsql';
+    }
+
+    private function roundedAverageSql(string $column, int $precision = 1): string
+    {
+        return $this->isPostgres()
+            ? "ROUND(AVG({$column})::numeric, {$precision})"
+            : "ROUND(AVG({$column}), {$precision})";
+    }
+
+    private function yearMonthSql(string $column): string
+    {
+        return $this->isPostgres()
+            ? "TO_CHAR({$column}, 'YYYY-MM')"
+            : "DATE_FORMAT({$column}, '%Y-%m')";
+    }
+
+    private function passRateSql(string $column): string
+    {
+        $passed = "SUM(CASE WHEN {$column} >= 50 THEN 1 ELSE 0 END)";
+        $total = "NULLIF(COUNT({$column}), 0)";
+
+        return $this->isPostgres()
+            ? "ROUND(({$passed}::numeric / {$total}) * 100)"
+            : "ROUND(({$passed} / {$total}) * 100)";
+    }
+
     public function mainDashboard(Request $request)
     {
         $academicYear = $request->get('academic_year', date('Y') . '-' . (date('Y') + 1));
@@ -268,7 +297,7 @@ class AdminController extends Controller
             ->selectRaw("
                 COALESCE(direct_majors.id, group_majors.id) as major_id,
                 COALESCE(direct_majors.name, group_majors.name, 'Unassigned') as major_name,
-                ROUND(AVG(semester_assignment_scores.score), 1) as avg_score,
+                {$this->roundedAverageSql('semester_assignment_scores.score')} as avg_score,
                 COUNT(DISTINCT students.id) as student_count,
                 COUNT(semester_assignment_scores.id) as score_count
             ")
@@ -311,9 +340,9 @@ class AdminController extends Controller
             ->select(
                 'subjects.id',
                 'subjects.name',
-                DB::raw('ROUND(AVG(semester_assignment_scores.score), 1) as avg_score'),
+                DB::raw($this->roundedAverageSql('semester_assignment_scores.score') . ' as avg_score'),
                 DB::raw('COUNT(semester_assignment_scores.id) as score_count'),
-                DB::raw("ROUND((SUM(CASE WHEN semester_assignment_scores.score >= 50 THEN 1 ELSE 0 END) / NULLIF(COUNT(semester_assignment_scores.id), 0)) * 100) as pass_rate")
+                DB::raw($this->passRateSql('semester_assignment_scores.score') . ' as pass_rate')
             )
             ->limit(7)
             ->get()
@@ -445,7 +474,7 @@ class AdminController extends Controller
                 'students.id',
                 'users.name',
                 'class_groups.name as group_name',
-                DB::raw('ROUND(AVG(semester_assignment_scores.score), 1) as avg_score')
+                DB::raw($this->roundedAverageSql('semester_assignment_scores.score') . ' as avg_score')
             )
             ->take(4)
             ->get()
@@ -540,13 +569,13 @@ class AdminController extends Controller
             ->values();
 
         $enrolledByMonth = Student::query()
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, COUNT(*) as total")
+            ->selectRaw($this->yearMonthSql('created_at') . " as month_key, COUNT(*) as total")
             ->where('created_at', '>=', now()->startOfMonth()->subMonths(5))
             ->groupBy('month_key')
             ->pluck('total', 'month_key');
 
         $graduatedByMonth = Student::query()
-            ->selectRaw("DATE_FORMAT(updated_at, '%Y-%m') as month_key, COUNT(*) as total")
+            ->selectRaw($this->yearMonthSql('updated_at') . " as month_key, COUNT(*) as total")
             ->where('status', 'graduated')
             ->where('updated_at', '>=', now()->startOfMonth()->subMonths(5))
             ->groupBy('month_key')
