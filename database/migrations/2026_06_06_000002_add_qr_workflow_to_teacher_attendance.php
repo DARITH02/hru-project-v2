@@ -27,15 +27,17 @@ return new class extends Migration
             }
         });
 
-        try {
-            Schema::table('teacher_attendance_sessions', function (Blueprint $table) {
-                $table->foreign('auto_check_in_source_session_id', 'teacher_att_auto_source_fk')
-                    ->references('id')
-                    ->on('teacher_attendance_sessions')
-                    ->nullOnDelete();
-            });
-        } catch (Throwable) {
-            // Constraint already exists or the failed previous attempt left the column in place.
+        if (DB::getDriverName() === 'mysql') {
+            try {
+                Schema::table('teacher_attendance_sessions', function (Blueprint $table) {
+                    $table->foreign('auto_check_in_source_session_id', 'teacher_att_auto_source_fk')
+                        ->references('id')
+                        ->on('teacher_attendance_sessions')
+                        ->nullOnDelete();
+                });
+            } catch (Throwable) {
+                // Constraint already exists or the failed previous attempt left the column in place.
+            }
         }
 
         if (DB::getDriverName() === 'mysql' && Schema::hasTable('teacher_attendance_sessions')) {

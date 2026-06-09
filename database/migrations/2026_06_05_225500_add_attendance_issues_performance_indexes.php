@@ -54,7 +54,11 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $blueprint) use ($columns, $index) {
                 $blueprint->index($columns, $index);
             });
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            if (DB::getDriverName() === 'pgsql') {
+                throw $e;
+            }
+
             // The index may already exist on manually restored databases.
         }
     }
@@ -69,7 +73,11 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $blueprint) use ($index) {
                 $blueprint->dropIndex($index);
             });
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            if (DB::getDriverName() === 'pgsql') {
+                throw $e;
+            }
+
             // The index may already have been removed.
         }
     }
