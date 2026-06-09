@@ -161,8 +161,8 @@
                 @endif
                 <div class="sample-grade-list">
                     @foreach($majorComparison as $major)
-                        <div>
-                            <span><i style="background:{{ match ($major['tone']) {
+                        @php
+                            $majorToneColor = match ($major['tone']) {
                                 'emerald' => '#22d3a5',
                                 'purple' => '#a78bfa',
                                 'amber' => '#ffb547',
@@ -170,7 +170,10 @@
                                 'cyan' => '#22c7f0',
                                 'indigo' => '#818cf8',
                                 default => '#4f7cff',
-                            } }}"></i>{{ $major['name'] }}</span>
+                            };
+                        @endphp
+                        <div>
+                            <span><i style="background:{{ $majorToneColor }}"></i>{{ $major['name'] }}</span>
                             <strong>{{ rtrim(rtrim(number_format($major['avg_score'], 1), '0'), '.') }}</strong>
                         </div>
                     @endforeach
