@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -49,11 +50,13 @@ return new class extends Migration
             return;
         }
 
-        $wrappedColumns = collect($columns)
-            ->map(fn ($column) => "`{$column}`")
-            ->implode(', ');
-
-        DB::statement("ALTER TABLE `{$table}` ADD INDEX `{$index}` ({$wrappedColumns})");
+        try {
+            Schema::table($table, function (Blueprint $blueprint) use ($columns, $index) {
+                $blueprint->index($columns, $index);
+            });
+        } catch (Throwable) {
+            // The index may already exist on manually restored databases.
+        }
     }
 
     private function dropIndexIfExists(string $table, string $index): void
@@ -62,15 +65,27 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("ALTER TABLE `{$table}` DROP INDEX `{$index}`");
+        try {
+            Schema::table($table, function (Blueprint $blueprint) use ($index) {
+                $blueprint->dropIndex($index);
+            });
+        } catch (Throwable) {
+            // The index may already have been removed.
+        }
     }
 
     private function indexExists(string $table, string $index): bool
     {
-        $database = DB::getDatabaseName();
+        if (DB::getDriverName() === 'pgsql') {
+            return DB::table('pg_indexes')
+                ->where('schemaname', 'public')
+                ->where('tablename', $table)
+                ->where('indexname', $index)
+                ->exists();
+        }
 
         return DB::table('information_schema.statistics')
-            ->where('table_schema', $database)
+            ->where('table_schema', DB::getDatabaseName())
             ->where('table_name', $table)
             ->where('index_name', $index)
             ->exists();

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->dateTime('end_time');
             $table->dateTime('checkin_open_time');
             $table->enum('session_type', ['morning', 'afternoon', 'evening', 'other'])->default('other');
-            $table->enum('status', ['scheduled', 'active', 'completed'])->default('scheduled');
+            $table->enum('status', ['scheduled', 'active', 'completed', 'skipped'])->default('scheduled');
             $table->timestamps();
         });
     }

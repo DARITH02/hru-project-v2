@@ -38,7 +38,7 @@ return new class extends Migration
             // Constraint already exists or the failed previous attempt left the column in place.
         }
 
-        if (Schema::hasTable('teacher_attendance_sessions')) {
+        if (DB::getDriverName() === 'mysql' && Schema::hasTable('teacher_attendance_sessions')) {
             DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY attendance_status ENUM('scheduled','present','on_time','late','very_late','teaching','completed','early_leave','absent','permission','cancelled','rescheduled','missing_check_out') NOT NULL DEFAULT 'scheduled'");
             DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY check_in_method ENUM('qr','manual','location','system','auto_session') NULL");
         }
@@ -86,7 +86,9 @@ return new class extends Migration
             }
         });
 
-        DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY attendance_status ENUM('scheduled','on_time','late','very_late','teaching','completed','early_leave','absent','permission','cancelled','rescheduled','missing_check_out') NOT NULL DEFAULT 'scheduled'");
-        DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY check_in_method ENUM('qr','manual','location','system') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY attendance_status ENUM('scheduled','on_time','late','very_late','teaching','completed','early_leave','absent','permission','cancelled','rescheduled','missing_check_out') NOT NULL DEFAULT 'scheduled'");
+            DB::statement("ALTER TABLE teacher_attendance_sessions MODIFY check_in_method ENUM('qr','manual','location','system') NULL");
+        }
     }
 };
