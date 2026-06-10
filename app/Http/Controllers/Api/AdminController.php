@@ -1516,13 +1516,18 @@ class AdminController extends Controller
                 'role' => 'teacher',
             ]);
 
-            $teacher = Teacher::create([
+            $teacherData = [
                 'user_id' => $user->id,
-                'teacher_code' => Teacher::generateTeacherCode(),
                 'department_id' => $request->department_id,
                 'specialization' => $request->specialization,
                 'status' => $request->status ?? 'active',
-            ]);
+            ];
+
+            if (Teacher::hasTeacherCodeColumn()) {
+                $teacherData['teacher_code'] = Teacher::generateTeacherCode();
+            }
+
+            $teacher = Teacher::create($teacherData);
 
             DB::commit();
             return response()->json([

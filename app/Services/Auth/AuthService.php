@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +45,28 @@ class AuthService
             'student_code' => $student->student_code,
             'group_id' => $student->group_id,
             'id' => $student->id,
+        ];
+    }
+
+    public function teacherPayload(User $user): ?array
+    {
+        if ($user->role !== 'teacher') {
+            return null;
+        }
+
+        $teacher = Teacher::with('department')->where('user_id', $user->id)->first();
+
+        if (!$teacher) {
+            return null;
+        }
+
+        return [
+            'id' => $teacher->id,
+            'teacher_code' => $teacher->teacher_code,
+            'department_id' => $teacher->department_id,
+            'department' => $teacher->department?->name,
+            'specialization' => $teacher->specialization,
+            'status' => $teacher->status,
         ];
     }
 

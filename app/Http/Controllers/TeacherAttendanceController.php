@@ -251,6 +251,10 @@ class TeacherAttendanceController extends Controller
 
     private function resolveTeacherCode(string $identifier): ?Teacher
     {
+        if (!Teacher::hasTeacherCodeColumn()) {
+            return null;
+        }
+
         $code = strtoupper(trim($identifier));
 
         return Teacher::with('user')

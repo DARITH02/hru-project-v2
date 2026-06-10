@@ -34,6 +34,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
                 'student' => $this->auth->studentPayload($user),
+                'teacher' => $this->auth->teacherPayload($user),
             ]
         ]);
     }
@@ -57,6 +58,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'student' => $this->auth->studentPayload($user),
+            'teacher' => $this->auth->teacherPayload($user),
         ]);
     }
 

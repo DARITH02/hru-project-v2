@@ -782,12 +782,19 @@ class AdminController extends Controller
 
         if ($request->filled('search')) {
             $q = $request->search;
-            $query->where(function ($w) use ($q) {
+            $hasTeacherCode = Teacher::hasTeacherCodeColumn();
+
+            $query->where(function ($w) use ($q, $hasTeacherCode) {
                 $w->whereHas('user', function ($u) use ($q) {
                     $u->where('name', 'like', "%$q%")
                         ->orWhere('email', 'like', "%$q%");
-                })->orWhere('teacher_code', 'like', "%$q%")
-                ->orWhereHas('department', function ($d) use ($q) {
+                });
+
+                if ($hasTeacherCode) {
+                    $w->orWhere('teacher_code', 'like', "%$q%");
+                }
+
+                $w->orWhereHas('department', function ($d) use ($q) {
                     $d->where('name', 'like', "%$q%");
                 });
             });

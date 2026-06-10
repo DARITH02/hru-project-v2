@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Teacher extends Model
 {
@@ -11,8 +12,17 @@ class Teacher extends Model
 
     protected $fillable = ['user_id', 'teacher_code', 'department_id', 'specialization', 'status', 'telegram_id'];
 
-    public static function generateTeacherCode(): string
+    public static function hasTeacherCodeColumn(): bool
     {
+        return Schema::hasColumn('teachers', 'teacher_code');
+    }
+
+    public static function generateTeacherCode(): ?string
+    {
+        if (!self::hasTeacherCodeColumn()) {
+            return null;
+        }
+
         do {
             $code = 'TCH-' . random_int(100000, 999999);
         } while (self::where('teacher_code', $code)->exists());
