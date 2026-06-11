@@ -206,6 +206,10 @@ class TeacherAttendanceController extends Controller
             $data['schedule_id'] = $data['schedule_id'] ?? $session->schedule_id;
         }
 
+        if (!empty($data['schedule_id'])) {
+            TeacherSchedule::where('teacher_id', $teacher->id)->findOrFail($data['schedule_id']);
+        }
+
         $correction = TeacherAttendanceCorrection::create($data + [
             'teacher_id' => $teacher->id,
             'status' => 'pending',

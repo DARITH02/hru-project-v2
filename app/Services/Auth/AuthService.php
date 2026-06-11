@@ -62,7 +62,7 @@ class AuthService
 
         return [
             'id' => $teacher->id,
-            'teacher_code' => $teacher->teacher_code,
+            'teacher_code' => Teacher::hasTeacherCodeColumn() ? $teacher->teacher_code : null,
             'department_id' => $teacher->department_id,
             'department' => $teacher->department?->name,
             'specialization' => $teacher->specialization,

@@ -550,11 +550,14 @@ class TeacherAttendanceService
             $session = $correction->attendanceSession;
             if ($session) {
                 $old = $session->toArray();
-                if ($correction->requested_check_in_time) {
+                if ($correction->request_type === 'schedule_change') {
+                    $this->applyScheduleChangeCorrection($correction, $session, $request);
+                } elseif ($correction->requested_check_in_time) {
                     $session->check_in_time = $correction->requested_check_in_time;
                     $session->check_in_method = 'manual';
                 }
-                if ($correction->requested_check_out_time) {
+
+                if ($correction->request_type !== 'schedule_change' && $correction->requested_check_out_time) {
                     $session->check_out_time = $correction->requested_check_out_time;
                     $session->check_out_method = 'manual';
                 }
@@ -585,6 +588,42 @@ class TeacherAttendanceService
 
             return $correction->fresh(['teacher.user', 'attendanceSession']);
         });
+    }
+
+    private function applyScheduleChangeCorrection(TeacherAttendanceCorrection $correction, TeacherAttendanceSession $session, Request $request): void
+    {
+        $schedule = $correction->schedule ?: $session->schedule;
+        if (!$schedule) {
+            return;
+        }
+
+        $start = $correction->requested_check_in_time
+            ? Carbon::parse($correction->requested_check_in_time)
+            : Carbon::parse($schedule->scheduled_start_time);
+        $end = $correction->requested_check_out_time
+            ? Carbon::parse($correction->requested_check_out_time)
+            : Carbon::parse($schedule->scheduled_end_time);
+
+        if ($end->lessThanOrEqualTo($start)) {
+            throw ValidationException::withMessages([
+                'requested_check_out_time' => 'The requested end time must be after the requested start time.',
+            ]);
+        }
+
+        $schedule->update([
+            'schedule_date' => $start->toDateString(),
+            'scheduled_start_time' => $start,
+            'scheduled_end_time' => $end,
+            'check_in_opens_at' => $start->copy()->subMinutes(30),
+            'check_in_closes_at' => $start->copy()->addMinutes(15),
+            'check_out_opens_at' => $end->copy()->subMinutes(15),
+            'check_out_closes_at' => $end->copy()->addMinutes(60),
+            'approved_by' => $request->user()?->id,
+        ]);
+
+        $session->attendance_date = $start->toDateString();
+        $session->scheduled_start_time = $start;
+        $session->scheduled_end_time = $end;
     }
 
     public function rejectCorrection(TeacherAttendanceCorrection $correction, Request $request): TeacherAttendanceCorrection

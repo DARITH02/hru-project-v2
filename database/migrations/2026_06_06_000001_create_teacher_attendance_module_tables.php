@@ -34,9 +34,9 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->timestamps();
 
-            $table->index(['teacher_id', 'schedule_date']);
-            $table->index(['teacher_id', 'subject_id', 'schedule_date', 'session_number']);
-            $table->index(['semester', 'academic_year']);
+            $table->index(['teacher_id', 'schedule_date'], 'teacher_schedule_teacher_date_idx');
+            $table->index(['teacher_id', 'subject_id', 'schedule_date', 'session_number'], 'teacher_schedule_subject_date_session_idx');
+            $table->index(['semester', 'academic_year'], 'teacher_schedule_period_idx');
             $table->index('status');
         });
 
@@ -106,7 +106,7 @@ return new class extends Migration
             $table->string('used_ip_address')->nullable();
             $table->timestamps();
 
-            $table->index(['teacher_id', 'subject_id', 'attendance_date', 'session_number']);
+            $table->index(['teacher_id', 'subject_id', 'attendance_date', 'session_number'], 'teacher_qr_subject_date_session_idx');
             $table->index('expires_at');
             $table->foreign('teacher_attendance_session_id', 'teacher_qr_session_fk')->references('id')->on('teacher_attendance_sessions')->cascadeOnDelete();
         });

@@ -10,6 +10,15 @@ use App\Http\Controllers\Api\UserLocationController;
 use Illuminate\Support\Facades\Route;
 
 //  PUBLIC / AUTH API
+Route::get('/', fn () => response()->json([
+    'success' => true,
+    'message' => 'HRU ATS API is running.',
+    'endpoints' => [
+        'login' => url('/api/login'),
+        'check_status' => url('/api/check-status'),
+        'branding' => url('/api/branding'),
+    ],
+]));
 Route::get('/check-status', [AdminController::class, 'checkStatus']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::get('/branding', [AuthController::class, 'branding']);

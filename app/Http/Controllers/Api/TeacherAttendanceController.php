@@ -143,7 +143,12 @@ class TeacherAttendanceController extends Controller
         ]);
 
         if (!empty($data['attendance_session_id'])) {
-            TeacherAttendanceSession::where('teacher_id', $teacher->id)->findOrFail($data['attendance_session_id']);
+            $session = TeacherAttendanceSession::where('teacher_id', $teacher->id)->findOrFail($data['attendance_session_id']);
+            $data['schedule_id'] = $data['schedule_id'] ?? $session->schedule_id;
+        }
+
+        if (!empty($data['schedule_id'])) {
+            TeacherSchedule::where('teacher_id', $teacher->id)->findOrFail($data['schedule_id']);
         }
 
         $correction = TeacherAttendanceCorrection::create($data + [
