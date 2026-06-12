@@ -224,17 +224,17 @@
                 </div>
                 <div
                     style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">
-                    Delete Class?</div>
+                    {{ __('admin_courses.delete_class_question') }}</div>
                 <div
                     style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.06em;line-height:1.6">
-                    This action is irreversible. All associated records<br>will be permanently removed from the system.
+                    {{ __('admin_courses.delete_warning') }}
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('deleteModal')" class="btn-secondary">CANCEL</button>
+                <button onclick="closeModal('deleteModal')" class="btn-secondary">{{ __('admin_courses.cancel') }}</button>
                 <button id="confirmDeleteBtn"
                     style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--red),#F87171);color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;font-weight:600;cursor:pointer;transition:all .2s;">
-                    DELETE ENTRY
+                    {{ __('admin_courses.delete_entry') }}
                 </button>
             </div>
         </div>
@@ -250,18 +250,18 @@
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                 </div>
-                <div class="danger-modal-title">Delete Selected Classes?</div>
+                <div class="danger-modal-title">{{ __('admin_courses.delete_selected_classes') }}</div>
                 <div class="danger-modal-text">
-                    This action is irreversible. All sessions, schedules, student enrollments, and academic scores associated with these classes will be permanently removed.
+                    {{ __('admin_courses.bulk_delete_warning') }}
                 </div>
                 <div id="bulkDeleteModalCount" class="danger-modal-count">
-                    1 Selected Classes
+                    {{ __('admin_courses.selected_classes', ['count' => 1]) }}
                 </div>
             </div>
             <div class="danger-modal-footer">
-                <button type="button" onclick="closeModal('bulkDeleteModal')" class="btn-secondary">CANCEL</button>
+                <button type="button" onclick="closeModal('bulkDeleteModal')" class="btn-secondary">{{ __('admin_courses.cancel') }}</button>
                 <button type="button" id="confirmBulkDeleteBtn" class="btn-danger">
-                    DELETE SELECTED
+                    {{ __('admin_courses.delete_selected') }}
                 </button>
             </div>
         </div>
@@ -272,7 +272,7 @@
     <div id="editModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-head">
-                <span id="editModalTitle" class="modal-title">Edit Class</span>
+                <span id="editModalTitle" class="modal-title">{{ __('admin_courses.edit_class') }}</span>
                 <button onclick="closeModal('editModal')" class="modal-close">
                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -285,7 +285,7 @@
                 <div class="modal-body">
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label">Subject</label>
+                            <label class="form-label">{{ __('admin_courses.subject') }}</label>
                             <select id="editSubjectName" name="subject_id" class="form-input">
                                 @foreach($subjects as $sub)
                                     <option value="{{ $sub->id }}">{{ $sub->name }}</option>
@@ -293,7 +293,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Class Group(s)</label>
+                            <label class="form-label">{{ __('admin_courses.class_groups') }}</label>
                             <select id="editClassGroup" name="group_ids[]" class="form-input" multiple
                                 style="height: auto; min-height: 100px;">
                                 @foreach($classGroups as $group)
@@ -305,25 +305,25 @@
 
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label">Instructor</label>
+                            <label class="form-label">{{ __('admin_courses.instructor') }}</label>
                             <select id="editInstructor" name="teacher_id" class="form-input">
                                 @foreach($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}">{{ $teacher->user->name ?? 'Unknown' }}</option>
+                                    <option value="{{ $teacher->id }}">{{ $teacher->user->name ?? __('admin_courses.unknown') }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Location (Room)</label>
-                            <input id="editRoom" name="room_number" class="form-input" type="text" placeholder="e.g. 101">
+                            <label class="form-label">{{ __('admin_courses.location_room') }}</label>
+                            <input id="editRoom" name="room_number" class="form-input" type="text" placeholder="{{ __('admin_courses.example_room') }}">
                         </div>
                     </div>
 
                     <div class="form-group"
                         style="padding:15px; background:var(--surface3); border:1px solid var(--border); border-radius:12px; margin: 5px 0 15px;">
-                        <label class="form-label" style="margin-top:0">Schedule & Timing</label>
+                        <label class="form-label" style="margin-top:0">{{ __('admin_courses.schedule_timing') }}</label>
                         <div class="form-grid-2">
                             <div class="form-group" style="margin-bottom:0">
-                                <label class="form-label" style="font-size:9px">Preferred Days</label>
+                                <label class="form-label" style="font-size:9px">{{ __('admin_courses.preferred_days') }}</label>
                                 <div class="day-selector-grid" id="editDaySelector">
                                     <label class="day-chip"><input type="checkbox" value="Mon"><span>M</span></label>
                                     <label class="day-chip"><input type="checkbox" value="Tue"><span>T</span></label>
@@ -338,11 +338,11 @@
                             </div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                                 <div class="form-group" style="margin-bottom:0">
-                                    <label class="form-label" style="font-size:9px">Start</label>
+                                    <label class="form-label" style="font-size:9px">{{ __('admin_courses.start') }}</label>
                                     <input id="editTimeStart" name="time_start" class="form-input" type="time">
                                 </div>
                                 <div class="form-group" style="margin-bottom:0">
-                                    <label class="form-label" style="font-size:9px">End</label>
+                                    <label class="form-label" style="font-size:9px">{{ __('admin_courses.end') }}</label>
                                     <input id="editTimeEnd" name="time_end" class="form-input" type="time">
                                 </div>
                             </div>
@@ -350,17 +350,17 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">Operational Status</label>
+                        <label class="form-label">{{ __('admin_courses.operational_status') }}</label>
                         <select id="editStatus" name="status" class="form-input">
-                            <option value="active">Active</option>
-                            <option value="waiting">Waiting</option>
-                            <option value="ready">Ready</option>
+                            <option value="active">{{ __('admin_courses.active') }}</option>
+                            <option value="waiting">{{ __('admin_courses.waiting') }}</option>
+                            <option value="ready">{{ __('admin_courses.ready') }}</option>
                         </select>
                     </div>
                 </div>
                 <div id="editModalFooter" class="modal-footer">
-                    <button type="button" onclick="closeModal('editModal')" class="btn-secondary">CANCEL</button>
-                    <button type="submit" class="btn-primary">SAVE CHANGES</button>
+                    <button type="button" onclick="closeModal('editModal')" class="btn-secondary">{{ __('admin_courses.cancel') }}</button>
+                    <button type="submit" class="btn-primary">{{ __('admin_courses.save_changes') }}</button>
                 </div>
             </form>
         </div>
@@ -370,7 +370,7 @@
     <div id="createModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-head">
-                <span class="modal-title">New Catalog Entry</span>
+                <span class="modal-title">{{ __('admin_courses.new_entry_title') }}</span>
                 <button onclick="closeModal('createModal')" class="modal-close">
                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -382,16 +382,16 @@
                 <div class="modal-body">
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label">Subject <span class="req">*</span></label>
+                            <label class="form-label">{{ __('admin_courses.subject') }} <span class="req">*</span></label>
                             <select name="subject_id" class="form-input" required>
-                                <option value="" disabled selected>Select a Subject...</option>
+                                <option value="" disabled selected>{{ __('admin_courses.select_subject') }}</option>
                                 @foreach($subjects as $sub)
                                     <option value="{{ $sub->id }}">{{ $sub->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Class Group(s) <span class="req">*</span></label>
+                            <label class="form-label">{{ __('admin_courses.class_groups') }} <span class="req">*</span></label>
                             <select name="group_ids[]" class="form-input" required multiple
                                 style="height: auto; min-height: 100px;">
                                 @foreach($classGroups as $group)
@@ -403,27 +403,27 @@
 
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label">Lead Instructor <span class="req">*</span></label>
+                            <label class="form-label">{{ __('admin_courses.lead_instructor') }} <span class="req">*</span></label>
                             <select name="teacher_id" class="form-input" required>
-                                <option value="" disabled selected>Select Instructor...</option>
+                                <option value="" disabled selected>{{ __('admin_courses.select_instructor') }}</option>
                                 @foreach($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}">{{ $teacher->user->name ?? 'Unknown Instructor' }}
+                                    <option value="{{ $teacher->id }}">{{ $teacher->user->name ?? __('admin_courses.unknown_instructor') }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Location (Room) <span class="req">*</span></label>
-                            <input name="room_number" class="form-input" type="text" required placeholder="e.g. 101">
+                            <label class="form-label">{{ __('admin_courses.location_room') }} <span class="req">*</span></label>
+                            <input name="room_number" class="form-input" type="text" required placeholder="{{ __('admin_courses.example_room') }}">
                         </div>
                     </div>
 
                     <div class="form-group"
                         style="padding:15px; background:var(--surface3); border:1px solid var(--border); border-radius:12px; margin: 10px 0 15px;">
-                        <label class="form-label" style="margin-top:0">Weekly Schedule</label>
+                        <label class="form-label" style="margin-top:0">{{ __('admin_courses.weekly_schedule') }}</label>
                         <div class="form-grid-2">
                             <div class="form-group" style="margin-bottom:0">
-                                <label class="form-label" style="font-size:9px">Preferred Days</label>
+                                <label class="form-label" style="font-size:9px">{{ __('admin_courses.preferred_days') }}</label>
                                 <div class="day-selector-grid" id="createDaySelector">
                                     <label class="day-chip"><input type="checkbox" value="Mon"><span>M</span></label>
                                     <label class="day-chip"><input type="checkbox" value="Tue"><span>T</span></label>
@@ -438,11 +438,11 @@
                             </div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                                 <div class="form-group" style="margin-bottom:0">
-                                    <label class="form-label" style="font-size:9px">Start Time</label>
+                                    <label class="form-label" style="font-size:9px">{{ __('admin_courses.start_time') }}</label>
                                     <input name="time_start" class="form-input" type="time" value="08:00">
                                 </div>
                                 <div class="form-group" style="margin-bottom:0">
-                                    <label class="form-label" style="font-size:9px">End Time</label>
+                                    <label class="form-label" style="font-size:9px">{{ __('admin_courses.end_time') }}</label>
                                     <input name="time_end" class="form-input" type="time" value="09:30">
                                 </div>
                             </div>
@@ -450,21 +450,21 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">Initial Operational Status</label>
+                        <label class="form-label">{{ __('admin_courses.initial_operational_status') }}</label>
                         <select name="status" class="form-input">
-                            <option value="active">Active</option>
-                            <option value="waiting">Waiting</option>
-                            <option value="ready">Ready</option>
+                            <option value="active">{{ __('admin_courses.active') }}</option>
+                            <option value="waiting">{{ __('admin_courses.waiting') }}</option>
+                            <option value="ready">{{ __('admin_courses.ready') }}</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="closeModal('createModal')" class="btn-secondary">CANCEL</button>
+                    <button type="button" onclick="closeModal('createModal')" class="btn-secondary">{{ __('admin_courses.cancel') }}</button>
                     <button type="submit" class="btn-primary">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                         </svg>
-                        CREATE ENTRY
+                        {{ __('admin_courses.create_entry') }}
                     </button>
                 </div>
             </form>
@@ -487,10 +487,10 @@
                     </div>
                     <div>
                         <div id="enrollModalTitle" class="modal-title"
-                            style="font-weight: 800; font-size: 17px; letter-spacing: -0.02em;">Manage Enrollment</div>
+                            style="font-weight: 800; font-size: 17px; letter-spacing: -0.02em;">{{ __('admin_courses.manage_enrollment') }}</div>
                         <div id="enrollModalSubtitle"
                             style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.02em">
-                            BATCH TRANSFER STUDENTS</div>
+                            {{ __('admin_courses.batch_transfer_students') }}</div>
                     </div>
                 </div>
                 <button onclick="closeModal('enrollModal')" class="modal-close"
@@ -510,12 +510,12 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
                         </svg>
                         <input id="studentSearch" type="text" class="search-input"
-                            placeholder="Find student by name or code..." onkeyup="filterEnrollList()"
+                            placeholder="{{ __('admin_courses.find_student') }}" onkeyup="filterEnrollList()"
                             style="padding-left:36px; height:42px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; font-size:12px;">
                     </div>
                     <div id="enrollCount"
                         style="font-family:var(--font-mono); font-size:10px; color:var(--text2); background:var(--surface2); padding:11px 16px; border-radius:12px; border:1px solid var(--border); font-weight:800">
-                        {{ count($students) }} TOTAL
+                        {{ count($students) }} {{ __('admin_courses.total') }}
                     </div>
                 </div>
                 <div id="studentListContainer" class="enroll-list" style="max-height:480px; padding: 20px 28px;">
@@ -857,13 +857,12 @@
         <div>
             <div class="breadcrumb" style="margin-bottom: 15px;">
                 <span
-                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.1em;">ACADEMIC
-                    COMMAND</span>
+                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.1em;">{{ __('admin_courses.breadcrumb_section') }}</span>
                 <span class="breadcrumb-sep">/</span>
-                <span class="breadcrumb-current" style="color: var(--accent); font-weight: 800;">CATALOG MATRIX</span>
+                <span class="breadcrumb-current" style="color: var(--accent); font-weight: 800;">{{ __('admin_courses.breadcrumb_current') }}</span>
             </div>
-            <h1 class="page-title-new">Course Matrix Authority</h1>
-            <p class="page-subtitle-new">INTELLIGENT CURRICULUM MANAGEMENT SYSTEM</p>
+            <h1 class="page-title-new">{{ __('admin_courses.title') }}</h1>
+            <p class="page-subtitle-new">{{ __('admin_courses.subtitle') }}</p>
         </div>
         <div style="display: flex; gap: 12px;">
             <button class="btn-secondary" onclick="window.location.href='{{ route('admin.export.courses') }}'"
@@ -872,14 +871,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                EXPORT SYSTEM DATA
+                {{ __('admin_courses.export_system_data') }}
             </button>
             <button class="btn-primary" onclick="openModal('createModal')"
                 style="border-radius: 14px; height: 46px; padding: 0 24px; font-weight: 800; font-size: 11px; background: #364ed9 ; box-shadow: 0 8px 20px var(--accent)33; gap: 10px;">
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                NEW CATALOG ENTRY
+                {{ __('admin_courses.new_catalog_entry') }}
             </button>
         </div>
     </div>
@@ -892,7 +891,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div class="stat-label-new">TOTAL CATALOGUE</div>
+                    <div class="stat-label-new">{{ __('admin_courses.total_catalogue') }}</div>
                     <div class="stat-value-new">{{ $classes->count() }}</div>
                 </div>
                 <div class="glow-icon" style="background: var(--accent)15; color: var(--accent);">
@@ -905,7 +904,7 @@
             <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
                 <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--green);">↑
                     2.4%</span>
-                <span style="font-size: 9px; color: var(--muted2); font-weight: 600;">FROM LAST PERIOD</span>
+                <span style="font-size: 9px; color: var(--muted2); font-weight: 600;">{{ __('admin_courses.from_last_period') }}</span>
             </div>
         </div>
 
@@ -915,7 +914,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div class="stat-label-new">ACTIVE ROSTER</div>
+                    <div class="stat-label-new">{{ __('admin_courses.active_roster') }}</div>
                     <div class="stat-value-new">{{ $classes->pluck('teacher_id')->unique()->count() }}</div>
                 </div>
                 <div class="glow-icon" style="background: var(--green)15; color: var(--green);">
@@ -930,8 +929,7 @@
                     style="width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green);">
                 </div>
                 <span
-                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 0.05em;">SYSTEM
-                    HEALTHY</span>
+                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 0.05em;">{{ __('admin_courses.system_healthy') }}</span>
             </div>
         </div>
 
@@ -941,7 +939,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div class="stat-label-new">RESOURCE LOAD</div>
+                    <div class="stat-label-new">{{ __('admin_courses.resource_load') }}</div>
                     <div class="stat-value-new">84<span style="font-size: 18px; opacity: 0.5">%</span></div>
                 </div>
                 <div class="glow-icon" style="background: var(--amber)15; color: var(--amber);">
@@ -956,8 +954,7 @@
                     style="width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber);">
                 </div>
                 <span
-                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--amber); letter-spacing: 0.05em;">NEAR
-                    CAPACITY</span>
+                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--amber); letter-spacing: 0.05em;">{{ __('admin_courses.near_capacity') }}</span>
             </div>
         </div>
 
@@ -967,7 +964,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div class="stat-label-new">HUB UPTIME</div>
+                    <div class="stat-label-new">{{ __('admin_courses.hub_uptime') }}</div>
                     <div class="stat-value-new">99.9<span style="font-size: 18px; opacity: 0.5">%</span></div>
                 </div>
                 <div class="glow-icon" style="background: var(--violet)15; color: var(--violet);">
@@ -982,7 +979,7 @@
                     style="width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green);">
                 </div>
                 <span
-                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 0.05em;">OPERATIONAL</span>
+                    style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 0.05em;">{{ __('admin_courses.operational') }}</span>
             </div>
         </div>
     </div>
@@ -997,10 +994,10 @@
             <div id="bulkActionsToolbar" style="display:none; align-items:center; justify-content:space-between; background:var(--surface3); padding:12px 20px; border-radius:12px; margin: 15px; border:1px solid var(--accent)33; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 <div style="display:flex; align-items:center; gap:12px">
                     <div style="width:12px; height:12px; border-radius:50%; background:var(--red); box-shadow:0 0 10px var(--red)"></div>
-                    <span id="selectedClassesCount" style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--text); letter-spacing:0.05em">0 CLASSES SELECTED</span>
+                    <span id="selectedClassesCount" style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--text); letter-spacing:0.05em">{{ __('admin_courses.classes_selected', ['count' => 0]) }}</span>
                 </div>
                 <button onclick="confirmBulkDeleteClasses()" class="btn-primary" style="background:var(--red); border:none; height:34px; font-size:10px; padding:0 20px; font-weight:900; box-shadow:0 4px 12px var(--red)44">
-                    CONFIRM BULK DELETE
+                    {{ __('admin_courses.confirm_bulk_delete') }}
                 </button>
             </div>
 
@@ -1011,8 +1008,7 @@
                         style="width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)">
                     </div>
                     <span
-                        style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--text2)">ACADEMIC
-                        CATALOG</span>
+                        style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--text2)">{{ __('admin_courses.academic_catalog') }}</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="search-wrap"
@@ -1022,13 +1018,13 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" />
                         </svg>
                         <input id="searchInput" name="search" value="{{ request('search') }}" class="search-input"
-                            type="text" placeholder="Search catalog..." onkeyup="filterTable(event)"
+                            type="text" placeholder="{{ __('admin_courses.search_catalog') }}" onkeyup="filterTable(event)"
                             style="border: none; background: transparent; color: var(--text); font-size: 11px; padding-left: 10px; width: 100%; outline: none;">
                     </div>
 
                     <select class="filter-select" onchange="filterByDept(this.value)"
                         style="height: 36px; background: var(--surface3); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-family: var(--font-mono); font-size: 9px; padding: 0 35px 0 15px; cursor: pointer;">
-                        <option value="">ALL DEPARTMENTS</option>
+                        <option value="">{{ __('admin_courses.all_departments') }}</option>
                         @foreach($departments as $d)
                             <option value="{{ $d->id }}" {{ request('dept') == $d->id ? 'selected' : '' }}>
                                 {{ strtoupper($d->name) }}
@@ -1038,11 +1034,11 @@
 
                     <select class="filter-select" onchange="filterByStatus(this.value)"
                         style="height: 36px; background: var(--surface3); border: 1px solid var(--border); border-radius: 10px; color: var(--text2); font-family: var(--font-mono); font-size: 9px; padding: 0 35px 0 15px; cursor: pointer;">
-                        <option value="">ALL STATUS</option>
-                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>ACTIVE</option>
-                        <option value="waiting" {{ request('status') == 'waiting' ? 'selected' : '' }}>WAITING</option>
-                        <option value="ready" {{ request('status') == 'ready' ? 'selected' : '' }}>READY</option>
-                        <option value="archived" {{ request('status') == 'archived' ? 'selected' : '' }}>ARCHIVED</option>
+                        <option value="">{{ __('admin_courses.all_status') }}</option>
+                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>{{ __('admin_courses.active') }}</option>
+                        <option value="waiting" {{ request('status') == 'waiting' ? 'selected' : '' }}>{{ __('admin_courses.waiting') }}</option>
+                        <option value="ready" {{ request('status') == 'ready' ? 'selected' : '' }}>{{ __('admin_courses.ready') }}</option>
+                        <option value="archived" {{ request('status') == 'archived' ? 'selected' : '' }}>{{ __('admin_courses.archived') }}</option>
                     </select>
 
                     <div
@@ -1050,12 +1046,12 @@
                         <span
                             style="font-family: var(--font-mono); font-size: 9px; color: var(--muted2); letter-spacing: .05em;">
                             <span id="rowCount"
-                                style="color: var(--accent); font-weight: 700;">{{ $classes->count() }}</span> ENTRIES
+                                style="color: var(--accent); font-weight: 700;">{{ $classes->count() }}</span> {{ __('admin_courses.entries') }}
                         </span>
                     </div>
 
 
-                    <button class="btn-primary" onclick="openModal('createModal')" title="Add Entry"
+                    <button class="btn-primary" onclick="openModal('createModal')" title="{{ __('admin_courses.add_entry') }}"
                         style="width: 36px; height: 36px; border-radius: 10px; padding: 0; display: flex; align-items: center; justify-content: center; transform: scale(1); transition: transform .2s;"
                         onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -1072,13 +1068,13 @@
                         <th style="padding-left:25px; width:45px; border-top-left-radius: 12px;">
                             <input type="checkbox" id="selectAllClasses" onchange="toggleSelectAllClasses(this.checked)" style="accent-color:var(--accent); width:16px; height:16px; cursor:pointer">
                         </th>
-                        <th>COURSE IDENTITY</th>
-                        <th>FACULTY</th>
-                        <th>LOGISTICS</th>
-                        <th style="width:80px">STU</th>
-                        <th style="width:160px">SESSIONS</th>
-                        <th style="width:100px">STATUS</th>
-                        <th style="text-align:right; padding-right:25px; border-top-right-radius: 12px;">CONTROL</th>
+                        <th>{{ __('admin_courses.table_course_identity') }}</th>
+                        <th>{{ __('admin_courses.table_faculty') }}</th>
+                        <th>{{ __('admin_courses.table_logistics') }}</th>
+                        <th style="width:80px">{{ __('admin_courses.table_students') }}</th>
+                        <th style="width:160px">{{ __('admin_courses.table_sessions') }}</th>
+                        <th style="width:100px">{{ __('admin_courses.table_status') }}</th>
+                        <th style="text-align:right; padding-right:25px; border-top-right-radius: 12px;">{{ __('admin_courses.table_control') }}</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -1131,14 +1127,14 @@
                                                 @if($isReady)
                                                     <input type="checkbox" class="class-checkbox" data-id="{{ $class->id }}" onchange="updateBulkDeleteUI()" style="accent-color:var(--accent); width:16px; height:16px; cursor:pointer">
                                                 @else
-                                                    <div style="width:16px; height:16px; border:1px solid var(--border); border-radius:4px; opacity:0.2" title="Only READY status can be selected"></div>
+                                                    <div style="width:16px; height:16px; border:1px solid var(--border); border-radius:4px; opacity:0.2" title="{{ __('admin_courses.only_ready_selectable') }}"></div>
                                                 @endif
                                             </td>
                                             {{-- Subject --}}
                                             <td style="padding-left:65px; width:250px">
                                                 <div class="subject-cell">
                                                     @php
-                                                        $subName = $class->subject->name ?? 'Unknown';
+                                                        $subName = $class->subject->name ?? __('admin_courses.unknown');
                                                         $initials = strtoupper(substr($subName, 0, 1));
                                                         $allClr = ['#2563EB', '#22C55E', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444'];
                                                         $clr = $allClr[$class->subject_id % count($allClr)];
@@ -1162,13 +1158,13 @@
                                                         <span class="instructor-name">{{ $class->teacher->user->name }}</span>
                                                     </div>
                                                 @else
-                                                    <span class="instructor-empty">— unassigned —</span>
+                                                    <span class="instructor-empty">— {{ __('admin_courses.unassigned') }} —</span>
                                                 @endif
                                             </td>
                                             {{-- Room & Schedule --}}
                                             <td>
                                                 <div style="display:flex; flex-direction:column; gap:5px">
-                                                    <span class="room-badge">RM {{ $class->room_number ?? 'TBD' }}</span>
+                                                    <span class="room-badge">{{ __('admin_courses.room_short') }} {{ $class->room_number ?? __('admin_courses.tbd') }}</span>
                                                     @if($class->schedule)
                                                         @php
                                                             $sched = explode(' ', $class->schedule);
@@ -1193,7 +1189,7 @@
                                                 <div style="display:flex; flex-direction:column; gap:5px">
                                                     <div style="display:flex; justify-content:space-between; align-items:center;">
                                                         <span
-                                                            style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted)">PROGRESS</span>
+                                                            style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted)">{{ __('admin_courses.progress') }}</span>
                                                         <span
                                                             style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--accent)">{{ $class->sessions->whereIn('status', ['completed'])->count() }}/{{ $class->sessions->count() }}</span>
                                                     </div>
@@ -1209,10 +1205,10 @@
                                             <td>
                                                 @php $st = strtolower($class->status ?? 'active'); @endphp
                                                 @if($st === 'active')
-                                                    <span class="status-tag tag-active">ACTIVE</span>
+                                                    <span class="status-tag tag-active">{{ __('admin_courses.active') }}</span>
                                                 @elseif($st === 'archived')
                                                     <span class="status-tag"
-                                                        style="background:var(--surface3); color:var(--muted); border:1px solid var(--border);">ARCHIVED</span>
+                                                        style="background:var(--surface3); color:var(--muted); border:1px solid var(--border);">{{ __('admin_courses.archived') }}</span>
                                                 @else
                                                     <span class="status-tag tag-ready">{{ strtoupper($st) }}</span>
                                                 @endif
@@ -1220,7 +1216,7 @@
                                             {{-- Actions --}}
                                             <td style="text-align:right; padding-right:25px">
                                                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
-                                                    <button class="action-btn btn-view" title="View Detail"
+                                                    <button class="action-btn btn-view" title="{{ __('admin_courses.view_detail') }}"
                                                         onclick="openViewModal({{ $class->id }}, '{{ $class->subject_id }}', '{{ $class->teacher_id }}', '{{ addslashes($class->room_number ?? '') }}', '{{ addslashes($class->schedule ?? '') }}', '{{ $class->status ?? 'active' }}', '{{ $class->groups->pluck('id')->join(',') }}')">
                                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1230,7 +1226,7 @@
                                                         </svg>
                                                     </button>
 
-                                                    <button class="action-btn btn-edit" title="Edit Metadata"
+                                                    <button class="action-btn btn-edit" title="{{ __('admin_courses.edit_metadata') }}"
                                                         onclick="openEditModal({{ $class->id }}, '{{ $class->subject_id }}', '{{ $class->teacher_id }}', '{{ addslashes($class->room_number ?? '') }}', '{{ addslashes($class->schedule ?? '') }}', '{{ $class->status ?? 'active' }}', '{{ $class->groups->pluck('id')->join(',') }}')">
                                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1239,7 +1235,7 @@
                                                     </button>
 
                                                     <div class="action-dropdown">
-                                                        <button class="more-btn" onclick="toggleActionMenu(event, this)" title="More Options">
+                                                        <button class="more-btn" onclick="toggleActionMenu(event, this)" title="{{ __('admin_courses.more_options') }}">
                                                             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                                                     d="M5 12h.01M12 12h.01M19 12h.01" />
@@ -1252,23 +1248,23 @@
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                                                 </svg>
-                                                                Enroll Students
+                                                                {{ __('admin_courses.enroll_students') }}
                                                             </button>
                                                             <button class="dropdown-item"
-                                                                onclick="openSessionsModal({{ $class->id }}, '{{ addslashes($class->subject->name ?? 'Unknown Class') }}')">
+                                                                onclick="openSessionsModal({{ $class->id }}, '{{ addslashes($class->subject->name ?? __('admin_courses.unknown')) }}')">
                                                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                 </svg>
-                                                                View Sessions
+                                                                {{ __('admin_courses.view_sessions') }}
                                                             </button>
                                                             <button class="dropdown-item"
-                                                                onclick="openCourseSemesterModal({{ $class->id }}, '{{ addslashes($class->subject->name ?? 'Unknown Class') }}', '{{ addslashes($class->schedule ?? '') }}')">
+                                                                onclick="openCourseSemesterModal({{ $class->id }}, '{{ addslashes($class->subject->name ?? __('admin_courses.unknown')) }}', '{{ addslashes($class->schedule ?? '') }}')">
                                                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" />
                                                                 </svg>
-                                                                Semesters
+                                                                {{ __('admin_courses.semesters') }}
                                                             </button>
                                                             <div style="height:1px; background:var(--border); margin:4px 8px;"></div>
                                                             <a href="{{ route('admin.courses.pre-end', $class->id) }}" target="_blank"
@@ -1278,14 +1274,14 @@
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                                                 </svg>
-                                                                Pre-End Schedule
+                                                                {{ __('admin_courses.pre_end_schedule') }}
                                                             </a>
                                                             <button class="dropdown-item text-red" onclick="openDeleteModal({{ $class->id }})">
                                                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                 </svg>
-                                                                Delete Class
+                                                                {{ __('admin_courses.delete_class') }}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1302,10 +1298,10 @@
                                 <div class="empty-state" style="padding: 60px 0; text-align:center;">
                                     <div class="empty-title"
                                         style="font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--text)">
-                                        Catalog is Empty</div>
+                                        {{ __('admin_courses.catalog_empty') }}</div>
                                     <div class="empty-desc"
                                         style="font-family:var(--font-mono); font-size:10px; color:var(--muted); max-width:260px; margin:0 auto">
-                                        No classes found for the selected filters.</div>
+                                        {{ __('admin_courses.no_classes_found') }}</div>
                                 </div>
                             </td>
                         </tr>
@@ -1323,18 +1319,17 @@
                 <div class="side-panel-head" style="color: var(--red); font-weight: 900;">
                     <span
                         style="width:8px;height:8px;border-radius:2px;background:var(--red);display:inline-block;box-shadow:0 0 10px var(--red)"></span>
-                    GLOBAL SESSION SKIP
+                    {{ __('admin_courses.global_session_skip') }}
                 </div>
                 <div style="padding: 20px;">
                     <p
                         style="font-size:10px; color:var(--muted); line-height:1.5; margin-bottom:18px; font-family:var(--font-mono)">
-                        Cancel multiple academic sessions across <span style="color:var(--text); font-weight:700">ALL
-                            SUBJECTS</span> within a specific time range.
+                        {{ __('admin_courses.global_skip_desc') }}
                     </p>
 
                     <button onclick="openModal('globalSkipModal')" class="btn-primary"
                         style="width:100%; height:44px; background:linear-gradient(135deg, var(--red), #f43f5e); border:none; box-shadow:0 8px 20px rgba(244, 63, 94, 0.2); font-weight:800; letter-spacing:0.05em;">
-                        CONFIGURE GLOBAL SKIP
+                        {{ __('admin_courses.configure_global_skip') }}
                     </button>
 
                     <div
@@ -1344,8 +1339,7 @@
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <span
-                            style="font-size:8px; font-family:var(--font-mono); color:var(--red); font-weight:700; text-transform:uppercase">Irreversible
-                            Action</span>
+                            style="font-size:8px; font-family:var(--font-mono); color:var(--red); font-weight:700; text-transform:uppercase">{{ __('admin_courses.irreversible_action') }}</span>
                     </div>
                 </div>
             </div>
@@ -1355,12 +1349,12 @@
                 <div class="side-panel-head">
                     <span
                         style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>
-                    QUICK OPERATIONS
+                    {{ __('admin_courses.quick_operations') }}
                 </div>
                 <div style="padding:16px; display:flex; flex-direction:column; gap:10px">
                     <button onclick="window.location.href='/api/admin/classes/export'" class="btn-secondary"
                         style="width:100%; display:flex; justify-content:space-between; align-items:center; height:42px; padding:0 16px; font-size:10px; font-weight:700; background:var(--surface3)">
-                        <span>EXPORT CSV</span>
+                        <span>{{ __('admin_courses.export_csv') }}</span>
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-width="2" />
                         </svg>
@@ -1368,7 +1362,7 @@
 
                     <button id="syncCacheBtn" onclick="runCacheClear()" class="btn-secondary"
                         style="width:100%; display:flex; justify-content:space-between; align-items:center; height:42px; padding:0 16px; font-size:10px; font-weight:700; background:var(--surface3)">
-                        <span id="syncCacheBtnLabel">SYNC CACHE</span>
+                        <span id="syncCacheBtnLabel">{{ __('admin_courses.sync_cache') }}</span>
                         <svg id="syncCacheIcon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
@@ -1382,15 +1376,15 @@
                         <div>
                             <div
                                 style="font-family:var(--font-mono); font-size:8px; color:var(--muted2); letter-spacing:.05em; margin-bottom:4px">
-                                HUB INTEGRITY</div>
+                                {{ __('admin_courses.hub_integrity') }}</div>
                             <div
                                 style="font-size:18px; font-weight:900; color:var(--accent); font-family:var(--font-display)">
                                 A+</div>
                         </div>
                         <div style="text-align:right">
                             <div style="font-family:var(--font-mono); font-size:8px; color:var(--green); font-weight:800">
-                                OPTIMIZED</div>
-                            <div style="font-size:8px; color:var(--muted); line-height:1.2">REGISTRY DATA</div>
+                                {{ __('admin_courses.optimized') }}</div>
+                            <div style="font-size:8px; color:var(--muted); line-height:1.2">{{ __('admin_courses.registry_data') }}</div>
                         </div>
                     </div>
                 </div>
@@ -1402,10 +1396,10 @@
                     <div style="display:flex; align-items:center; gap:8px">
                         <span
                             style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;display:inline-block;box-shadow:0 0 10px var(--green)"></span>
-                        DATABASE ACTIVITY
+                        {{ __('admin_courses.database_activity') }}
                     </div>
                     <span
-                        style="font-family:var(--font-mono); font-size:8px; color:var(--muted); letter-spacing:0.1em">LIVE</span>
+                        style="font-family:var(--font-mono); font-size:8px; color:var(--muted); letter-spacing:0.1em">{{ __('admin_courses.live') }}</span>
                 </div>
                 <div id="dbActivityLogs" class="db-entries" style="padding:10px 16px">
                     @forelse($recentActivities ?? [] as $act)
@@ -1434,7 +1428,7 @@
                     @empty
                         <div id="dbActivityPlaceholder"
                             style="padding:20px; text-align:center; color:var(--muted); font-size:9px; font-family:var(--font-mono)">
-                            NO RECENT ACTIONS FOUND
+                            {{ __('admin_courses.no_recent_actions') }}
                         </div>
                     @endforelse
                 </div>
@@ -1459,10 +1453,10 @@
                     </div>
                     <div>
                         <div class="modal-title" style="font-size: 16px; font-weight: 800; letter-spacing: -0.01em;">
-                            Semester Management</div>
+                            {{ __('admin_courses.semester_management') }}</div>
                         <div id="csmSubtitle"
                             style="font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:700;letter-spacing:0.05em">
-                            LOADING COURSE...</div>
+                            {{ __('admin_courses.loading_course') }}</div>
                     </div>
                 </div>
                 <button onclick="closeModal('courseSemesterModal')" class="modal-close"
@@ -1484,28 +1478,28 @@
                     </div>
                     <div
                         style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--accent);font-weight:800">
-                        ASSIGN NEW SEMESTER</div>
+                        {{ __('admin_courses.assign_new_semester') }}</div>
                     <div style="height: 1px; flex: 1; background: linear-gradient(270deg, var(--accent), transparent);">
                     </div>
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="form-label">Academic Year <span class="req">*</span></label>
+                        <label class="form-label">{{ __('admin_courses.academic_year') }} <span class="req">*</span></label>
                         <input id="csmYear" class="form-input" type="text" placeholder="2025-2026"
                             value="{{ now()->year }}-{{ now()->year + 1 }}" style="background:var(--surface3)">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Semester <span class="req">*</span></label>
+                        <label class="form-label">{{ __('admin_courses.semester') }} <span class="req">*</span></label>
                         <select id="csmSemester" class="form-input" style="background:var(--surface3)">
-                            <option value="1">Semester 1</option>
-                            <option value="2">Semester 2</option>
+                            <option value="1">{{ __('admin_courses.semester_1') }}</option>
+                            <option value="2">{{ __('admin_courses.semester_2') }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom:20px">
-                    <label class="form-label" style="font-size:9px">Preferred Days <span class="req">*</span></label>
+                    <label class="form-label" style="font-size:9px">{{ __('admin_courses.preferred_days') }} <span class="req">*</span></label>
                     <div class="day-selector-grid" id="csmDaySelector">
                         <label class="day-chip"><input type="checkbox" value="Mon"><span>M</span></label>
                         <label class="day-chip"><input type="checkbox" value="Tue"><span>T</span></label>
@@ -1519,15 +1513,15 @@
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label class="form-label">Academic Start <span class="req">*</span></label>
+                        <label class="form-label">{{ __('admin_courses.academic_start') }} <span class="req">*</span></label>
                         <div style="position:relative">
                             <input id="csmStart" class="form-input" type="date" oninput="csmPreview()"
                                 style="background:var(--surface3); padding-right: 12px;">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Break / Holiday <span
-                                style="color:var(--muted); font-size: 8px;">(OPTIONAL)</span></label>
+                        <label class="form-label">{{ __('admin_courses.break_holiday') }} <span
+                                style="color:var(--muted); font-size: 8px;">({{ __('admin_courses.optional') }})</span></label>
                         <input id="csmHoliday" class="form-input" type="date" oninput="csmPreview()"
                             style="background:var(--surface3)">
                     </div>
@@ -1536,24 +1530,24 @@
                 <div class="form-grid-2" style="margin-top: -5px">
                     <div class="form-group">
                         <label class="form-label" style="display:flex; justify-content:space-between">
-                            Session 1 <span style="color:var(--muted); font-size: 8px;">(START/END)</span>
+                            {{ __('admin_courses.session_1') }} <span style="color:var(--muted); font-size: 8px;">({{ __('admin_courses.start_end') }})</span>
                         </label>
                         <div style="display:flex; align-items:center; gap:8px">
                             <input id="csmTimeStart" class="form-input" type="time" value="08:00"
                                 style="background:var(--surface3); font-size: 11px;">
-                            <span style="font-size:10px; color:var(--muted); font-weight: 700;">TO</span>
+                            <span style="font-size:10px; color:var(--muted); font-weight: 700;">{{ __('admin_courses.to') }}</span>
                             <input id="csmTimeEnd" class="form-input" type="time" value="09:30"
                                 style="background:var(--surface3); font-size: 11px;">
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" style="display:flex; justify-content:space-between">
-                            Session 2 <span style="color:var(--muted); font-size: 8px;">(OPTIONAL)</span>
+                            {{ __('admin_courses.session_2') }} <span style="color:var(--muted); font-size: 8px;">({{ __('admin_courses.optional') }})</span>
                         </label>
                         <div style="display:flex; align-items:center; gap:8px">
                             <input id="csmTimeStart2" class="form-input" type="time"
                                 style="background:var(--surface3); font-size: 11px;">
-                            <span style="font-size:10px; color:var(--muted); font-weight: 700;">TO</span>
+                            <span style="font-size:10px; color:var(--muted); font-weight: 700;">{{ __('admin_courses.to') }}</span>
                             <input id="csmTimeEnd2" class="form-input" type="time"
                                 style="background:var(--surface3); font-size: 11px;">
                         </div>
@@ -1561,21 +1555,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Target Capacity <span
-                            style="color:var(--muted); font-size: 8px;">(SESSIONS)</span></label>
+                    <label class="form-label">{{ __('admin_courses.target_capacity') }} <span
+                            style="color:var(--muted); font-size: 8px;">({{ __('admin_courses.sessions') }})</span></label>
                     <div style="position:relative">
                         <input id="csmCount" class="form-input" type="number" value="30" min="1" max="100"
                             style="background:var(--surface3); font-weight: 700; color: var(--accent); padding-right: 40px">
                         <div
                             style="position:absolute; right:15px; top:50%; transform:translateY(-50%); font-family:var(--font-mono); font-size:9px; color:var(--muted); pointer-events:none">
-                            SESSIONS</div>
+                            {{ __('admin_courses.sessions') }}</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Internal Notes</label>
+                    <label class="form-label">{{ __('admin_courses.internal_notes') }}</label>
                     <textarea id="csmNotes" class="form-input" rows="2"
-                        placeholder="Administrative references, special conditions, etc."
+                        placeholder="{{ __('admin_courses.notes_placeholder') }}"
                         style="background:var(--surface3); height: 60px; padding-top: 10px; resize: none;"></textarea>
                 </div>
 
@@ -1585,12 +1579,10 @@
                         <div style="display:flex; align-items:center; gap:10px">
                             <div style="width:14px; height:2px; background:var(--accent); border-radius:2px"></div>
                             <span
-                                style="font-family:var(--font-mono); font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--text2)">ACTIVE
-                                ASSIGNMENTS</span>
+                                style="font-family:var(--font-mono); font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--text2)">{{ __('admin_courses.active_assignments') }}</span>
                         </div>
                         <span id="csmCountBadge"
-                            style="font-family:var(--font-mono); font-size:9px; color:var(--accent); background:var(--accent)18; padding:4px 12px; border-radius:20px; font-weight:800; border:1px solid var(--accent)22">0
-                            ACTIVE</span>
+                            style="font-family:var(--font-mono); font-size:9px; color:var(--accent); background:var(--accent)18; padding:4px 12px; border-radius:20px; font-weight:800; border:1px solid var(--accent)22">{{ __('admin_courses.active_count', ['count' => 0]) }}</span>
                     </div>
                     <div id="csmItems">
                         {{-- Cards injected via csmLoad() --}}
@@ -1858,7 +1850,7 @@
                                 style="background:var(--surface3); border-radius:16px; padding:15px; text-align:center; border:1px solid var(--border)">
                                 <div
                                     style="font-family:var(--font-mono); font-size:8px; color:var(--muted); text-transform:uppercase; margin-bottom:5px">
-                                    ATTENANCE RATE</div>
+                                    ATTENDANCE RATE</div>
                                 <div style="font-family:var(--font-display); font-size:24px; font-weight:800; color:var(--accent)"
                                     id="smRate">0%</div>
                                 <div style="font-family:var(--font-mono); font-size:8px; color:var(--muted2); margin-top:3px"
@@ -2358,6 +2350,10 @@
 
 
     <script>
+        const courseT = @json(trans('admin_courses'));
+        const courseText = (key, fallback = key) => courseT[key] || fallback;
+        const courseCountText = (key, count, fallback) => (courseT[key] || fallback).replace(':count', count);
+
         // ─── Modals ────────────────────────────────────
         // ═════════════════════════════════════════════════════════════════════
         // ACTION DROPDOWN LOGIC
@@ -2413,7 +2409,7 @@
             const icon  = document.getElementById('syncCacheIcon');
 
             btn.disabled = true;
-            label.textContent = 'SYNCING...';
+            label.textContent = courseText('syncing', 'SYNCING...');
             icon.style.animation = 'spin 0.9s linear infinite';
 
             // Inline spin keyframe if not already defined
@@ -2435,16 +2431,16 @@
 
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Cache Purged — app, config, route & view caches cleared.', 'success');
+                    showToast(courseText('cache_purged', 'Cache purged. App, config, route, and view caches were cleared.'), 'success');
                 } else {
-                    showToast(data.message || 'Cache clear failed.', 'error');
+                    showToast(data.message || courseText('cache_clear_failed', 'Cache clear failed.'), 'error');
                 }
             } catch (err) {
-                showToast('Connection error during cache sync.', 'error');
+                showToast(courseText('cache_connection_error', 'Connection error during cache sync.'), 'error');
             }
 
             btn.disabled = false;
-            label.textContent = 'SYNC CACHE';
+            label.textContent = courseText('sync_cache', 'SYNC CACHE');
             icon.style.animation = '';
         }
 
@@ -2454,7 +2450,7 @@
             const tx = document.getElementById('toastMsg');
             t.className = `toast show toast-${type}`;
             ic.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'i';
-            tx.textContent = msg;
+            tx.textContent = window.__t ? window.__t(msg) : msg;
             clearTimeout(t._t);
             t._t = setTimeout(() => t.classList.remove('show'), 3200);
         }
@@ -2538,11 +2534,11 @@
                         logActivity(act.action, act.target);
                     });
                 } else {
-                    document.getElementById('dbActivityPlaceholder').innerHTML = 'NO RECENT ACTIONS FOUND';
+                    document.getElementById('dbActivityPlaceholder').innerHTML = courseText('no_recent_actions_found', 'NO RECENT ACTIONS FOUND');
                 }
             } catch (e) {
                 console.error('Activity fetch failed', e);
-                document.getElementById('dbActivityPlaceholder').innerHTML = 'STREAM OFFLINE';
+                document.getElementById('dbActivityPlaceholder').innerHTML = courseText('stream_offline', 'STREAM OFFLINE');
             }
         }
 
@@ -2566,7 +2562,7 @@
             if (!pendingDeleteId) return;
             const btn = document.getElementById('confirmDeleteBtn');
             const ogHtml = btn.innerHTML;
-            btn.innerHTML = 'DELETING...';
+            btn.innerHTML = courseText('deleting', 'DELETING...');
             try {
                 const res = await fetch(`/api/admin/classes/${pendingDeleteId}`, {
                     method: 'DELETE',
@@ -2576,16 +2572,16 @@
                 if (data.success) {
                     const row = document.querySelector(`tr[data-id="${pendingDeleteId}"]`);
                     if (row) { row.style.opacity = 0; setTimeout(() => row.remove(), 300); }
-                    showToast('Class entry deleted permanently.', 'success');
+                    showToast(courseText('class_deleted', 'Class entry deleted permanently.'), 'success');
                     closeModal('deleteModal');
                     // Update counts if necessary
                     const cntEl = document.getElementById('rowCount');
                     if (cntEl) cntEl.textContent = parseInt(cntEl.textContent) - 1;
                 } else {
-                    showToast(data.error || 'Failed to delete entry.', 'error');
+                    showToast(data.error || courseText('delete_failed', 'Failed to delete entry.'), 'error');
                 }
             } catch (e) {
-                showToast('Network error on delete.', 'error');
+                showToast(courseText('delete_network_error', 'Network error on delete.'), 'error');
             }
             btn.innerHTML = ogHtml;
             pendingDeleteId = null;
@@ -2593,7 +2589,7 @@
 
         // ─── View (read-only) ──────────────────────────
         function openViewModal(id, subject, instructor, room, schedule, status, groupId) {
-            document.getElementById('editModalTitle').textContent = 'Class Details';
+            document.getElementById('editModalTitle').textContent = courseText('class_details', 'Class Details');
             document.getElementById('editClassId').value = id;
             document.getElementById('editSubjectName').value = subject;
             document.getElementById('editInstructor').value = instructor;
@@ -2646,7 +2642,7 @@
 
         // ─── Edit ──────────────────────────────────────
         function openEditModal(id, subject, instructor, room, schedule, status, groupId) {
-            document.getElementById('editModalTitle').textContent = 'Edit Class';
+            document.getElementById('editModalTitle').textContent = courseText('edit_class', 'Edit Class');
             document.getElementById('editClassId').value = id;
             document.getElementById('editSubjectName').value = subject;
             document.getElementById('editInstructor').value = instructor;
@@ -2706,7 +2702,7 @@
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             const ogHtml = btn.innerHTML;
-            btn.innerHTML = 'SAVING...';
+            btn.innerHTML = courseText('saving', 'SAVING...');
 
             try {
                 const id = document.getElementById('editClassId').value;
@@ -2746,14 +2742,14 @@
                 const data = await res.json();
                 if (data.success) {
                     logActivity('UPDATE', `catalog.classes#${id}`);
-                    showToast('Class updated successfully!', 'success');
+                    showToast(courseText('class_updated', 'Class updated successfully.'), 'success');
                     closeModal('editModal');
                     setTimeout(() => window.location.reload(), 800);
                 } else {
-                    showToast(data.error || 'Failed to update entry.', 'error');
+                    showToast(data.error || courseText('update_failed', 'Failed to update entry.'), 'error');
                 }
             } catch (err) {
-                showToast('Network error occurred.', 'error');
+                showToast(courseText('network_error', 'Network error occurred.'), 'error');
             }
             btn.innerHTML = ogHtml;
         });
@@ -2763,7 +2759,7 @@
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             const ogHtml = btn.innerHTML;
-            btn.innerHTML = 'SAVING...';
+            btn.innerHTML = courseText('saving', 'SAVING...');
 
             try {
                 const formData = new FormData(e.target);
@@ -2809,15 +2805,15 @@
 
                 const data = await res.json();
                 if (data.success) {
-                    showToast('New catalog entry created!', 'success');
+                    showToast(courseText('new_entry_created', 'New catalog entry created.'), 'success');
                     closeModal('createModal');
                     e.target.reset();
                     setTimeout(() => window.location.reload(), 800);
                 } else {
-                    showToast(data.error || 'Failed to create entry.', 'error');
+                    showToast(data.error || courseText('create_failed', 'Failed to create entry.'), 'error');
                 }
             } catch (err) {
-                showToast('Network error occurred.', 'error');
+                showToast(courseText('network_error', 'Network error occurred.'), 'error');
             }
             btn.innerHTML = ogHtml;
         });
@@ -2903,7 +2899,7 @@
                     showToast(data.error || 'Server error', 'error');
                 }
             } catch (e) {
-                showToast('Sync failure', 'error');
+                showToast(courseText('sync_failure', 'Sync failure'), 'error');
             }
             btn.classList.remove('loading');
         }
@@ -2978,7 +2974,7 @@
         }
 
         async function openCourseSemesterModal(classId, className, schedule) {
-            if (!classId) { showToast('Invalid class ID.', 'error'); return; }
+            if (!classId) { showToast(courseText('invalid_class_id', 'Invalid class ID.'), 'error'); return; }
             _csmClassId = classId;
 
             // Initial UI state
@@ -3051,7 +3047,7 @@
                 const data = json.data || json; // Handle wrapped or unwrapped
 
                 if (!data || !data.length) {
-                    badge.textContent = '0 FOUND';
+                    badge.textContent = courseText('zero_found', '0 FOUND');
                     c.innerHTML = `
                                         <div style="padding:40px 20px; text-align:center; background:var(--surface3)44; border-radius:16px; border:1px dashed var(--border); margin:0 4px">
                                             <div style="width:48px; height:48px; border-radius:50%; background:var(--violet)10; color:var(--violet); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; opacity:0.8">
@@ -3119,7 +3115,7 @@
 
                                             <div class="csm-progress-section">
                                                 <div class="csm-progress-head">
-                                                    <span class="csm-label" style="margin-bottom:0">COURSE PROGRESSION</span>
+                                                    <span class="csm-label" style="margin-bottom:0">${courseText('course_progression', 'COURSE PROGRESSION')}</span>
                                                     <span class="csm-value" style="font-size:13px">${a.progress}%</span>
                                                 </div>
                                                 <div class="csm-progress-track">
@@ -3143,7 +3139,7 @@
         async function csmSave() {
             if (!_csmClassId) return;
             const btn = document.getElementById('csmSaveBtn');
-            const og = btn.innerHTML; btn.textContent = 'SAVING...'; btn.disabled = true;
+            const og = btn.innerHTML; btn.textContent = courseText('saving', 'SAVING...'); btn.disabled = true;
             const getSelectedDays = (selectorId) => {
                 const checked = Array.from(document.querySelectorAll(`#${selectorId} input:checked`));
                 if (checked.length === 5 && checked.every(c => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(c.value))) return 'Mon-Fri';
@@ -3164,7 +3160,7 @@
                 sessions_count: document.getElementById('csmCount').value,
             };
             if (!payload.academic_year || !payload.start_date) {
-                showToast('Academic year and start date are required.', 'error');
+                showToast(courseText('academic_year_start_required', 'Academic year and start date are required.'), 'error');
                 btn.innerHTML = og; btn.disabled = false; return;
             }
             try {
@@ -3179,27 +3175,27 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Semester assignment saved.', 'success');
+                    showToast(courseText('semester_saved', 'Semester assignment saved.'), 'success');
                     document.getElementById('csmStart').value = '';
                     document.getElementById('csmHoliday').value = '';
                     document.getElementById('csmNotes').value = '';
                     document.getElementById('csmPreview').style.display = 'none';
                     await csmLoad(_csmClassId);
-                } else { showToast(data.error || data.message || 'Failed.', 'error'); }
-            } catch (e) { showToast('Network error.', 'error'); }
+                } else { showToast(data.error || data.message || courseText('failed', 'Failed.'), 'error'); }
+            } catch (e) { showToast(courseText('network_error_short', 'Network error.'), 'error'); }
             btn.innerHTML = og; btn.disabled = false;
         }
 
         async function csmDelete(id) {
-            if (!confirm('Remove this semester assignment?')) return;
+            if (!confirm(courseText('remove_semester_question', 'Remove this semester assignment?'))) return;
             try {
                 const res = await fetch('/api/admin/semesters/' + id, {
                     method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csmCsrf }
                 });
                 const data = await res.json();
-                if (data.success) { showToast('Removed.', 'success'); await csmLoad(_csmClassId); }
-                else showToast('Failed.', 'error');
-            } catch (e) { showToast('Network error.', 'error'); }
+                if (data.success) { showToast(courseText('removed', 'Removed.'), 'success'); await csmLoad(_csmClassId); }
+                else showToast(courseText('failed', 'Failed.'), 'error');
+            } catch (e) { showToast(courseText('network_error_short', 'Network error.'), 'error'); }
         }
 
         // ── SESSION HISTORY FEATURE ─────────────────────────
@@ -3879,7 +3875,7 @@
             
             if (checked.length > 0) {
                 toolbar.style.display = 'flex';
-                countLabel.textContent = `${checked.length} CLASSES SELECTED`;
+                countLabel.textContent = courseCountText('classes_selected', checked.length, ':count CLASSES SELECTED');
             } else {
                 toolbar.style.display = 'none';
             }
@@ -3890,7 +3886,7 @@
             if (checked.length === 0) return;
             
             const count = checked.length;
-            document.getElementById('bulkDeleteModalCount').textContent = `${count} ${count === 1 ? 'Selected Class' : 'Selected Classes'}`;
+            document.getElementById('bulkDeleteModalCount').textContent = courseCountText(count === 1 ? 'selected_class' : 'selected_classes', count, ':count Selected Classes');
             openModal('bulkDeleteModal');
         }
 
@@ -3902,7 +3898,7 @@
             
             const btn = document.getElementById('confirmBulkDeleteBtn');
             const ogText = btn.textContent;
-            btn.textContent = 'DELETING...';
+            btn.textContent = courseText('deleting', 'DELETING...');
             btn.disabled = true;
 
             try {
@@ -3925,7 +3921,7 @@
                     btn.disabled = false;
                 }
             } catch (e) {
-                showToast('Network error', 'error');
+                showToast(courseText('network_error_plain', 'Network error'), 'error');
                 btn.textContent = ogText;
                 btn.disabled = false;
             }

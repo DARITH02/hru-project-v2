@@ -115,21 +115,21 @@ class AdminController extends Controller
         );
         $modules = collect([
             [
-                'name' => 'Result & Grading',
+                'name' => __('admin.nav.result_grading'),
                 'route' => route('admin.results'),
-                'eyebrow' => 'Assessment Hub',
-                'description' => 'Review semester performance, distribution trends, and grading output.',
+                'eyebrow' => __('admin.dashboard.assessment_hub'),
+                'description' => __('admin.dashboard.result_module_desc'),
                 'metric' => $averageScore . '/100',
-                'detail' => number_format($resultCount) . ' score records',
+                'detail' => __('admin.dashboard.score_records', ['count' => number_format($resultCount)]),
                 'accent' => 'var(--accent)',
             ],
             [
-                'name' => 'Attendance Issues',
+                'name' => __('admin.nav.attendance_issues'),
                 'route' => route('admin.attendance-issues'),
-                'eyebrow' => 'Risk Monitor',
-                'description' => 'Track absence pressure, blacklist candidates, and attendance exceptions.',
+                'eyebrow' => __('admin.dashboard.risk_monitor'),
+                'description' => __('admin.dashboard.attendance_module_desc'),
                 'metric' => number_format($attendanceIssueCount),
-                'detail' => $attendanceRate . '% attendance rate',
+                'detail' => __('admin.dashboard.attendance_rate_detail', ['value' => $attendanceRate]),
                 'accent' => 'var(--red)',
             ],
         ]);
@@ -188,7 +188,7 @@ class AdminController extends Controller
         if ($sessions->isEmpty()) {
             return [
                 'attendance_rate' => 0,
-                'labels' => collect(range(1, 7))->map(fn($index) => 'Wk ' . $index)->all(),
+                'labels' => collect(range(1, 7))->map(fn($index) => __('admin.dashboard.week_short', ['number' => $index]))->all(),
                 'student_series' => array_fill(0, 7, 0),
                 'teacher_series' => array_fill(0, 7, 0),
             ];
@@ -296,12 +296,12 @@ class AdminController extends Controller
             ->where('semester_assignments.semester', $semester)
             ->selectRaw("
                 COALESCE(direct_majors.id, group_majors.id) as major_id,
-                COALESCE(direct_majors.name, group_majors.name, 'Unassigned') as major_name,
+                COALESCE(direct_majors.name, group_majors.name, '__unassigned__') as major_name,
                 {$this->roundedAverageSql('semester_assignment_scores.score')} as avg_score,
                 COUNT(DISTINCT students.id) as student_count,
                 COUNT(semester_assignment_scores.id) as score_count
             ")
-            ->groupByRaw("COALESCE(direct_majors.id, group_majors.id), COALESCE(direct_majors.name, group_majors.name, 'Unassigned')")
+            ->groupByRaw("COALESCE(direct_majors.id, group_majors.id), COALESCE(direct_majors.name, group_majors.name, '__unassigned__')")
             ->orderByDesc('avg_score')
             ->get()
             ->values()
@@ -310,7 +310,7 @@ class AdminController extends Controller
 
                 return [
                     'id' => $major->major_id ? (int) $major->major_id : null,
-                    'name' => $major->major_name,
+                    'name' => $major->major_name === '__unassigned__' ? __('admin.dashboard.unassigned') : $major->major_name,
                     'avg_score' => (float) $major->avg_score,
                     'student_count' => (int) $major->student_count,
                     'score_count' => (int) $major->score_count,
@@ -431,12 +431,19 @@ class AdminController extends Controller
                 )
                 : 0;
 
-            $primarySubject = optional($teacher->classes->first()?->subject)->name ?? ($teacher->specialization ?: 'Unassigned');
+            $primarySubject = optional($teacher->classes->first()?->subject)->name ?? ($teacher->specialization ?: __('admin.dashboard.unassigned'));
             $loadTone = $studentCount >= 45 ? 'warn' : ($studentCount >= 25 ? 'info' : 'online');
-            $loadLabel = $studentCount >= 45 ? 'High' : ($studentCount >= 25 ? 'Med' : 'Low');
+            $loadLabel = $studentCount >= 45
+                ? __('admin.dashboard.load_high')
+                : ($studentCount >= 25 ? __('admin.dashboard.load_medium') : __('admin.dashboard.load_low'));
             $statusValue = strtolower((string) $teacher->status);
             $statusTone = $statusValue === 'active' ? 'online' : ($statusValue === 'busy' ? 'busy' : 'offline');
-            $statusLabel = $statusValue === 'active' ? 'Active' : ($teacher->status ? ucfirst($teacher->status) : 'Offline');
+            $statusLabel = match ($statusValue) {
+                'active' => __('admin.dashboard.status_active'),
+                'busy' => __('admin.dashboard.status_busy'),
+                'inactive' => __('admin.dashboard.status_inactive'),
+                default => $teacher->status ? ucfirst($teacher->status) : __('admin.dashboard.status_offline'),
+            };
             $initials = collect(explode(' ', trim($teacher->user->name ?? 'T')))
                 ->filter()
                 ->take(2)
@@ -446,7 +453,7 @@ class AdminController extends Controller
 
             return [
                 'initials' => $initials ?: 'T',
-                'name' => $teacher->user->name ?? 'Unknown Teacher',
+                'name' => $teacher->user->name ?? __('admin.dashboard.unknown_teacher'),
                 'subject' => $primarySubject,
                 'students' => $studentCount,
                 'score' => (int) $avgScore,
@@ -489,7 +496,7 @@ class AdminController extends Controller
                 return [
                     'initials' => $student['initials'],
                     'name' => $student['name'],
-                    'sub' => $student['absences'] . ' absences',
+                    'sub' => __('admin.dashboard.absences_count', ['count' => $student['absences']]),
                     'value' => $student['attendance_rate'] . '%',
                     'tone' => $student['attendance_rate'] <= 50 ? 'danger' : 'warn',
                     'accent' => 'rose',
@@ -507,7 +514,7 @@ class AdminController extends Controller
                         return [
                             'initials' => $initials ?: 'S',
                             'name' => $student->name,
-                            'sub' => ($student->group_name ?: 'No group') . ' · avg score',
+                            'sub' => ($student->group_name ?: __('admin.dashboard.no_group')) . ' · ' . __('admin.dashboard.avg_score_short'),
                             'value' => (int) round($student->avg_score) . '%',
                             'tone' => $student->avg_score < 50 ? 'danger' : 'warn',
                             'accent' => 'blue',
@@ -527,7 +534,7 @@ class AdminController extends Controller
             ->map(function (ActivityLog $log) {
                 return [
                     'title' => $log->action . ' — ' . $log->target,
-                    'meta' => $log->created_at?->format('M j · g:i A') ?? 'System',
+                    'meta' => $log->created_at?->format('M j · g:i A') ?? __('admin.dashboard.system'),
                     'accent' => 'blue',
                 ];
             });
@@ -553,10 +560,15 @@ class AdminController extends Controller
             ->map(function ($item) {
                 $status = strtolower((string) $item->status);
                 $accent = $status === 'present' ? 'emerald' : ($status === 'late' ? 'amber' : 'rose');
+                $statusKey = 'admin.dashboard.attendance_status.' . $status;
+                $statusLabel = __($statusKey) === $statusKey ? ucfirst($status) : __($statusKey);
 
                 return [
-                    'title' => ucfirst($status) . ' attendance — ' . ($item->student_name ?? 'Unknown student'),
-                    'meta' => ($item->subject_name ?: 'General') . ' · ' . Carbon::parse($item->created_at)->format('M j · g:i A'),
+                    'title' => __('admin.dashboard.attendance_activity', [
+                        'status' => $statusLabel,
+                        'student' => $item->student_name ?? __('admin.dashboard.unknown_student'),
+                    ]),
+                    'meta' => ($item->subject_name ?: __('admin.dashboard.general')) . ' · ' . Carbon::parse($item->created_at)->format('M j · g:i A'),
                     'accent' => $accent,
                 ];
             });
@@ -604,7 +616,14 @@ class AdminController extends Controller
         $riskControl = $studentCount > 0 ? max(0, 100 - (int) round(($attendanceIssueCount / $studentCount) * 100)) : 100;
 
         return [
-            'labels' => ['Results', 'Attendance', 'Teacher Load', 'Dept Reach', 'Subject Reach', 'Risk Control'],
+            'labels' => [
+                __('admin.dashboard.radar_results'),
+                __('admin.dashboard.radar_attendance'),
+                __('admin.dashboard.radar_teacher_load'),
+                __('admin.dashboard.radar_dept_reach'),
+                __('admin.dashboard.radar_subject_reach'),
+                __('admin.dashboard.radar_risk_control'),
+            ],
             'series' => [$passRate, $attendanceRate, $teacherLoad, $departmentReach, $subjectReach, $riskControl],
             'target' => [85, 90, 75, 70, 70, 90],
         ];
@@ -683,8 +702,8 @@ class AdminController extends Controller
 
             return [
                 'student_id' => $student->id,
-                'name' => $student->user->name ?? 'Unknown Student',
-                'group_name' => $student->group?->name ?? 'No group',
+                'name' => $student->user->name ?? __('admin.dashboard.unknown_student'),
+                'group_name' => $student->group?->name ?? __('admin.dashboard.no_group'),
                 'absences' => $absences,
                 'attendance_rate' => $rate,
                 'initials' => $initials ?: 'S',

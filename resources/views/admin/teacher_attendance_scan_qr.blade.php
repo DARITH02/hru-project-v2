@@ -126,7 +126,7 @@
 
                 <section class="teacher-qr-note">
                     <strong>Teacher Code Form</strong>
-                    <span>The scanned QR opens a form where the teacher chooses check-in or checkout and enters their generated teacher code. Session 1 check-in auto checks in later same-subject sessions; checkout closes the latest open session and must match the check-in phone location.</span>
+                    <span>The scanned QR opens a form where the teacher chooses check-in or check-out and enters their generated teacher code. Session 1 check-in auto checks in later same-subject sessions; check-out closes the latest open session and must match the check-in phone location.</span>
                 </section>
             </aside>
         </section>

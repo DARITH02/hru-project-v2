@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'demo.readonly' => \App\Http\Middleware\DemoReadOnlyMiddleware::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
         $middleware->trustProxies(at: '*');
         $middleware->statefulApi();
         

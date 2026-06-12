@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController as AdminUIController;
+use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\RestoreController;
 use App\Http\Controllers\Admin\TeacherAttendanceController as AdminTeacherAttendanceController;
 use App\Http\Controllers\Admin\TelegramBotController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +41,13 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
         Route::delete('/admin/users/{id}', [AdminUIController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::delete('/admin/attendance-issues/history/drop-all', [AdminUIController::class, 'dropAllHistory'])->name('admin.attendance-issues.history.drop-all');
         Route::delete('/admin/attendance-issues/history/bulk-drop', [AdminUIController::class, 'bulkDropHistory'])->name('admin.attendance-issues.history.bulk-drop');
+
+        Route::get('/admin/backup-restore', [BackupController::class, 'index'])->name('admin.backup-restore');
+        Route::post('/admin/backup-restore/backup', [BackupController::class, 'store'])->name('admin.backup-restore.backup');
+        Route::get('/admin/backup-restore/download/{fileName}', [BackupController::class, 'download'])->name('admin.backup-restore.download');
+        Route::delete('/admin/backup-restore/local/{fileName}', [BackupController::class, 'destroyLocal'])->name('admin.backup-restore.local.destroy');
+        Route::delete('/admin/backup-restore/cloud/{fileId}', [BackupController::class, 'destroyCloud'])->name('admin.backup-restore.cloud.destroy');
+        Route::post('/admin/backup-restore/restore', [RestoreController::class, 'store'])->name('admin.backup-restore.restore');
     });
 
     Route::get('/admin/students', [AdminUIController::class, 'students'])->name('admin.students');

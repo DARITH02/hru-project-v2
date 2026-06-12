@@ -43,13 +43,13 @@
                     </div>
                     <div
                         style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--red); letter-spacing:0.1em; text-transform:uppercase;">
-                        Attendance Integrity Monitor</div>
+                        {{ __('admin_attendance_issues.monitor') }}</div>
                 </div>
                 <h1
                     style="font-family:var(--font-display); font-size:36px; font-weight:900; color:var(--text); letter-spacing:-0.02em; margin:0;">
-                    Attendance Issues <span style="color:var(--red);">& Blacklist</span></h1>
+                    {{ __('admin_attendance_issues.title') }} <span style="color:var(--red);">{{ __('admin_attendance_issues.title_suffix') }}</span></h1>
                 <p style="font-size:14px; color:var(--muted); margin-top:8px; font-weight:500;">
-                    Students with 30+ absences in this semester are flagged. Restores are tracked and limited to 2 times.
+                    {{ __('admin_attendance_issues.subtitle') }}
                 </p>
             </div>
             
@@ -57,7 +57,7 @@
                 {{-- Year Filter --}}
                 <div
                     style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:4px 12px; display:flex; align-items:center; gap:8px;">
-                    <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; color:var(--muted);">ACADEMIC YEAR</span>
+                    <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; color:var(--muted);">{{ __('admin_attendance_issues.academic_year') }}</span>
                     <select id="filterYear" onchange="applyFilters()"
                         style="background:transparent; border:none; color:var(--text); font-family:var(--font-mono); font-size:11px; font-weight:700; outline:none; cursor:pointer;">
                         @foreach($academicYears as $year)
@@ -70,11 +70,11 @@
                 {{-- Semester Filter --}}
                 <div
                     style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:4px 12px; display:flex; align-items:center; gap:8px;">
-                    <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; color:var(--muted);">SEMESTER</span>
+                    <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; color:var(--muted);">{{ __('admin_attendance_issues.semester') }}</span>
                     <select id="filterSemester" onchange="applyFilters()"
                         style="background:transparent; border:none; color:var(--text); font-family:var(--font-mono); font-size:11px; font-weight:700; outline:none; cursor:pointer;">
-                        <option value="1" {{ $semester == 1 ? 'selected' : '' }} style="background:var(--surface2); color:var(--text);">TERM 1</option>
-                        <option value="2" {{ $semester == 2 ? 'selected' : '' }} style="background:var(--surface2); color:var(--text);">TERM 2</option>
+                        <option value="1" {{ $semester == 1 ? 'selected' : '' }} style="background:var(--surface2); color:var(--text);">{{ __('admin_attendance_issues.term_1') }}</option>
+                        <option value="2" {{ $semester == 2 ? 'selected' : '' }} style="background:var(--surface2); color:var(--text);">{{ __('admin_attendance_issues.term_2') }}</option>
                     </select>
                 </div>
 
@@ -84,7 +84,7 @@
                 <div style="display:flex; gap:6px;">
                     <a href="{{ route('admin.attendance-issues.export.pdf', request()->all()) }}" class="btn-primary"
                         style="width:36px; height:36px; padding:0; border-radius:10px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text2);"
-                        title="Download PDF Report">
+                        title="{{ __('admin_attendance_issues.download_pdf') }}">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -97,7 +97,7 @@
                         @csrf
                         <button type="submit" class="btn-primary"
                             style="width:36px; height:36px; padding:0; border-radius:10px; background:var(--red); border:none; display:flex; align-items:center; justify-content:center; color:white; cursor:pointer;"
-                            title="Send PDF Report to Telegram">
+                            title="{{ __('admin_attendance_issues.send_telegram') }}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.5">
                                 <line x1="22" y1="2" x2="11" y2="13" />
@@ -119,26 +119,26 @@
                 <input type="hidden" name="academic_year" value="{{ $academicYear }}">
                 <input type="hidden" name="semester" value="{{ $semester }}">
                     <input name="search" class="search-input" type="text"
-                        placeholder="Search student name or code..."
+                        placeholder="{{ __('admin_attendance_issues.search_placeholder') }}"
                         value="{{ request('search') }}"
                         style="padding-left:34px; width:100%; box-sizing:border-box;">
                 <button type="submit" class="btn-primary"
-                    title="Search"
+                    title="{{ __('admin_attendance_issues.search') }}"
                     style="background:var(--surface3); border:1px solid var(--border); color:var(--text2); box-shadow:none; padding:8px 14px; display:flex; align-items:center; gap:5px; white-space:nowrap;">
                     <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
-                    SEARCH
+                    {{ __('admin_attendance_issues.search') }}
                 </button>
                 @if(request()->filled('search'))
                     <a href="{{ route('admin.attendance-issues') }}?academic_year={{ $academicYear }}&semester={{ $semester }}"
                         class="btn-secondary"
-                        title="Clear search"
+                        title="{{ __('admin_attendance_issues.clear') }}"
                         style="padding:8px 14px; display:flex; align-items:center; gap:5px; white-space:nowrap;">
                         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
-                        CLEAR
+                        {{ __('admin_attendance_issues.clear') }}
                     </a>
                 @endif
             </form>
@@ -154,11 +154,11 @@
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
-                    BLACKLISTED (30+ ABSENCES)</div>
+                    {{ __('admin_attendance_issues.blacklisted_card') }}</div>
                 <div style="font-size:42px; font-weight:900; color:var(--red); line-height:1;">{{ $totalBlacklisted }}</div>
                 <div style="margin-top:15px; display:flex; align-items:center; gap:6px;">
-                    <span style="color:var(--red); font-weight:800; font-size:12px;">⚠️ RESTRICTED</span>
-                    <span style="color:var(--muted); font-size:11px; font-weight:600;">EXCLUDED FROM EXAMS</span>
+                    <span style="color:var(--red); font-weight:800; font-size:12px;">⚠️ {{ __('admin_attendance_issues.restricted') }}</span>
+                    <span style="color:var(--muted); font-size:11px; font-weight:600;">{{ __('admin_attendance_issues.excluded_exams') }}</span>
                 </div>
             </div>
 
@@ -170,11 +170,11 @@
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
-                    AT RISK (10-29 ABSENCES)</div>
+                    {{ __('admin_attendance_issues.at_risk_card') }}</div>
                 <div style="font-size:42px; font-weight:900; color:var(--amber); line-height:1;">{{ $totalAtRisk }}</div>
                 <div style="margin-top:15px; display:flex; align-items:center; gap:6px;">
-                    <span style="color:var(--amber); font-weight:800; font-size:12px;">WARNING</span>
-                    <span style="color:var(--muted); font-size:11px; font-weight:600;">APPROACHING LIMIT</span>
+                    <span style="color:var(--amber); font-weight:800; font-size:12px;">{{ __('admin_attendance_issues.warning') }}</span>
+                    <span style="color:var(--muted); font-size:11px; font-weight:600;">{{ __('admin_attendance_issues.approaching_limit') }}</span>
                 </div>
             </div>
 
@@ -186,11 +186,11 @@
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
-                    SECURE / GOOD STANDING</div>
+                    {{ __('admin_attendance_issues.secure_good') }}</div>
                 <div style="font-size:42px; font-weight:900; color:var(--green); line-height:1;">{{ $totalNormal }}</div>
                 <div style="margin-top:15px; display:flex; align-items:center; gap:6px;">
-                    <span style="color:var(--green); font-weight:800; font-size:12px;">🟢 EXEMPT</span>
-                    <span style="color:var(--muted); font-size:11px; font-weight:600;">ATTENDANCE STABLE</span>
+                    <span style="color:var(--green); font-weight:800; font-size:12px;">🟢 {{ __('admin_attendance_issues.exempt') }}</span>
+                    <span style="color:var(--muted); font-size:11px; font-weight:600;">{{ __('admin_attendance_issues.attendance_stable') }}</span>
                 </div>
             </div>
 
@@ -202,11 +202,11 @@
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
-                    AVG ABSENCE RATE</div>
+                    {{ __('admin_attendance_issues.avg_absence_rate') }}</div>
                 <div style="font-size:42px; font-weight:900; color:var(--text); line-height:1;">{{ $avgAbsenceRate }}%</div>
                 <div style="margin-top:15px; display:flex; align-items:center; gap:6px;">
-                    <span style="color:var(--accent); font-weight:800; font-size:12px;">SYSTEMIC</span>
-                    <span style="color:var(--muted); font-size:11px; font-weight:600;">ACROSS ALL GROUPS</span>
+                    <span style="color:var(--accent); font-weight:800; font-size:12px;">{{ __('admin_attendance_issues.systemic') }}</span>
+                    <span style="color:var(--muted); font-size:11px; font-weight:600;">{{ __('admin_attendance_issues.across_groups') }}</span>
                 </div>
             </div>
         </div>
@@ -217,23 +217,23 @@
                 <div style="display:flex; gap:15px;">
                     <button class="btn-tab active" onclick="switchTab('blacklist-tab')" id="btn-blacklist-tab"
                         style="background:transparent; border:none; padding:10px 18px; font-family:var(--font-display); font-size:14px; font-weight:800; cursor:pointer; color:var(--text); border-bottom:3px solid var(--red); transition:all 0.2s;">
-                        🚫 BLACKLISTED ({{ $totalBlacklisted }})
+                        🚫 {{ __('admin_attendance_issues.tab_blacklisted') }} ({{ $totalBlacklisted }})
                     </button>
                     <button class="btn-tab" onclick="switchTab('atrisk-tab')" id="btn-atrisk-tab"
                         style="background:transparent; border:none; padding:10px 18px; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; transition:all 0.2s;">
-                        ⚠️ AT RISK ({{ $totalAtRisk }})
+                        ⚠️ {{ __('admin_attendance_issues.tab_at_risk') }} ({{ $totalAtRisk }})
                     </button>
                     <button class="btn-tab" onclick="switchTab('all-tab')" id="btn-all-tab"
                         style="background:transparent; border:none; padding:10px 18px; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; transition:all 0.2s;">
-                        👥 ALL REGISTRY ({{ $processedStudents->count() }})
+                        👥 {{ __('admin_attendance_issues.tab_all_registry') }} ({{ $processedStudents->count() }})
                     </button>
                     <button class="btn-tab" onclick="switchTab('history-tab')" id="btn-history-tab"
                         style="background:transparent; border:none; padding:10px 18px; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; transition:all 0.2s;">
-                        📋 EVENT REGISTRY ({{ $restoreHistories->count() }})
+                        📋 {{ __('admin_attendance_issues.tab_event_registry') }} ({{ $restoreHistories->count() }})
                     </button>
                 </div>
                 <div style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted2);">
-                    CRITICAL LIMIT: 30 ABSENT UNITS
+                    {{ __('admin_attendance_issues.critical_limit') }}
                 </div>
             </div>
 
@@ -243,12 +243,12 @@
                     <table class="att-table" style="width:100%;">
                         <thead>
                             <tr style="text-align:left; background:var(--surface3)44;">
-                                <th style="padding:15px 25px; width:60px;">IDENTITY</th>
-                                <th>STUDENT CODE</th>
-                                <th>MAJOR / GROUP</th>
-                                <th style="text-align:center;">CUMULATIVE ABSENCES</th>
-                                <th>STATUS</th>
-                                <th style="text-align:right; padding-right:25px;">ACTIONS</th>
+                                <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
+                                <th>{{ __('admin_attendance_issues.student_code') }}</th>
+                                <th>{{ __('admin_attendance_issues.major_group') }}</th>
+                                <th style="text-align:center;">{{ __('admin_attendance_issues.cumulative_absences') }}</th>
+                                <th>{{ __('admin_attendance_issues.status') }}</th>
+                                <th style="text-align:right; padding-right:25px;">{{ __('admin_attendance_issues.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -259,10 +259,10 @@
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--red);"></div>
                                             <div style="font-family:var(--font-mono); font-size:12px; font-weight:800; color:var(--text); letter-spacing:0.05em;">
-                                                CLASS GROUP: {{ strtoupper($groupName) }}
+                                                {{ __('admin_attendance_issues.class_group', ['group' => strtoupper($groupName)]) }}
                                             </div>
                                             <div style="font-size:10px; font-weight:700; color:var(--muted); padding:2px 8px; border-radius:4px; background:var(--surface2); border:1px solid var(--border);">
-                                                {{ count($items) }} BLACKLISTED
+                                                {{ __('admin_attendance_issues.blacklisted_count', ['count' => count($items)]) }}
                                             </div>
                                         </div>
                                     </td>
@@ -286,10 +286,10 @@
                                         </td>
                                         <td>
                                             <div style="font-size:12.5px; color:var(--text2);">
-                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? 'N/A' }}
+                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? __('admin_attendance_issues.not_available') }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:9px; color:var(--muted); margin-top:2px;">
-                                                {{ strtoupper($item['student']->group->name ?? 'NO GROUP') }}
+                                                {{ strtoupper($item['student']->group->name ?? __('admin_attendance_issues.no_group')) }}
                                             </div>
                                         </td>
                                         <td style="text-align:center;">
@@ -297,18 +297,18 @@
                                                 {{ $item['absences'] }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:8px; color:var(--muted); text-transform:uppercase;">
-                                                sessions absent
+                                                {{ __('admin_attendance_issues.sessions_absent') }}
                                             </div>
                                         </td>
                                         <td>
                                             <div style="display:flex; flex-direction:column; gap:4px;">
                                                 <span class="status-tag" style="background: rgba(239, 68, 68, 0.12); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.25);">
                                                     <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 5px;"></span>
-                                                    BLACKLISTED
+                                                    {{ __('admin_attendance_issues.blacklisted') }}
                                                 </span>
                                                 @if($item['restore_count'] > 0)
                                                     <span style="font-family:var(--font-mono); font-size:9px; color:var(--muted); font-weight:700;">
-                                                        🔄 Restored: {{ $item['restore_count'] }}/2
+                                                        🔄 {{ __('admin_attendance_issues.restored_count', ['count' => $item['restore_count']]) }}
                                                     </span>
                                                     @if($item['latest_restore'])
                                                         <div style="font-size:9px; color:var(--muted); margin-top:2px; font-weight:500; font-style:italic; max-width:180px;" title="{{ $item['latest_restore']->reason }}">
@@ -321,13 +321,13 @@
                                         <td style="text-align:right; padding-right:25px;">
                                             @if($item['restore_count'] >= 2)
                                                 <span class="status-tag" style="background:rgba(239, 68, 68, 0.08); color:var(--muted); border:1px solid var(--border); padding:6px 12px; font-size:9px; font-weight:800; font-family:var(--font-mono);">
-                                                    🔒 RESTORE LIMIT EXCEEDED (2/2)
+                                                    🔒 {{ __('admin_attendance_issues.restore_limit') }}
                                                 </span>
                                             @else
                                                 <button type="button" class="btn-primary" 
                                                     onclick="openActionModal({{ $item['student']->id }}, '{{ addslashes($item['student']->user->name) }}', false, {{ $item['restore_count'] + 1 }})"
                                                     style="background:linear-gradient(135deg, var(--green), #22C55E); box-shadow: 0 4px 14px rgba(34, 197, 94, 0.25); border:none; padding:6px 12px; font-size:9px;">
-                                                    🟢 RESTORE STUDENT (#{{ $item['restore_count'] + 1 }}/2)
+                                                    🟢 {{ __('admin_attendance_issues.restore_student', ['count' => $item['restore_count'] + 1]) }}
                                                 </button>
                                             @endif
                                         </td>
@@ -336,7 +336,7 @@
                             @empty
                                 <tr>
                                     <td colspan="6" style="padding:40px; text-align:center; color:var(--muted); font-family:var(--font-mono); font-size:12px;">
-                                        🎉 NO STUDENTS ARE CURRENTLY BLACKLISTED in {{ $academicYear }} (Sem {{ $semester }}).
+                                        🎉 {{ __('admin_attendance_issues.empty_blacklisted', ['year' => $academicYear, 'semester' => $semester]) }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -351,12 +351,12 @@
                     <table class="att-table" style="width:100%;">
                         <thead>
                             <tr style="text-align:left; background:var(--surface3)44;">
-                                <th style="padding:15px 25px; width:60px;">IDENTITY</th>
-                                <th>STUDENT CODE</th>
-                                <th>MAJOR / GROUP</th>
-                                <th style="text-align:center; width:220px;">PROGRESS TO BLACKLIST</th>
-                                <th>STATUS</th>
-                                <th style="text-align:right; padding-right:25px;">ACTIONS</th>
+                                <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
+                                <th>{{ __('admin_attendance_issues.student_code') }}</th>
+                                <th>{{ __('admin_attendance_issues.major_group') }}</th>
+                                <th style="text-align:center; width:220px;">{{ __('admin_attendance_issues.progress_to_blacklist') }}</th>
+                                <th>{{ __('admin_attendance_issues.status') }}</th>
+                                <th style="text-align:right; padding-right:25px;">{{ __('admin_attendance_issues.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -367,10 +367,10 @@
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--amber);"></div>
                                             <div style="font-family:var(--font-mono); font-size:12px; font-weight:800; color:var(--text); letter-spacing:0.05em;">
-                                                CLASS GROUP: {{ strtoupper($groupName) }}
+                                                {{ __('admin_attendance_issues.class_group', ['group' => strtoupper($groupName)]) }}
                                             </div>
                                             <div style="font-size:10px; font-weight:700; color:var(--muted); padding:2px 8px; border-radius:4px; background:var(--surface2); border:1px solid var(--border);">
-                                                {{ count($items) }} AT RISK
+                                                {{ __('admin_attendance_issues.at_risk_count', ['count' => count($items)]) }}
                                             </div>
                                         </div>
                                     </td>
@@ -394,10 +394,10 @@
                                         </td>
                                         <td>
                                             <div style="font-size:12.5px; color:var(--text2);">
-                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? 'N/A' }}
+                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? __('admin_attendance_issues.not_available') }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:9px; color:var(--muted); margin-top:2px;">
-                                                {{ strtoupper($item['student']->group->name ?? 'NO GROUP') }}
+                                                {{ strtoupper($item['student']->group->name ?? __('admin_attendance_issues.no_group')) }}
                                             </div>
                                         </td>
                                         <td>
@@ -406,7 +406,7 @@
                                                     <div style="width:{{ ($item['absences'] / 30) * 100 }}%; height:100%; background:var(--amber); border-radius:3px;"></div>
                                                 </div>
                                                 <div style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--amber);">
-                                                    {{ $item['absences'] }} / 30 ABSENCES
+                                                    {{ __('admin_attendance_issues.absences_count', ['count' => $item['absences']]) }}
                                                 </div>
                                             </div>
                                         </td>
@@ -414,11 +414,11 @@
                                             <div style="display:flex; flex-direction:column; gap:4px;">
                                                 <span class="status-tag" style="background: rgba(245, 158, 11, 0.12); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.25);">
                                                     <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--amber); display: inline-block; margin-right: 5px;"></span>
-                                                    WARNING AT RISK
+                                                    {{ __('admin_attendance_issues.warning_at_risk') }}
                                                 </span>
                                                 @if($item['restore_count'] > 0)
                                                     <span style="font-family:var(--font-mono); font-size:9px; color:var(--muted); font-weight:700;">
-                                                        🔄 Restored: {{ $item['restore_count'] }}/2
+                                                        🔄 {{ __('admin_attendance_issues.restored_count', ['count' => $item['restore_count']]) }}
                                                     </span>
                                                     @if($item['latest_restore'])
                                                         <div style="font-size:9px; color:var(--muted); margin-top:2px; font-weight:500; font-style:italic; max-width:180px;" title="{{ $item['latest_restore']->reason }}">
@@ -432,7 +432,7 @@
                                             <button type="button" class="btn-primary" 
                                                 onclick="openActionModal({{ $item['student']->id }}, '{{ addslashes($item['student']->user->name) }}', true, 0)"
                                                 style="background:linear-gradient(135deg, var(--red), #F87171); box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25); border:none; padding:6px 12px; font-size:9px;">
-                                                🚫 FORCE BLACKLIST
+                                                🚫 {{ __('admin_attendance_issues.force_blacklist') }}
                                             </button>
                                         </td>
                                     </tr>
@@ -440,7 +440,7 @@
                             @empty
                                 <tr>
                                     <td colspan="6" style="padding:40px; text-align:center; color:var(--muted); font-family:var(--font-mono); font-size:12px;">
-                                        🟢 NO STUDENTS ARE CURRENTLY AT RISK in {{ $academicYear }} (Sem {{ $semester }}).
+                                        🟢 {{ __('admin_attendance_issues.empty_at_risk', ['year' => $academicYear, 'semester' => $semester]) }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -455,12 +455,12 @@
                     <table class="att-table" style="width:100%;">
                         <thead>
                             <tr style="text-align:left; background:var(--surface3)44;">
-                                <th style="padding:15px 25px; width:60px;">IDENTITY</th>
-                                <th>STUDENT CODE</th>
-                                <th>MAJOR / GROUP</th>
-                                <th style="text-align:center;">TOTAL ABSENCES</th>
-                                <th>STATUS</th>
-                                <th style="text-align:right; padding-right:25px;">ACTIONS</th>
+                                <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
+                                <th>{{ __('admin_attendance_issues.student_code') }}</th>
+                                <th>{{ __('admin_attendance_issues.major_group') }}</th>
+                                <th style="text-align:center;">{{ __('admin_attendance_issues.total_absences') }}</th>
+                                <th>{{ __('admin_attendance_issues.status') }}</th>
+                                <th style="text-align:right; padding-right:25px;">{{ __('admin_attendance_issues.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -471,10 +471,10 @@
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--accent);"></div>
                                             <div style="font-family:var(--font-mono); font-size:12px; font-weight:800; color:var(--text); letter-spacing:0.05em;">
-                                                CLASS GROUP: {{ strtoupper($groupName) }}
+                                                {{ __('admin_attendance_issues.class_group', ['group' => strtoupper($groupName)]) }}
                                             </div>
                                             <div style="font-size:10px; font-weight:700; color:var(--muted); padding:2px 8px; border-radius:4px; background:var(--surface2); border:1px solid var(--border);">
-                                                {{ count($items) }} STUDENTS TOTAL
+                                                {{ __('admin_attendance_issues.students_total', ['count' => count($items)]) }}
                                             </div>
                                         </div>
                                     </td>
@@ -491,7 +491,7 @@
                                                     {{ strtoupper(substr(e($item['student']->user->name ?? 'UN'), 0, 2)) }}
                                                 </div>
                                                 <div style="font-weight:700; color:var(--text); font-size:13px;">
-                                                    {{ $item['student']->user->name ?? 'Unknown Student' }}
+                                                    {{ $item['student']->user->name ?? __('admin_attendance_issues.unknown_student') }}
                                                 </div>
                                             </div>
                                         </td>
@@ -502,10 +502,10 @@
                                         </td>
                                         <td>
                                             <div style="font-size:12.5px; color:var(--text2);">
-                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? 'N/A' }}
+                                                {{ $item['student']->major->name ?? $item['student']->group->major->name ?? __('admin_attendance_issues.not_available') }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:9px; color:var(--muted); margin-top:2px;">
-                                                {{ strtoupper($item['student']->group->name ?? 'NO GROUP') }}
+                                                {{ strtoupper($item['student']->group->name ?? __('admin_attendance_issues.no_group')) }}
                                             </div>
                                         </td>
                                         <td style="text-align:center;">
@@ -513,7 +513,7 @@
                                                 {{ $item['absences'] }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:8px; color:var(--muted); text-transform:uppercase;">
-                                                sessions absent
+                                                {{ __('admin_attendance_issues.sessions_absent') }}
                                             </div>
                                         </td>
                                         <td>
@@ -521,22 +521,22 @@
                                                 @if($isBlacklisted)
                                                     <span class="status-tag" style="background: rgba(239, 68, 68, 0.12); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.25);">
                                                         <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 5px;"></span>
-                                                        BLACKLISTED
+                                                        {{ __('admin_attendance_issues.blacklisted') }}
                                                     </span>
                                                 @elseif($isAtRisk)
                                                     <span class="status-tag" style="background: rgba(245, 158, 11, 0.12); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.25);">
                                                         <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--amber); display: inline-block; margin-right: 5px;"></span>
-                                                        AT RISK
+                                                        {{ __('admin_attendance_issues.at_risk') }}
                                                     </span>
                                                 @else
                                                     <span class="status-tag" style="background: rgba(34, 197, 94, 0.12); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.25);">
                                                         <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 5px;"></span>
-                                                        SECURE
+                                                        {{ __('admin_attendance_issues.secure') }}
                                                     </span>
                                                 @endif
                                                 @if($item['restore_count'] > 0)
                                                     <span style="font-family:var(--font-mono); font-size:9px; color:var(--muted); font-weight:700;">
-                                                        🔄 Restored: {{ $item['restore_count'] }}/2
+                                                        🔄 {{ __('admin_attendance_issues.restored_count', ['count' => $item['restore_count']]) }}
                                                     </span>
                                                     @if($item['latest_restore'])
                                                         <div style="font-size:9px; color:var(--muted); margin-top:2px; font-weight:500; font-style:italic; max-width:180px;" title="{{ $item['latest_restore']->reason }}">
@@ -550,20 +550,20 @@
                                             @if($isBlacklisted)
                                                 @if($item['restore_count'] >= 2)
                                                     <span class="status-tag" style="background:rgba(239, 68, 68, 0.08); color:var(--muted); border:1px solid var(--border); padding:6px 12px; font-size:9px; font-weight:800; font-family:var(--font-mono);">
-                                                        🔒 RESTORE LIMIT EXCEEDED (2/2)
+                                                        🔒 {{ __('admin_attendance_issues.restore_limit') }}
                                                     </span>
                                                 @else
                                                     <button type="button" class="btn-primary" 
                                                         onclick="openActionModal({{ $item['student']->id }}, '{{ addslashes($item['student']->user->name) }}', false, {{ $item['restore_count'] + 1 }})"
                                                         style="background:linear-gradient(135deg, var(--green), #22C55E); box-shadow: 0 4px 14px rgba(34, 197, 94, 0.25); border:none; padding:6px 12px; font-size:9px;">
-                                                        🟢 RESTORE STUDENT (#{{ $item['restore_count'] + 1 }}/2)
+                                                        🟢 {{ __('admin_attendance_issues.restore_student', ['count' => $item['restore_count'] + 1]) }}
                                                     </button>
                                                 @endif
                                             @else
                                                 <button type="button" class="btn-primary" 
                                                     onclick="openActionModal({{ $item['student']->id }}, '{{ addslashes($item['student']->user->name) }}', true, 0)"
                                                     style="background:linear-gradient(135deg, var(--red), #F87171); box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25); border:none; padding:6px 12px; font-size:9px;">
-                                                    🚫 BLACKLIST STUDENT
+                                                    🚫 {{ __('admin_attendance_issues.blacklist_student') }}
                                                 </button>
                                             @endif
                                         </td>
@@ -572,7 +572,7 @@
                             @empty
                                 <tr>
                                     <td colspan="6" style="padding:40px; text-align:center; color:var(--muted); font-family:var(--font-mono); font-size:12px;">
-                                        NO STUDENTS REGISTERED IN {{ $academicYear }} (Sem {{ $semester }}).
+                                        {{ __('admin_attendance_issues.empty_registered', ['year' => $academicYear, 'semester' => $semester]) }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -592,16 +592,16 @@
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                     <div style="width:10px; height:10px; border-radius:3px; background:#8B5CF6;"></div>
                     <h2 style="font-family:var(--font-display); font-size:18px; font-weight:900; color:var(--text); margin:0;">
-                        Blacklist &amp; Restore Event Log
+                        {{ __('admin_attendance_issues.event_log_title') }}
                     </h2>
                     <span style="font-family:var(--font-mono); font-size:10px; color:var(--muted); font-weight:700; background:var(--surface3); border:1px solid var(--border); padding:3px 10px; border-radius:6px;">
-                        {{ $academicYear }} · SEM {{ $semester }}
+                        {{ $academicYear }} · {{ __('admin_attendance_issues.sem_short', ['semester' => $semester]) }}
                     </span>
                     <span style="font-family:var(--font-mono); font-size:10px; color:var(--accent); font-weight:800; background:rgba(99,179,237,0.08); border:1px solid rgba(99,179,237,0.2); padding:3px 10px; border-radius:6px;">
-                        {{ $restoreHistories->count() }} RECORDS
+                        {{ __('admin_attendance_issues.records_count', ['count' => $restoreHistories->count()]) }}
                     </span>
                     <span style="font-family:var(--font-mono); font-size:9px; color:var(--green); font-weight:700; background:rgba(34,197,94,0.07); border:1px solid rgba(34,197,94,0.2); padding:3px 10px; border-radius:6px;">
-                        🟢 RESTORED: {{ $restoredHistoryCount }}
+                        🟢 {{ __('admin_attendance_issues.restored_history_count', ['count' => $restoredHistoryCount]) }}
                     </span>
                 </div>
 
@@ -612,7 +612,7 @@
                     <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); user-select:none;">
                         <input type="checkbox" id="selectAllHistory" onchange="toggleSelectAll(this)"
                             style="width:15px; height:15px; accent-color:#8B5CF6; cursor:pointer;">
-                        SELECT ALL
+                        {{ __('admin_attendance_issues.select_all') }}
                     </label>
 
                     {{-- Bulk Drop button --}}
@@ -622,7 +622,7 @@
                             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                             </svg>
-                            DROP SELECTED (<span id="selectedCount">0</span>)
+                            {{ __('admin_attendance_issues.drop_selected') }} (<span id="selectedCount">0</span>)
                         </button>
                     @else
                         <button type="button" id="bulkDropBtn" onclick="openUnauthorizedModal()" disabled
@@ -630,7 +630,7 @@
                             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
-                            DROP SELECTED (<span id="selectedCount">0</span>)
+                            {{ __('admin_attendance_issues.drop_selected') }} (<span id="selectedCount">0</span>)
                         </button>
                     @endif
 
@@ -644,7 +644,7 @@
                             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/>
                             </svg>
-                            DROP ALL
+                            {{ __('admin_attendance_issues.drop_all') }}
                         </button>
                     @else
                         <button type="button" onclick="openUnauthorizedModal()"
@@ -653,7 +653,7 @@
                             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
-                            DROP ALL
+                            {{ __('admin_attendance_issues.drop_all') }}
                         </button>
                     @endif
                 </div>
@@ -674,7 +674,7 @@
             @if($restoreHistories->isEmpty())
                 <div style="padding:60px; text-align:center; color:var(--muted); font-family:var(--font-mono); font-size:12px;">
                     <div style="font-size:48px; margin-bottom:16px;">📋</div>
-                    NO BLACKLIST OR RESTORE EVENTS RECORDED FOR {{ $academicYear }} · SEMESTER {{ $semester }}.
+                    {{ __('admin_attendance_issues.empty_history', ['year' => $academicYear, 'semester' => $semester]) }}
                 </div>
             @else
                 {{-- Timeline Feed --}}
@@ -686,7 +686,7 @@
                             $eventBg      = $isRestore ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)';
                             $eventBorder  = $isRestore ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)';
                             $eventIcon    = $isRestore ? '🟢' : '🚫';
-                            $eventLabel   = $isRestore ? 'RESTORED' : 'BLACKLISTED';
+                            $eventLabel   = $isRestore ? __('admin_attendance_issues.restored') : __('admin_attendance_issues.blacklisted');
 
                             // Parse "Authorized by: X | Details: Y" format
                             $authorizerName = null;
@@ -736,17 +736,17 @@
                                         </div>
                                         <div>
                                             <div style="font-weight:800; font-size:14px; color:var(--text); line-height:1.2;">
-                                                {{ $record->student->user->name ?? 'Unknown Student' }}
+                                                {{ $record->student->user->name ?? __('admin_attendance_issues.unknown_student') }}
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:10px; color:var(--accent); font-weight:700; margin-top:1px;">
-                                                {{ $record->student->student_code ?? 'N/A' }}
+                                                {{ $record->student->student_code ?? __('admin_attendance_issues.not_available') }}
                                             </div>
                                         </div>
                                         <span style="font-size:11px; color:var(--muted); font-weight:600;">
-                                            · {{ $record->student->major->name ?? ($record->student->group->major->name ?? 'N/A') }}
+                                            · {{ $record->student->major->name ?? ($record->student->group->major->name ?? __('admin_attendance_issues.not_available')) }}
                                         </span>
                                         <span style="font-family:var(--font-mono); font-size:9px; font-weight:700; color:var(--muted); background:var(--surface3); border:1px solid var(--border); padding:2px 8px; border-radius:6px;">
-                                            {{ strtoupper($record->student->group->name ?? 'NO GROUP') }}
+                                            {{ strtoupper($record->student->group->name ?? __('admin_attendance_issues.no_group')) }}
                                         </span>
                                     </div>
 
@@ -757,7 +757,7 @@
                                             <div style="display:flex; align-items:flex-start; gap:8px;">
                                                 <span style="font-size:16px; margin-top:1px;">✍️</span>
                                                 <div>
-                                                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Authorized By</div>
+                                                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">{{ __('admin_attendance_issues.authorized_by') }}</div>
                                                     <div style="font-size:12.5px; font-weight:700; color:var(--text);">{{ $authorizerName }}</div>
                                                 </div>
                                             </div>
@@ -767,7 +767,7 @@
                                             <div style="display:flex; align-items:flex-start; gap:8px;">
                                                 <span style="font-size:16px; margin-top:1px;">👤</span>
                                                 <div>
-                                                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">System Account</div>
+                                                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">{{ __('admin_attendance_issues.system_account') }}</div>
                                                     <div style="font-size:12.5px; font-weight:700; color:var(--text);">{{ $record->restoredBy->name }}</div>
                                                 </div>
                                             </div>
@@ -776,7 +776,7 @@
                                         <div style="display:flex; align-items:flex-start; gap:8px;">
                                             <span style="font-size:16px; margin-top:1px;">📅</span>
                                             <div>
-                                                <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Timestamp</div>
+                                                <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">{{ __('admin_attendance_issues.timestamp') }}</div>
                                                 <div style="font-size:12.5px; font-weight:700; color:var(--text);">
                                                     {{ \Carbon\Carbon::parse($record->created_at)->format('d M Y, h:i A') }}
                                                 </div>
@@ -789,9 +789,9 @@
                                         <div style="display:flex; align-items:flex-start; gap:8px;">
                                             <span style="font-size:16px; margin-top:1px;">📖</span>
                                             <div>
-                                                <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Academic Period</div>
+                                                <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">{{ __('admin_attendance_issues.academic_period') }}</div>
                                                 <div style="font-size:12.5px; font-weight:700; color:var(--text);">
-                                                    {{ $record->academic_year }} · Sem {{ $record->semester }}
+                                                    {{ $record->academic_year }} · {{ __('admin_attendance_issues.sem_short', ['semester' => $record->semester]) }}
                                                 </div>
                                             </div>
                                         </div>
@@ -801,7 +801,7 @@
                                     {{-- Reason / Notes box --}}
                                     @if($detailReason)
                                         <div style="background:var(--surface3); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-top:2px;">
-                                            <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">📝 Reason / Notes</div>
+                                            <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">📝 {{ __('admin_attendance_issues.reason_notes') }}</div>
                                             <div style="font-size:12.5px; color:var(--text2); font-weight:500; line-height:1.7;">{{ $detailReason }}</div>
                                         </div>
                                     @endif
@@ -818,7 +818,7 @@
                                     </span>
                                     @if($isRestore)
                                         <span style="font-family:var(--font-mono); font-size:9px; color:var(--muted); font-weight:700; white-space:nowrap;">
-                                            Restore #{{ $studentRestoreCount }}/2
+                                            {{ __('admin_attendance_issues.restore_number', ['count' => $studentRestoreCount]) }}
                                         </span>
                                     @endif
                                 </div>
@@ -834,6 +834,16 @@
     </div>{{-- /history-tab --}}
 
     <script>
+        const attendanceIssueT = @json(trans('admin_attendance_issues'));
+        const issueText = (key, fallback = key) => attendanceIssueT[key] || fallback;
+        const issueReplace = (key, replacements, fallback = key) => {
+            let text = issueText(key, fallback);
+            Object.entries(replacements).forEach(([name, value]) => {
+                text = text.replace(`:${name}`, value);
+            });
+            return text;
+        };
+
         function applyFilters() {
             const year = document.getElementById('filterYear').value;
             const semester = document.getElementById('filterSemester').value;
@@ -889,29 +899,29 @@
             
             // Customize inputs/labels depending on action
             if (isBlacklist) {
-                title.textContent = `Force Blacklist: ${studentName}`;
-                subtitle.textContent = "Please authorize manual student blacklisting.";
-                authorizerLabel.innerHTML = 'Blacklisted By / Name <span style="color:var(--red);">*</span>';
-                authorizerInput.placeholder = "e.g. Admin, Dean, Registrar";
-                reasonLabel.innerHTML = 'Reason for Blacklisting <span style="color:var(--red);">*</span>';
-                reasonInput.placeholder = "Explain why this student is being forced into the blacklist...";
+                title.textContent = issueReplace('force_blacklist_title', { name: studentName }, 'Force Blacklist: :name');
+                subtitle.textContent = issueText('force_blacklist_subtitle', 'Please authorize manual student blacklisting.');
+                authorizerLabel.innerHTML = `${issueText('blacklisted_by', 'Blacklisted By / Name')} <span style="color:var(--red);">*</span>`;
+                authorizerInput.placeholder = issueText('generic_authorizer_placeholder', 'e.g. Admin, Dean, Registrar');
+                reasonLabel.innerHTML = `${issueText('reason_blacklisting', 'Reason for Blacklisting')} <span style="color:var(--red);">*</span>`;
+                reasonInput.placeholder = issueText('blacklist_placeholder', 'Explain why this student is being forced into the blacklist...');
                 
                 // Red theme for blacklist
                 confirmBtn.style.background = 'linear-gradient(135deg, var(--red), #F87171)';
                 confirmBtn.style.boxShadow = '0 4px 14px rgba(239, 68, 68, 0.25)';
-                confirmBtn.textContent = 'CONFIRM BLACKLIST';
+                confirmBtn.textContent = issueText('confirm_blacklist', 'CONFIRM BLACKLIST');
             } else {
-                title.textContent = `Restore Student: ${studentName}`;
-                subtitle.textContent = `Authorizing restoration attempt #${restoreNumber} of 2.`;
-                authorizerLabel.innerHTML = 'Authorized By / Name <span style="color:var(--red);">*</span>';
-                authorizerInput.placeholder = "e.g. Dr. John Doe (Dean)";
-                reasonLabel.innerHTML = 'Reason for Restoration <span style="color:var(--red);">*</span>';
-                reasonInput.placeholder = "Describe the justification/reason for restoring this student...";
+                title.textContent = issueReplace('restore_title', { name: studentName }, 'Restore Student: :name');
+                subtitle.textContent = issueReplace('restore_subtitle', { count: restoreNumber }, 'Authorizing restoration attempt #:count of 2.');
+                authorizerLabel.innerHTML = `${issueText('authorized_by_name', 'Authorized By / Name')} <span style="color:var(--red);">*</span>`;
+                authorizerInput.placeholder = issueText('authorizer_placeholder', 'e.g. Dr. John Doe (Dean)');
+                reasonLabel.innerHTML = `${issueText('reason_restoration', 'Reason for Restoration')} <span style="color:var(--red);">*</span>`;
+                reasonInput.placeholder = issueText('restore_placeholder', 'Describe the justification or reason for restoring this student...');
                 
                 // Green theme for restore
                 confirmBtn.style.background = 'linear-gradient(135deg, var(--green), #22C55E)';
                 confirmBtn.style.boxShadow = '0 4px 14px rgba(34, 197, 94, 0.25)';
-                confirmBtn.textContent = 'CONFIRM RESTORE';
+                confirmBtn.textContent = issueText('confirm_restore', 'CONFIRM RESTORE');
             }
             
             // Clear previous inputs
@@ -986,12 +996,12 @@
             if (checked.length === 0) return;
 
             openConfirmModal(
-                '🗑️ Drop Selected Records',
-                `You are about to permanently delete <strong>${checked.length}</strong> selected event record(s). This action cannot be undone.`,
+                `🗑️ ${issueText('drop_selected_title', 'Drop Selected Records')}`,
+                issueReplace('drop_selected_body', { count: checked.length }, 'You are about to permanently delete <strong>:count</strong> selected event record(s). This action cannot be undone.'),
                 'rgba(139,92,246,0.15)',
                 'rgba(139,92,246,0.3)',
                 '#8B5CF6',
-                'DROP SELECTED',
+                issueText('drop_selected', 'DROP SELECTED'),
                 () => {
                     const container = document.getElementById('bulkDropIds');
                     container.innerHTML = '';
@@ -1010,12 +1020,12 @@
         function confirmDropAll() {
             const total = document.querySelectorAll('.history-checkbox').length;
             openConfirmModal(
-                '🚨 Drop ALL Records',
-                `You are about to permanently delete <strong>all ${total}</strong> event record(s) for this semester. This action cannot be undone.`,
+                `🚨 ${issueText('drop_all_title', 'Drop ALL Records')}`,
+                issueReplace('drop_all_body', { count: total }, 'You are about to permanently delete <strong>all :count</strong> event record(s) for this semester. This action cannot be undone.'),
                 'rgba(239,68,68,0.12)',
                 'rgba(239,68,68,0.35)',
                 'var(--red)',
-                'DROP ALL',
+                issueText('drop_all', 'DROP ALL'),
                 () => document.getElementById('dropAllForm').submit()
             );
         }
@@ -1041,7 +1051,7 @@
                     <div style="padding:18px 28px;background:rgba(0,0,0,0.12);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;">
                         <button onclick="document.getElementById('confirmDeleteModal').remove()"
                             style="background:var(--surface3);border:1px solid var(--border);color:var(--text2);padding:9px 20px;border-radius:10px;font-family:var(--font-mono);font-size:10px;font-weight:800;cursor:pointer;">
-                            CANCEL
+                            ${issueText('cancel', 'CANCEL')}
                         </button>
                         <button id="confirmDeleteOk"
                             style="background:${accentColor};border:none;color:#fff;padding:9px 20px;border-radius:10px;font-family:var(--font-mono);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:0.04em;">
@@ -1088,10 +1098,10 @@
             <div style="padding:25px 30px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
                 <div>
                     <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--text); margin:0;" id="actionModalTitle">
-                        Authorize Action
+                        {{ __('admin_attendance_issues.authorize_action') }}
                     </h3>
                     <p style="font-size:11px; color:var(--muted); margin:4px 0 0 0;" id="actionModalSubtitle">
-                        Please fill in authorization credentials.
+                        {{ __('admin_attendance_issues.authorization_subtitle') }}
                     </p>
                 </div>
                 <button type="button" onclick="closeActionModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; border-radius:50%; display:flex; align-items:center; justify-content:center; hover:color:var(--text); transition:color 0.2s;">
@@ -1111,9 +1121,9 @@
                     <!-- Input: Name -->
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <label for="authorizer_name" id="authorizerLabel" style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); letter-spacing:0.05em; text-transform:uppercase;">
-                            Authorized By / Name <span style="color:var(--red);">*</span>
+                            {{ __('admin_attendance_issues.authorized_by_name') }} <span style="color:var(--red);">*</span>
                         </label>
-                        <input type="text" id="authorizer_name" name="authorizer_name" required placeholder="e.g. Dr. John Doe (Dean)" 
+                        <input type="text" id="authorizer_name" name="authorizer_name" required placeholder="{{ __('admin_attendance_issues.authorizer_placeholder') }}" 
                             style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; color:var(--text); font-size:13px; font-weight:600; outline:none; transition:border-color 0.2s;"
                             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
                     </div>
@@ -1121,9 +1131,9 @@
                     <!-- Input: Reason -->
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <label for="action_reason" id="reasonLabel" style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); letter-spacing:0.05em; text-transform:uppercase;">
-                            Reason / Description <span style="color:var(--red);">*</span>
+                            {{ __('admin_attendance_issues.reason_description') }} <span style="color:var(--red);">*</span>
                         </label>
-                        <textarea id="action_reason" name="reason" required placeholder="Describe the reason for this action..." rows="4"
+                        <textarea id="action_reason" name="reason" required placeholder="{{ __('admin_attendance_issues.reason_placeholder') }}" rows="4"
                             style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 16px; color:var(--text); font-size:13px; font-weight:600; outline:none; transition:border-color 0.2s; resize:none; line-height:1.5;"
                             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
                     </div>
@@ -1132,10 +1142,10 @@
                 <!-- Modal Footer -->
                 <div style="padding:20px 30px; background:rgba(0,0,0,0.15); border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px;">
                     <button type="button" onclick="closeActionModal()" class="btn-primary" style="background:var(--surface3); border:1px solid var(--border); color:var(--text2); padding:10px 20px; font-size:11px; cursor:pointer;">
-                        CANCEL
+                        {{ __('admin_attendance_issues.cancel') }}
                     </button>
                     <button type="submit" id="actionConfirmBtn" class="btn-primary" style="border:none; padding:10px 20px; font-size:11px; cursor:pointer; font-weight:800; font-family:var(--font-mono);">
-                        CONFIRM
+                        {{ __('admin_attendance_issues.confirm') }}
                     </button>
                 </div>
             </form>
@@ -1156,9 +1166,9 @@
                     </svg>
                 </div>
                 <div style="flex:1;">
-                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--red); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;">403 — Access Denied</div>
-                    <h3 style="font-family:var(--font-display); font-size:19px; font-weight:900; color:var(--text); margin:0 0 4px;">Unauthorized Action</h3>
-                    <p style="font-size:12px; color:var(--muted); margin:0;">You do not have permission to perform this operation.</p>
+                    <div style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--red); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;">{{ __('admin_attendance_issues.access_denied') }}</div>
+                    <h3 style="font-family:var(--font-display); font-size:19px; font-weight:900; color:var(--text); margin:0 0 4px;">{{ __('admin_attendance_issues.unauthorized_action') }}</h3>
+                    <p style="font-size:12px; color:var(--muted); margin:0;">{{ __('admin_attendance_issues.unauthorized_desc') }}</p>
                 </div>
                 <button type="button" onclick="closeUnauthorizedModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; border-radius:50%; display:flex; align-items:center; flex-shrink:0;">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1172,12 +1182,10 @@
                 <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.18); border-radius:14px; padding:18px 20px; margin-bottom:18px;">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                         <span style="font-size:18px;">🚫</span>
-                        <span style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--red);">DELETION RESTRICTED</span>
+                        <span style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--red);">{{ __('admin_attendance_issues.deletion_restricted') }}</span>
                     </div>
                     <p style="font-size:13px; color:var(--text2); line-height:1.75; margin:0;">
-                        Deleting <strong style="color:var(--text);">EVENT REGISTRY</strong> records is a privileged operation reserved exclusively for
-                        <strong style="color:var(--red);">Super Administrators</strong>.
-                        Audit trails must be preserved to maintain institutional data integrity.
+                        {{ __('admin_attendance_issues.restricted_body') }}
                     </p>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px;">
@@ -1185,7 +1193,7 @@
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <p style="font-size:12px; color:var(--muted); margin:0; line-height:1.6;">
-                        If deletion is required, please contact your <strong style="color:var(--text2);">Super Admin</strong> to perform this action.
+                        {{ __('admin_attendance_issues.contact_super_admin') }}
                     </p>
                 </div>
             </div>
@@ -1195,7 +1203,7 @@
                 <button type="button" onclick="closeUnauthorizedModal()"
                     style="background:linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08)); border:1px solid rgba(239,68,68,0.35); color:var(--red); padding:10px 28px; border-radius:12px; font-family:var(--font-mono); font-size:10px; font-weight:800; cursor:pointer; letter-spacing:0.06em; transition:all 0.2s;"
                     onmouseenter="this.style.background='rgba(239,68,68,0.22)'" onmouseleave="this.style.background='linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'">
-                    UNDERSTOOD
+                    {{ __('admin_attendance_issues.understood') }}
                 </button>
             </div>
         </div>

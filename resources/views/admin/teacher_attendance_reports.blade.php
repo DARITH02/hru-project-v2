@@ -61,26 +61,58 @@
     <div class="panel" style="padding:16px 20px;margin-bottom:20px;">
         <form method="GET" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;width:100%;">
             <div style="display:flex;align-items:center;gap:8px;">
-                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">FROM:</label>
-                <input type="date" name="from" value="{{ $from->toDateString() }}" class="form-input" style="height:36px;padding:0 12px;font-family:var(--font-mono);font-size:12px;width:150px;color-scheme:var(--data-theme,light);">
+                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">REPORT:</label>
+                <select name="period_type" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:130px;">
+                    <option value="day" @selected(($periodType ?? 'day') === 'day')>Per Day</option>
+                    <option value="semester" @selected(($periodType ?? 'day') === 'semester')>Per Semester</option>
+                </select>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">TO:</label>
-                <input type="date" name="to" value="{{ $to->toDateString() }}" class="form-input" style="height:36px;padding:0 12px;font-family:var(--font-mono);font-size:12px;width:150px;color-scheme:var(--data-theme,light);">
+                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">DAY:</label>
+                <input type="date" name="report_date" value="{{ ($reportDate ?? $from)->toDateString() }}" class="form-input" style="height:36px;padding:0 12px;font-family:var(--font-mono);font-size:12px;width:150px;color-scheme:var(--data-theme,light);">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">YEAR:</label>
+                <select name="academic_year" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:140px;">
+                    @forelse(($academicYears ?? collect()) as $year)
+                        <option value="{{ $year }}" @selected(($selectedAcademicYear ?? request('academic_year')) == $year)>{{ $year }}</option>
+                    @empty
+                        <option value="{{ now()->format('Y') }}">{{ now()->format('Y') }}</option>
+                    @endforelse
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">SEM:</label>
+                <select name="semester" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:90px;">
+                    @foreach(($semesters ?? collect([1, 2])) as $semesterOption)
+                        <option value="{{ $semesterOption }}" @selected((int) ($selectedSemester ?? request('semester', 1)) === (int) $semesterOption)>{{ $semesterOption }}</option>
+                    @endforeach
+                </select>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">TEACHER:</label>
                 <select name="teacher_id" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:200px;">
                     <option value="">All Teachers</option>
-                    @foreach($teachers as $teacher)
-                        <option value="{{ $teacher->id }}" @selected(request('teacher_id') == $teacher->id)>
-                            {{ $teacher->user->name ?? 'Teacher #'.$teacher->id }}
-                        </option>
+                    @foreach(($teacherGroups ?? collect(['All Teachers' => $teachers])) as $departmentName => $departmentTeachers)
+                        <optgroup label="{{ $departmentName }}">
+                            @foreach($departmentTeachers as $teacher)
+                                <option value="{{ $teacher->id }}" @selected(request('teacher_id') == $teacher->id)>
+                                    {{ $teacher->user->name ?? 'Teacher #'.$teacher->id }}
+                                </option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
             </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">GROUP BY:</label>
+                <select name="group_by" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:150px;">
+                    <option value="department" @selected(($groupBy ?? request('group_by', 'department')) === 'department')>Department</option>
+                    <option value="major" @selected(($groupBy ?? request('group_by')) === 'major')>Major</option>
+                </select>
+            </div>
             <button type="submit" class="btn-primary" style="height:36px;padding:0 18px;font-size:10px;">GENERATE REPORT</button>
-            @if(request()->hasAny(['from','to','teacher_id']))
+            @if(request()->hasAny(['period_type','report_date','academic_year','semester','teacher_id','group_by']))
                 <a href="{{ route('admin.teacher-attendance.reports') }}" class="btn-secondary" style="height:36px;padding:0 14px;font-size:10px;">RESET</a>
             @endif
 
@@ -140,7 +172,7 @@
                 <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--muted2);">REPORT ENTRIES</span>
             </div>
             <div class="toolbar-count">
-                <span>{{ $sessions->count() }}</span> SESSIONS
+                <span>{{ $sessions->count() }}</span> SESSIONS · {{ strtoupper($groupBy ?? 'department') }} · {{ strtoupper($periodLabel ?? '') }}
             </div>
         </div>
 
@@ -157,78 +189,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($sessions as $session)
-                        @php
-                            $sc = $statusConfig[$session->attendance_status] ?? ['bg'=>'rgba(100,116,139,.1)','color'=>'var(--muted2)','border'=>'rgba(100,116,139,.25)','label'=>strtoupper(str_replace('_',' ',$session->attendance_status))];
-                            $avatarColors = ['#2563EB','#22C55E','#8B5CF6','#F59E0B','#10B981','#EF4444'];
-                            $clr = $avatarColors[$session->id % count($avatarColors)];
-                            $tName = $session->teacher->user->name ?? 'Unknown';
-                        @endphp
-                        <tr class="fade-up">
-                            {{-- Date --}}
-                            <td>
-                                <div style="font-size:12px;font-weight:600;color:var(--text2);">
-                                    {{ $session->attendance_date?->format('M d, Y') }}
-                                </div>
-                                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px;">
-                                    {{ $session->attendance_date?->format('l') }}
-                                </div>
-                            </td>
-
-                            {{-- Teacher --}}
-                            <td>
-                                <div class="subject-cell">
-                                    <div class="subject-avatar"
-                                        style="background:{{ $clr }}22;color:{{ $clr }};border:1px solid {{ $clr }}44;font-size:10px;width:34px;height:34px;border-radius:50%;">
-                                        {{ strtoupper(substr($tName, 0, 2)) }}
-                                    </div>
-                                    <div>
-                                        <div class="subject-name">{{ $tName }}</div>
-                                        <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.04em;">
-                                            {{ $session->teacher->department->name ?? 'No dept.' }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-
-                            {{-- Subject --}}
-                            <td>
-                                <div style="font-size:12px;font-weight:600;color:var(--text2);">
-                                    {{ $session->subject->name ?? '-' }}
-                                </div>
-                                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.04em;">
-                                    {{ $session->classGroup->name ?? $session->classRoom->name ?? 'No group' }}
-                                </div>
-                            </td>
-
-                            {{-- Status badge --}}
-                            <td>
-                                <span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:99px;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.08em;background:{{ $sc['bg'] }};color:{{ $sc['color'] }};border:1px solid {{ $sc['border'] }};">
-                                    {{ $sc['label'] }}
-                                </span>
-                            </td>
-
-                            {{-- Timing Details --}}
-                            <td>
-                                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);display:flex;flex-direction:column;gap:3px;">
-                                    <div>
-                                        <span style="color:var(--muted2);">SCHED:</span> {{ $session->scheduled_start_time?->format('H:i') }} - {{ $session->scheduled_end_time?->format('H:i') }}
-                                    </div>
-                                    <div>
-                                        <span style="color:var(--muted2);">ACTUAL:</span> {{ $session->check_in_time?->format('H:i') ?? '-' }} - {{ $session->check_out_time?->format('H:i') ?? '-' }}
-                                    </div>
-                                </div>
-                            </td>
-
-                            {{-- Hours --}}
-                            <td style="text-align:right;">
-                                <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--accent);">
-                                    {{ number_format($session->actual_teaching_hours, 1) }}
-                                </span>
-                                <span style="font-size:10px;color:var(--muted);margin-left:2px;">hrs</span>
-                            </td>
-                        </tr>
-                    @empty
+                    @if($sessions->isEmpty())
                         <tr>
                             <td colspan="6">
                                 <div class="empty-state">
@@ -243,7 +204,100 @@
                                 </div>
                             </td>
                         </tr>
-                    @endforelse
+                    @else
+                        @foreach(($reportGroups ?? collect([['name' => 'All Sessions', 'sessions' => $sessions, 'count' => $sessions->count(), 'late' => 0, 'absent' => 0, 'hours' => $sessions->sum('actual_teaching_hours')]])) as $reportGroup)
+                            <tr>
+                                <td colspan="6" style="background:var(--surface3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 2px;">
+                                        <div style="display:flex;align-items:center;gap:9px;">
+                                            <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);"></span>
+                                            <span style="font-family:var(--font-mono);font-size:10px;font-weight:900;letter-spacing:.1em;color:var(--text);">
+                                                {{ strtoupper($reportGroup['name']) }}
+                                            </span>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.06em;">
+                                            <span>{{ $reportGroup['count'] }} SESSIONS</span>
+                                            <span>{{ $reportGroup['late'] }} LATE</span>
+                                            <span>{{ $reportGroup['absent'] }} ABSENT</span>
+                                            <span>{{ number_format($reportGroup['hours'], 1) }} HRS</span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            @foreach($reportGroup['sessions'] as $session)
+                                @php
+                                    $sc = $statusConfig[$session->attendance_status] ?? ['bg'=>'rgba(100,116,139,.1)','color'=>'var(--muted2)','border'=>'rgba(100,116,139,.25)','label'=>strtoupper(str_replace('_',' ',$session->attendance_status))];
+                                    $avatarColors = ['#2563EB','#22C55E','#8B5CF6','#F59E0B','#10B981','#EF4444'];
+                                    $clr = $avatarColors[$session->id % count($avatarColors)];
+                                    $tName = $session->teacher->user->name ?? 'Unknown';
+                                @endphp
+                                <tr class="fade-up">
+                                    {{-- Date --}}
+                                    <td>
+                                        <div style="font-size:12px;font-weight:600;color:var(--text2);">
+                                            {{ $session->attendance_date?->format('M d, Y') }}
+                                        </div>
+                                        <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px;">
+                                            {{ $session->attendance_date?->format('l') }}
+                                        </div>
+                                    </td>
+
+                                    {{-- Teacher --}}
+                                    <td>
+                                        <div class="subject-cell">
+                                            <div class="subject-avatar"
+                                                style="background:{{ $clr }}22;color:{{ $clr }};border:1px solid {{ $clr }}44;font-size:10px;width:34px;height:34px;border-radius:50%;">
+                                                {{ strtoupper(substr($tName, 0, 2)) }}
+                                            </div>
+                                            <div>
+                                                <div class="subject-name">{{ $tName }}</div>
+                                                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.04em;">
+                                                    {{ $session->teacher->department->name ?? 'No dept.' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {{-- Subject --}}
+                                    <td>
+                                        <div style="font-size:12px;font-weight:600;color:var(--text2);">
+                                            {{ $session->subject->name ?? '-' }}
+                                        </div>
+                                        <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.04em;">
+                                            {{ $session->classGroup->name ?? $session->classRoom->name ?? 'No group' }}
+                                        </div>
+                                    </td>
+
+                                    {{-- Status badge --}}
+                                    <td>
+                                        <span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:99px;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.08em;background:{{ $sc['bg'] }};color:{{ $sc['color'] }};border:1px solid {{ $sc['border'] }};">
+                                            {{ $sc['label'] }}
+                                        </span>
+                                    </td>
+
+                                    {{-- Timing Details --}}
+                                    <td>
+                                        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);display:flex;flex-direction:column;gap:3px;">
+                                            <div>
+                                                <span style="color:var(--muted2);">SCHED:</span> {{ $session->scheduled_start_time?->format('H:i') }} - {{ $session->scheduled_end_time?->format('H:i') }}
+                                            </div>
+                                            <div>
+                                                <span style="color:var(--muted2);">ACTUAL:</span> {{ $session->check_in_time?->format('H:i') ?? '-' }} - {{ $session->check_out_time?->format('H:i') ?? '-' }}
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {{-- Hours --}}
+                                    <td style="text-align:right;">
+                                        <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--accent);">
+                                            {{ number_format($session->actual_teaching_hours, 1) }}
+                                        </span>
+                                        <span style="font-size:10px;color:var(--muted);margin-left:2px;">hrs</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    @endif
                 </tbody>
             </table>
         </div>

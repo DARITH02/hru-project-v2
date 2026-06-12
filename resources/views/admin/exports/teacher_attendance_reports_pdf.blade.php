@@ -44,8 +44,8 @@
 
     <div class="meta-grid">
         <div class="meta-item">
-            <span class="meta-label">Selected Range</span>
-            <span class="meta-value">{{ $from->format('M d, Y') }} - {{ $to->format('M d, Y') }}</span>
+            <span class="meta-label">Selected Period</span>
+            <span class="meta-value">{{ $periodLabel ?? ($from->format('M d, Y') . ' - ' . $to->format('M d, Y')) }}</span>
         </div>
         <div class="meta-item">
             <span class="meta-label">Target Teacher</span>
@@ -89,7 +89,7 @@
         </div>
     </div>
 
-    <h2 class="section-title">📊 Registry Log Entries ({{ $sessions->count() }} records)</h2>
+    <h2 class="section-title">📊 Registry Log Entries ({{ $sessions->count() }} records · {{ strtoupper($groupBy ?? 'department') }})</h2>
     @if($sessions->isEmpty())
         <p style="font-size: 11px; color: #666; font-style: italic; padding-left: 10px;">No records match the selected filter criteria.</p>
     @else

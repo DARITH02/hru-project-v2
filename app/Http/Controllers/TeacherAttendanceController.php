@@ -163,7 +163,7 @@ class TeacherAttendanceController extends Controller
 
         return redirect()
             ->route('teacher.attendance.checkout')
-            ->with('success', 'QR check-in recorded for ' . ($session->subject->name ?? 'session') . '. Use checkout when the session ends.');
+            ->with('success', 'QR check-in recorded for ' . ($session->subject->name ?? 'session') . '. Use check-out when the session ends.');
     }
 
     public function checkIn(Request $request, TeacherAttendanceSession $session)

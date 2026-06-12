@@ -783,7 +783,7 @@
                 });
                 if (res.ok) {
                     document.querySelectorAll(`tr[data-id="${pendingDeleteId}"], .instructor-card[data-id="${pendingDeleteId}"]`).forEach(el => el.remove());
-                    showToast('Student record expunged.', 'success');
+                    showToast('Student record deleted.', 'success');
                     closeModal('deleteModal');
                 }
             } catch (e) { showToast('Error deleting record.', 'error'); }

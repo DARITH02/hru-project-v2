@@ -12,8 +12,8 @@
                 <span class="breadcrumb-sep">/</span>
                 <span class="breadcrumb-current">CORRECTIONS</span>
             </div>
-            <h1 class="page-title">Attendance Corrections</h1>
-            <p class="page-subtitle">MISSING CHECK-INS · CHECK-OUTS · STATUS DISPUTES</p>
+            <h1 class="page-title">Teacher Front Requests</h1>
+            <p class="page-subtitle">PERMISSION · STATUS · MISSING CHECK-INS · CHECK-OUTS</p>
         </div>
         <a href="{{ route('admin.teacher-attendance') }}" class="btn-secondary" style="gap:7px;">
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,16 +33,144 @@
         </div>
     @endif
 
+    @php
+        $currentStatus = request('status', 'all');
+        $showAbsentMenu = request('view') === 'absent';
+        $statusButtons = [
+            'all' => ['label' => '1 ALL', 'color' => 'var(--accent)'],
+            'pending' => ['label' => '2 PENDING', 'color' => 'var(--amber)'],
+            'approved' => ['label' => '3 APPROVED', 'color' => 'var(--green)'],
+            'rejected' => ['label' => '4 REJECTED', 'color' => 'var(--red)'],
+        ];
+    @endphp
+    <div class="panel" style="padding:12px 14px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            @foreach($statusButtons as $statusKey => $button)
+                @php
+                    $active = !$showAbsentMenu && ($currentStatus === $statusKey || ($statusKey === 'all' && !request()->filled('status')));
+                    $url = $statusKey === 'all'
+                        ? route('admin.teacher-attendance.corrections')
+                        : route('admin.teacher-attendance.corrections', ['status' => $statusKey]);
+                @endphp
+                <a href="{{ $url }}"
+                    class="{{ $active ? 'btn-primary' : 'btn-secondary' }}"
+                    style="height:38px;padding:0 13px;font-family:var(--font-mono);font-size:10px;font-weight:900;letter-spacing:.08em;gap:8px;{{ $active ? 'background:'.$button['color'].';border-color:'.$button['color'].';color:white;' : 'color:var(--text2);' }}">
+                    <span>{{ $button['label'] }}</span>
+                    <span style="display:inline-flex;min-width:20px;height:20px;padding:0 6px;align-items:center;justify-content:center;border-radius:99px;background:{{ $active ? 'rgba(255,255,255,.18)' : 'var(--surface3)' }};font-size:9px;">
+                        {{ $statusCounts[$statusKey] ?? 0 }}
+                    </span>
+                </a>
+            @endforeach
+            <a href="{{ route('admin.teacher-attendance.corrections', ['view' => 'absent']) }}"
+                class="{{ $showAbsentMenu ? 'btn-primary' : 'btn-secondary' }}"
+                style="height:38px;padding:0 13px;font-family:var(--font-mono);font-size:10px;font-weight:900;letter-spacing:.08em;gap:8px;{{ $showAbsentMenu ? 'background:var(--red);border-color:var(--red);color:white;' : 'color:var(--text2);' }}">
+                <span>5 ABSENT</span>
+                <span style="display:inline-flex;min-width:20px;height:20px;padding:0 6px;align-items:center;justify-content:center;border-radius:99px;background:{{ $showAbsentMenu ? 'rgba(255,255,255,.18)' : 'rgba(239,68,68,.1)' }};color:{{ $showAbsentMenu ? 'white' : 'var(--red)' }};font-size:9px;">
+                    {{ $totalAbsentSessions ?? 0 }}
+                </span>
+            </a>
+        </div>
+    </div>
+
+    @if($showAbsentMenu)
+        <div class="panel">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);"></div>
+                    <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--muted2);font-weight:800;">ABSENT TOTALS BY TEACHER</span>
+                </div>
+                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.08em;">
+                    <span style="color:var(--red);font-weight:900;">{{ $totalAbsentSessions ?? 0 }}</span> TOTAL ABSENTS
+                </div>
+            </div>
+
+            <div class="table-responsive" style="margin-top:12px;">
+                <table class="att-table">
+                    <thead>
+                        <tr>
+                            <th>TEACHER INFO</th>
+                            <th>DEPARTMENT</th>
+                            <th>LATEST ABSENT</th>
+                            <th style="text-align:right;">TOTAL ABSENTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($absentTeacherStats ?? collect() as $absentStat)
+                            @php
+                                $teacherName = $absentStat->teacher?->user?->name ?? 'Unknown Teacher';
+                                $avatarColors = ['#2563EB','#22C55E','#8B5CF6','#F59E0B','#10B981','#EF4444'];
+                                $clr = $avatarColors[((int) $absentStat->teacher_id) % count($avatarColors)];
+                                $latestAbsentDate = $absentStat->latest_absent_date ? \Carbon\Carbon::parse($absentStat->latest_absent_date) : null;
+                            @endphp
+                            <tr class="fade-up">
+                                <td>
+                                    <div class="subject-cell">
+                                        <div class="subject-avatar"
+                                            style="background:{{ $clr }}22;color:{{ $clr }};border:1px solid {{ $clr }}44;font-size:10px;width:34px;height:34px;border-radius:50%;">
+                                            {{ strtoupper(substr($teacherName, 0, 2)) }}
+                                        </div>
+                                        <div>
+                                            <div class="subject-name">{{ $teacherName }}</div>
+                                            <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.04em;">
+                                                TEACHER #{{ $absentStat->teacher_id }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:12px;font-weight:600;color:var(--text2);">
+                                        {{ $absentStat->teacher?->department?->name ?? 'No Department' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);">
+                                        {{ $latestAbsentDate?->format('M d, Y') ?? '-' }}
+                                    </div>
+                                </td>
+                                <td style="text-align:right;">
+                                    <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:30px;border-radius:99px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.25);font-family:var(--font-mono);font-size:13px;font-weight:900;">
+                                        {{ $absentStat->absent_total }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="empty-title">No Absent Records</div>
+                                        <div class="empty-desc">Teachers with absent attendance sessions will appear here.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if(($absentTeacherStats ?? null) instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.08em;">
+                        SHOWING {{ $absentTeacherStats->firstItem() ?? 0 }}–{{ $absentTeacherStats->lastItem() ?? 0 }} OF {{ $absentTeacherStats->total() }} TEACHERS
+                    </span>
+                    @if($absentTeacherStats->hasPages())
+                        {{ $absentTeacherStats->links('vendor.pagination.academy') }}
+                    @endif
+                </div>
+            @endif
+        </div>
+    @else
+
     {{-- ═══ TABLE PANEL ═══ --}}
     <div class="panel">
 
         <div class="catalog-toolbar">
             <div style="display:flex;align-items:center;gap:8px;">
                 <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 2s infinite;"></div>
-                <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--muted2);">CORRECTION QUEUE</span>
+                <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--muted2);">TEACHER FRONT REQUESTS</span>
             </div>
             <div class="toolbar-count">
-                <span>{{ $corrections->total() ?? $corrections->count() }}</span> REQUESTS
+                <span>{{ $corrections->total() ?? $corrections->count() }}</span> REQUESTS ·
+                <span>{{ $absentCounts[$currentStatus] ?? $absentCounts['all'] ?? 0 }}</span> ABSENTS
             </div>
         </div>
 
@@ -51,6 +179,7 @@
                 <thead>
                     <tr>
                         <th>TEACHER</th>
+                        <th>SESSION</th>
                         <th>REQUEST TYPE</th>
                         <th>REQUESTED VALUES</th>
                         <th>STATUS</th>
@@ -80,6 +209,9 @@
                             $avatarColors = ['#2563EB','#22C55E','#8B5CF6','#F59E0B','#10B981','#EF4444'];
                             $clr = $avatarColors[$correction->id % count($avatarColors)];
                             $tName = $correction->teacher->user->name ?? 'Unknown';
+                            $session = $correction->attendanceSession;
+                            $subject = $session?->subject?->name ?? $correction->schedule?->subject?->name ?? 'Subject';
+                            $className = $session?->classRoom?->name ?? $correction->schedule?->classRoom?->name ?? 'Class';
                         @endphp
                         <tr class="fade-up">
 
@@ -96,6 +228,21 @@
                                             {{ $correction->created_at->format('M d, Y H:i') }}
                                         </div>
                                     </div>
+                                </div>
+                            </td>
+
+                            {{-- Session --}}
+                            <td>
+                                <div style="font-size:12px;font-weight:600;color:var(--text2);">{{ $subject }}</div>
+                                <div style="font-size:10px;color:var(--muted);margin-top:2px;">{{ $className }}</div>
+                                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:3px;">
+                                    @if($session)
+                                        {{ $session->attendance_date?->format('M d') }} · {{ $session->scheduled_start_time?->format('H:i') }} – {{ $session->scheduled_end_time?->format('H:i') }}
+                                    @elseif($correction->schedule)
+                                        {{ $correction->schedule->schedule_date?->format('M d') }} · {{ $correction->schedule->scheduled_start_time?->format('H:i') }} – {{ $correction->schedule->scheduled_end_time?->format('H:i') }}
+                                    @else
+                                        No session linked
+                                    @endif
                                 </div>
                             </td>
 
@@ -177,7 +324,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 <div class="empty-state">
                                     <div class="empty-icon">
                                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,14 +342,18 @@
             </table>
         </div>
 
-        @if($corrections instanceof \Illuminate\Pagination\LengthAwarePaginator && $corrections->hasPages())
-            <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        @if($corrections instanceof \Illuminate\Pagination\LengthAwarePaginator)
+            <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.08em;">
-                    SHOWING {{ $corrections->firstItem() }}–{{ $corrections->lastItem() }} OF {{ $corrections->total() }}
+                    SHOWING {{ $corrections->firstItem() ?? 0 }}–{{ $corrections->lastItem() ?? 0 }} OF {{ $corrections->total() }}
+                    · ABSENTS {{ $absentCounts[$currentStatus] ?? $absentCounts['all'] ?? 0 }}
                 </span>
-                {{ $corrections->links('vendor.pagination.academy') }}
+                @if($corrections->hasPages())
+                    {{ $corrections->links('vendor.pagination.academy') }}
+                @endif
             </div>
         @endif
     </div>
+    @endif
 
 @endsection

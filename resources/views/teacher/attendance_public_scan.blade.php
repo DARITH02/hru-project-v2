@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -78,7 +78,7 @@
             </form>
         @endif
 
-        <p class="help">Check in on session 1 to auto check in later same-subject sessions. Choose checkout when session 2 or the latest open session ends. @if($requireLocation) Checkout must use the same location as check-in. @endif</p>
+        <p class="help">Check in on session 1 to auto check in later same-subject sessions. Choose check-out when session 2 or the latest open session ends. @if($requireLocation) Check-out must use the same location as check-in. @endif</p>
     </main>
     <script>
         const requireLocation = @json($requireLocation);
@@ -121,5 +121,6 @@
         if (!requireLocation && submitAttendance) submitAttendance.disabled = false;
         if (enableLocation) enableLocation.addEventListener('click', requestLocation);
     </script>
+@include('partials.legacy-translator')
 </body>
 </html>

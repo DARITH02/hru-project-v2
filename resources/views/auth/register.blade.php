@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -831,7 +831,7 @@ document.getElementById('email').addEventListener('blur', function () {
 document.getElementById('admin_key').addEventListener('input', function() {
     var hint = document.getElementById('hint-admin-key');
     if (this.value.length > 0) {
-        hint.textContent = 'Key entered - checking status on server...';
+        hint.textContent = 'Key entered — checking status on server...';
         hint.style.color = 'var(--accent)';
     } else {
         hint.textContent = 'Leave blank for regular Admin account';
@@ -921,5 +921,6 @@ document.getElementById('regForm').addEventListener('submit', function (e) {
 });
 </script>
 
+@include('partials.legacy-translator')
 </body>
 </html>

@@ -5,7 +5,7 @@
         $studentCapacity = min(100, max(18, (int) round(($studentCount / max($studentCount + 220, 1)) * 100)));
         $teacherAvailability = min(100, max(12, (int) round(($teacherCount / max($teacherCount + 8, 1)) * 100)));
         $resultHealth = min(100, max(0, (int) round($attendanceRate)));
-        $termLabel = 'Term ' . $semester;
+        $termLabel = __('admin.dashboard.term', ['number' => $semester]);
         $subjectLabels = $subjectPerformance->pluck('name')->values();
         $subjectScores = $subjectPerformance->pluck('avg_score')->values();
         $subjectPassRates = $subjectPerformance->sortByDesc('pass_rate')->values();
@@ -45,8 +45,8 @@
     <div class="sample-admin-dashboard">
         <div class="sample-topline">
             <div>
-                <h1 class="sample-page-title">Dashboard</h1>
-                <p class="sample-page-subtitle">{{ $academicYear }} · {{ $termLabel }} · Academic Overview</p>
+                <h1 class="sample-page-title">{{ __('admin.nav.dashboard') }}</h1>
+                <p class="sample-page-subtitle">{{ $academicYear }} · {{ $termLabel }} · {{ __('admin.dashboard.academic_overview') }}</p>
             </div>
             <form method="GET" action="{{ route('admin.dashboard') }}" class="sample-toolbar">
                 @if($selectedSubjectId)
@@ -61,8 +61,8 @@
                 </label>
                 <label class="sample-select-wrap">
                     <select name="semester" class="sample-select sample-select--compact" onchange="this.form.submit()">
-                        <option value="1" @selected($semester === 1)>Term 1</option>
-                        <option value="2" @selected($semester === 2)>Term 2</option>
+                        <option value="1" @selected($semester === 1)>{{ __('admin.dashboard.term', ['number' => 1]) }}</option>
+                        <option value="2" @selected($semester === 2)>{{ __('admin.dashboard.term', ['number' => 2]) }}</option>
                     </select>
                 </label>
                 <div class="sample-period-pill">{{ $academicYear }} · {{ $termLabel }}</div>
@@ -75,12 +75,12 @@
                     <div class="sample-metric-icon tone-blue">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
-                    <span class="sample-badge sample-badge--green">{{ $departmentCount }} depts</span>
+                    <span class="sample-badge sample-badge--green">{{ __('admin.dashboard.depts', ['count' => $departmentCount]) }}</span>
                 </div>
                 <div class="sample-metric-value">{{ number_format($studentCount) }}</div>
-                <div class="sample-metric-label">Total Students</div>
+                <div class="sample-metric-label">{{ __('admin.dashboard.total_students') }}</div>
                 <div class="sample-progress"><div class="sample-progress-fill tone-blue" style="width: {{ $studentCapacity }}%"></div></div>
-                <div class="sample-metric-meta"><span>{{ $studentCapacity }}% capacity</span><span class="metric-up">this term</span></div>
+                <div class="sample-metric-meta"><span>{{ __('admin.dashboard.capacity', ['value' => $studentCapacity]) }}</span><span class="metric-up">{{ __('admin.dashboard.this_term') }}</span></div>
             </article>
 
             <article class="sample-card sample-metric-card">
@@ -88,12 +88,12 @@
                     <div class="sample-metric-icon tone-emerald">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>
                     </div>
-                    <span class="sample-badge sample-badge--green">{{ $subjectCount }} subjects</span>
+                    <span class="sample-badge sample-badge--green">{{ __('admin.dashboard.subjects_count', ['count' => $subjectCount]) }}</span>
                 </div>
                 <div class="sample-metric-value">{{ number_format($teacherCount) }}</div>
-                <div class="sample-metric-label">Active Teachers</div>
+                <div class="sample-metric-label">{{ __('admin.dashboard.active_teachers') }}</div>
                 <div class="sample-progress"><div class="sample-progress-fill tone-emerald" style="width: {{ $teacherAvailability }}%"></div></div>
-                <div class="sample-metric-meta"><span>{{ $teacherAvailability }}% load balance</span><span class="metric-up">{{ $classCount }} classes</span></div>
+                <div class="sample-metric-meta"><span>{{ __('admin.dashboard.load_balance', ['value' => $teacherAvailability]) }}</span><span class="metric-up">{{ __('admin.dashboard.classes_count', ['count' => $classCount]) }}</span></div>
             </article>
 
             <article class="sample-card sample-metric-card">
@@ -101,12 +101,12 @@
                     <div class="sample-metric-icon tone-amber">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                     </div>
-                    <span class="sample-badge sample-badge--amber">{{ $classCount }} sessions</span>
+                    <span class="sample-badge sample-badge--amber">{{ __('admin.dashboard.sessions_count', ['count' => $classCount]) }}</span>
                 </div>
                 <div class="sample-metric-value">{{ $attendanceRate }}%</div>
-                <div class="sample-metric-label">Avg. Attendance</div>
+                <div class="sample-metric-label">{{ __('admin.dashboard.avg_attendance') }}</div>
                 <div class="sample-progress"><div class="sample-progress-fill tone-amber" style="width: {{ $resultHealth }}%"></div></div>
-                <div class="sample-metric-meta"><span>{{ $attendanceAbsenceRate }}% absence</span><span class="metric-down">live attendance data</span></div>
+                <div class="sample-metric-meta"><span>{{ __('admin.dashboard.absence', ['value' => $attendanceAbsenceRate]) }}</span><span class="metric-down">{{ __('admin.dashboard.live_attendance_data') }}</span></div>
             </article>
 
             <article class="sample-card sample-metric-card">
@@ -114,12 +114,12 @@
                     <div class="sample-metric-icon tone-rose">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     </div>
-                    <span class="sample-badge sample-badge--green">{{ number_format($resultCount) }} scores</span>
+                    <span class="sample-badge sample-badge--green">{{ __('admin.dashboard.scores_count', ['count' => number_format($resultCount)]) }}</span>
                 </div>
                 <div class="sample-metric-value">{{ $passRate }}%</div>
-                <div class="sample-metric-label">Pass Rate</div>
+                <div class="sample-metric-label">{{ __('admin.dashboard.pass_rate') }}</div>
                 <div class="sample-progress"><div class="sample-progress-fill tone-rose" style="width: {{ $passRate }}%"></div></div>
-                <div class="sample-metric-meta"><span>{{ $averageScore }}/100 avg score</span><span class="metric-up">current term</span></div>
+                <div class="sample-metric-meta"><span>{{ __('admin.dashboard.avg_score', ['value' => $averageScore]) }}</span><span class="metric-up">{{ __('admin.dashboard.current_term') }}</span></div>
             </article>
         </div>
 
@@ -127,12 +127,12 @@
             <section class="sample-card sample-card--span-2">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Attendance Trend</h3>
-                        <p class="sample-card-subtitle">Recent student and teacher attendance rate</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.attendance_trend') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.attendance_trend_subtitle') }}</p>
                     </div>
                     <div class="sample-legend">
-                        <span><i class="tone-blue"></i>Students</span>
-                        <span><i class="tone-emerald"></i>Teachers</span>
+                        <span><i class="tone-blue"></i>{{ __('admin.dashboard.students') }}</span>
+                        <span><i class="tone-emerald"></i>{{ __('admin.dashboard.teachers') }}</span>
                     </div>
                 </div>
                 <div class="sample-chart h-52"><canvas id="attendanceChart"></canvas></div>
@@ -141,8 +141,8 @@
             <section class="sample-card">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Major Comparison</h3>
-                        <p class="sample-card-subtitle">Average student score across all majors</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.major_comparison') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.major_comparison_subtitle') }}</p>
                     </div>
                 </div>
                 @if($hasMajorComparisonData)
@@ -155,8 +155,8 @@
                                 <path d="M7 14l3-3 3 2 4-5"/>
                             </svg>
                         </div>
-                        <div class="sample-grade-empty__title">No major comparison yet</div>
-                        <div class="sample-grade-empty__desc">No student score data is available for the selected term.</div>
+                        <div class="sample-grade-empty__title">{{ __('admin.dashboard.no_major_comparison') }}</div>
+                        <div class="sample-grade-empty__desc">{{ __('admin.dashboard.no_major_comparison_desc') }}</div>
                     </div>
                 @endif
                 <div class="sample-grade-list">
@@ -185,13 +185,13 @@
             <section class="sample-card sample-card--span-2">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Subject Performance</h3>
-                        <p class="sample-card-subtitle">Average scores by subject this term</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.subject_performance') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.subject_performance_subtitle') }}</p>
                     </div>
                     <div class="sample-inline-filter">
                         <label class="sample-select-wrap">
                             <select name="subject_id" id="subjectPerformanceSelect" class="sample-select">
-                                <option value="">All subjects</option>
+                                <option value="">{{ __('admin.dashboard.all_subjects') }}</option>
                                 @foreach($subjectOptions as $subject)
                                     <option value="{{ $subject->id }}" @selected($selectedSubjectId === (int) $subject->id)>{{ $subject->name }}</option>
                                 @endforeach
@@ -205,8 +205,8 @@
             <section class="sample-card">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Pass Rate by Subject</h3>
-                        <p class="sample-card-subtitle">Ranked by performance</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.pass_rate_by_subject') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.ranked_by_performance') }}</p>
                     </div>
                 </div>
                 <div class="sample-rank-list" id="subjectPassRateList">
@@ -224,21 +224,21 @@
             <section class="sample-card sample-card--span-2">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Teacher Status</h3>
-                        <p class="sample-card-subtitle">Current load and average class results</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.teacher_status') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.teacher_status_subtitle') }}</p>
                     </div>
-                    <div class="sample-filter-pill">{{ $teacherRows->count() }} visible</div>
+                    <div class="sample-filter-pill">{{ __('admin.dashboard.visible', ['count' => $teacherRows->count()]) }}</div>
                 </div>
                 <div class="sample-table-wrap">
                     <table class="sample-table">
                         <thead>
                             <tr>
-                                <th>Teacher</th>
-                                <th>Subject</th>
-                                <th>Students</th>
-                                <th>Avg Score</th>
-                                <th>Load</th>
-                                <th>Status</th>
+                                <th>{{ __('admin.dashboard.teacher') }}</th>
+                                <th>{{ __('admin.dashboard.subject') }}</th>
+                                <th>{{ __('admin.dashboard.students') }}</th>
+                                <th>{{ __('admin.dashboard.avg_score_short') }}</th>
+                                <th>{{ __('admin.dashboard.load') }}</th>
+                                <th>{{ __('admin.dashboard.status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -271,7 +271,7 @@
                 <section class="sample-card">
                     <div class="sample-card-head">
                         <div>
-                            <h3 class="sample-card-title">Student Alerts</h3>
+                            <h3 class="sample-card-title">{{ __('admin.dashboard.student_alerts') }}</h3>
                         </div>
                     </div>
                     <div class="sample-alert-list">
@@ -293,7 +293,7 @@
                 <section class="sample-card">
                     <div class="sample-card-head">
                         <div>
-                            <h3 class="sample-card-title">Activity Feed</h3>
+                            <h3 class="sample-card-title">{{ __('admin.dashboard.activity_feed') }}</h3>
                         </div>
                     </div>
                     <div class="sample-activity-list">
@@ -352,12 +352,12 @@
             <section class="sample-card sample-card--span-2">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Monthly Enrollment vs Graduates</h3>
-                        <p class="sample-card-subtitle">Last 6 months from the student table</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.monthly_enrollment') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.monthly_enrollment_subtitle') }}</p>
                     </div>
                     <div class="sample-legend">
-                        <span><i class="tone-blue"></i>Enrolled</span>
-                        <span><i class="tone-emerald"></i>Graduates</span>
+                        <span><i class="tone-blue"></i>{{ __('admin.dashboard.enrolled') }}</span>
+                        <span><i class="tone-emerald"></i>{{ __('admin.dashboard.graduates') }}</span>
                     </div>
                 </div>
                 <div class="sample-chart h-48"><canvas id="enrollChart"></canvas></div>
@@ -366,8 +366,8 @@
             <section class="sample-card">
                 <div class="sample-card-head">
                     <div>
-                        <h3 class="sample-card-title">Operational Radar</h3>
-                        <p class="sample-card-subtitle">Live delivery health across core indicators</p>
+                        <h3 class="sample-card-title">{{ __('admin.dashboard.operational_radar') }}</h3>
+                        <p class="sample-card-subtitle">{{ __('admin.dashboard.operational_radar_subtitle') }}</p>
                     </div>
                 </div>
                 <div class="sample-chart h-52"><canvas id="radarChart"></canvas></div>
@@ -388,8 +388,8 @@
 
         <div class="sample-footer">
             {{-- <span>Academic year {{ $academicYear }} </span> --}}
-            <span>Developed by <strong>Darith</strong> Team</span>
-            <span>© {{ explode('-', $academicYear)[0] ?? now()->year }} HRU Dashboard</span>
+            <span>{{ __('admin.dashboard.developed_by') }} <strong>Darith</strong> {{ __('admin.dashboard.team') }}</span>
+            <span>© {{ explode('-', $academicYear)[0] ?? now()->year }} {{ __('admin.dashboard.hru_dashboard') }}</span>
         </div>
     </div>
 @endsection
@@ -448,8 +448,8 @@
                     data: {
                         labels: @json($attendanceLabels),
                         datasets: [
-                            { label:'Students', data:@json($attendanceStudentSeries), borderColor:'#4f7cff', backgroundColor:'rgba(79,124,255,0.08)', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#4f7cff', pointBorderColor:activeTheme.surface, pointBorderWidth:2, fill:true, tension:0.4 },
-                            { label:'Teachers', data:@json($attendanceTeacherSeries), borderColor:'#22d3a5', backgroundColor:'rgba(34,211,165,0.06)', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#22d3a5', pointBorderColor:activeTheme.surface, pointBorderWidth:2, fill:true, tension:0.4, borderDash:[5,3] }
+                            { label:@json(__('admin.dashboard.students')), data:@json($attendanceStudentSeries), borderColor:'#4f7cff', backgroundColor:'rgba(79,124,255,0.08)', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#4f7cff', pointBorderColor:activeTheme.surface, pointBorderWidth:2, fill:true, tension:0.4 },
+                            { label:@json(__('admin.dashboard.teachers')), data:@json($attendanceTeacherSeries), borderColor:'#22d3a5', backgroundColor:'rgba(34,211,165,0.06)', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#22d3a5', pointBorderColor:activeTheme.surface, pointBorderWidth:2, fill:true, tension:0.4, borderDash:[5,3] }
                         ]
                     },
                     options: {
@@ -470,7 +470,7 @@
                     data: {
                         labels:@json($majorLabels),
                         datasets:[{
-                            label:'Average Score',
+                            label:@json(__('admin.dashboard.average_score')),
                             data:@json($majorScores),
                             backgroundColor:@json($majorColors),
                             borderRadius:8,
@@ -495,7 +495,7 @@
                     type:'bar',
                     data: {
                         labels:@json($subjectLabels),
-                        datasets:[{ label:'Avg Score', data:@json($subjectScores), backgroundColor:@json($subjectColors), borderRadius:6, borderSkipped:false }]
+                        datasets:[{ label:@json(__('admin.dashboard.avg_score_short')), data:@json($subjectScores), backgroundColor:@json($subjectColors), borderRadius:6, borderSkipped:false }]
                     },
                     options: {
                         responsive:true, maintainAspectRatio:false,
@@ -516,8 +516,8 @@
                     data: {
                         labels:@json($enrollmentSeries['labels']),
                         datasets:[
-                            { label:'Enrolled', data:@json($enrollmentSeries['enrolled']), backgroundColor:'rgba(79,124,255,0.75)', borderRadius:5, borderSkipped:false },
-                            { label:'Graduates', data:@json($enrollmentSeries['graduated']), backgroundColor:'rgba(34,211,165,0.75)', borderRadius:5, borderSkipped:false }
+                            { label:@json(__('admin.dashboard.enrolled')), data:@json($enrollmentSeries['enrolled']), backgroundColor:'rgba(79,124,255,0.75)', borderRadius:5, borderSkipped:false },
+                            { label:@json(__('admin.dashboard.graduates')), data:@json($enrollmentSeries['graduated']), backgroundColor:'rgba(34,211,165,0.75)', borderRadius:5, borderSkipped:false }
                         ]
                     },
                     options: {
@@ -538,8 +538,8 @@
                     data: {
                         labels:@json($radarMetrics['labels']),
                         datasets:[
-                            { label:'Current', data:@json($radarMetrics['series']), backgroundColor:'rgba(79,124,255,0.15)', borderColor:'#4f7cff', borderWidth:2, pointBackgroundColor:'#4f7cff', pointRadius:4 },
-                            { label:'Target', data:@json($radarMetrics['target']), backgroundColor:'rgba(34,211,165,0.06)', borderColor:'rgba(34,211,165,0.4)', borderWidth:1.5, borderDash:[4,3], pointRadius:0 }
+                            { label:@json(__('admin.dashboard.current')), data:@json($radarMetrics['series']), backgroundColor:'rgba(79,124,255,0.15)', borderColor:'#4f7cff', borderWidth:2, pointBackgroundColor:'#4f7cff', pointRadius:4 },
+                            { label:@json(__('admin.dashboard.target')), data:@json($radarMetrics['target']), backgroundColor:'rgba(34,211,165,0.06)', borderColor:'rgba(34,211,165,0.4)', borderWidth:1.5, borderDash:[4,3], pointRadius:0 }
                         ]
                     },
                     options: {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,7 @@
         @endphp
         <div class="icon">✓</div>
         <h1>{{ $isCheckout ? 'Checkout Submitted' : 'Check-In Submitted' }}</h1>
-        <p>{{ $isCheckout ? 'Your QR checkout has been recorded.' : 'Your QR check-in has been recorded.' }}</p>
+        <p>{{ $isCheckout ? 'Your QR check-out has been recorded.' : 'Your QR check-in has been recorded.' }}</p>
         <section class="meta">
             <div><span>Subject</span><strong>{{ $session->subject->name ?? 'Subject' }}</strong></div>
             <div><span>Session</span><strong>{{ $session->session_number }}</strong></div>
@@ -28,5 +28,6 @@
             <div><span>Checkout</span><strong>{{ $session->check_out_time?->format('H:i') ?? '-' }}</strong></div>
         </section>
     </main>
+@include('partials.legacy-translator')
 </body>
 </html>

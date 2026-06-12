@@ -49,7 +49,7 @@
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section-label">Main</div>
+            <div class="nav-section-label">{{ __('admin.sections.main') }}</div>
 
             <a href="{{ route('admin.dashboard') }}"
                 class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -62,7 +62,7 @@
                         <rect x="14" y="18" width="7" height="3" rx="1.5" />
                     </svg>
                 </span>
-                <span class="nav-text">Dashboard</span>
+                <span class="nav-text">{{ __('admin.nav.dashboard') }}</span>
             </a>
 
             <a href="{{ route('admin.results') }}"
@@ -75,7 +75,7 @@
                         <path d="M22 10v6" />
                         <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
                     </svg></span>
-                <span class="nav-text">Result & Grading</span>
+                <span class="nav-text">{{ __('admin.nav.result_grading') }}</span>
             </a>
 
 
@@ -88,46 +88,46 @@
                         <line x1="12" y1="9" x2="12" y2="13" />
                         <line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg></span>
-                <span class="nav-text">Attendance Issues</span>
+                <span class="nav-text">{{ __('admin.nav.attendance_issues') }}</span>
             </a>
 
 
             @if (Auth::user()->isAdmin())
-                <div class="nav-section-label">Teachers</div>
-                <a href="{{ route('admin.instructors') }}" data-tooltip="Instructors"
+                <div class="nav-section-label">{{ __('admin.sections.teachers') }}</div>
+                <a href="{{ route('admin.instructors') }}" data-tooltip="{{ __('admin.nav.instructors') }}"
                     class="nav-link {{ request()->is('admin/instructors') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="6" cy="5" r="2.5" stroke="currentColor"
                                 stroke-width="1.3" />
                             <path d="M1 13c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Instructors</span></a>
+                        </svg></span><span class="nav-text">{{ __('admin.nav.instructors') }}</span></a>
 
-                <a href="{{ route('admin.teacher-attendance') }}" data-tooltip="Teacher Attendance"
+                <a href="{{ route('admin.teacher-attendance') }}" data-tooltip="{{ __('admin.nav.teacher_attendance') }}"
                     class="nav-link {{ request()->routeIs('admin.teacher-attendance') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M3 2.5h10v11H3z" stroke="currentColor" stroke-width="1.3" />
                             <path d="M5.5 6h5M5.5 9h3" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
                             <path d="M11.5 1.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Teacher Attendance</span></a>
-                <a href="{{ route('admin.teacher-attendance.scan-qr') }}" data-tooltip="Teacher QR Scan"
+                        </svg></span><span class="nav-text">{{ __('admin.nav.teacher_attendance') }}</span></a>
+                <a href="{{ route('admin.teacher-attendance.scan-qr') }}" data-tooltip="{{ __('admin.nav.teacher_qr_scan') }}"
                     class="nav-link {{ request()->is('admin/teacher-attendance/scan-qr') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M2 2h4v4H2V2ZM10 2h4v4h-4V2ZM2 10h4v4H2v-4Z" stroke="currentColor"
                                 stroke-width="1.3" />
                             <path d="M10 10h1.5v1.5H10V10ZM12.5 10H14v4h-4v-1.5h2.5V10Z" stroke="currentColor"
                                 stroke-width="1.3" stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Teacher QR Scan</span></a>
-                <a href="{{ route('admin.teacher-attendance.scan-monitor') }}" data-tooltip="Teacher Scan Monitor"
+                        </svg></span><span class="nav-text">{{ __('admin.nav.teacher_qr_scan') }}</span></a>
+                <a href="{{ route('admin.teacher-attendance.scan-monitor') }}" data-tooltip="{{ __('admin.nav.scan_monitor') }}"
                     class="nav-link {{ request()->is('admin/teacher-attendance/scan-monitor*') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M2.5 3h11v8h-11V3Z" stroke="currentColor" stroke-width="1.3" />
                             <path d="M5 13h6M8 11v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                             <path d="M5 7.5l1.5 1.5L11 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg></span><span class="nav-text">Scan Monitor</span></a>
+                        </svg></span><span class="nav-text">{{ __('admin.nav.scan_monitor') }}</span></a>
 
-                <div class="nav-section-label">Students</div>
+                <div class="nav-section-label">{{ __('admin.sections.students') }}</div>
                 <a href="{{ route('admin.students.overview') }}" class="nav-link {{ request()->routeIs('admin.students.overview') ? 'active' : '' }}">
                     <span class="nav-icon">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -141,25 +141,25 @@
                                 stroke-width="1.3" />
                         </svg>
                     </span>
-                    <span class="nav-text">Overview</span>
+                    <span class="nav-text">{{ __('admin.nav.overview') }}</span>
                 </a>
-                <a href="{{ route('admin.students') }}" data-tooltip="Students"
+                <a href="{{ route('admin.students') }}" data-tooltip="{{ __('admin.nav.students') }}"
                     class="nav-link {{ request()->is('admin/students') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="6" r="2.5" stroke="currentColor"
                                 stroke-width="1.3" />
                             <path d="M2 13c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Students</span></a>
-                <a href="{{ route('admin.permissions') }}" data-tooltip="Permissions"
+                        </svg></span><span class="nav-text">{{ __('admin.nav.students') }}</span></a>
+                <a href="{{ route('admin.permissions') }}" data-tooltip="{{ __('admin.nav.permissions') }}"
                     class="nav-link {{ request()->is('admin/permissions') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M2 13v-8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1Z"
                                 stroke="currentColor" stroke-width="1.3" />
                             <path d="M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Permissions</span></a>
-                <a href="{{ route('admin.classes') }}" data-tooltip="Groups"
+                        </svg></span><span class="nav-text">{{ __('admin.nav.permissions') }}</span></a>
+                <a href="{{ route('admin.classes') }}" data-tooltip="{{ __('admin.nav.student_groups') }}"
                     class="nav-link {{ request()->is('admin/classes') ? 'active' : '' }}"><span class="nav-icon"><svg
                             width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M2 13c0-2.5 1-4 4-4s4 1.5 4 4M2 5a3 3 0 0 1 6 0 3 3 0 0 1-6 0z"
@@ -167,10 +167,10 @@
                             <path d="M10 5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0z" stroke="currentColor"
                                 stroke-width="1.3" />
                             <path d="M12 13c0-2 1-3 3-3s3 1 3 3" stroke="currentColor" stroke-width="1.3" />
-                        </svg></span><span class="nav-text">Student Groups</span></a>
+                        </svg></span><span class="nav-text">{{ __('admin.nav.student_groups') }}</span></a>
 
-                <div class="nav-section-label">Academic Setup</div>
-                <a href="{{ route('admin.departments') }}" data-tooltip="Departments"
+                <div class="nav-section-label">{{ __('admin.sections.academic_setup') }}</div>
+                <a href="{{ route('admin.departments') }}" data-tooltip="{{ __('admin.nav.departments') }}"
                     class="nav-link {{ request()->is('admin/departments') ? 'active' : '' }}"><span class="nav-icon">
 
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -189,9 +189,9 @@
                         </svg>
 
 
-                    </span><span class="nav-text">Departments</span></a>
+                    </span><span class="nav-text">{{ __('admin.nav.departments') }}</span></a>
                 <a href="{{ route('admin.subjects') }}"
-                    class="nav-link {{ request()->is('admin/subjects') ? 'active' : '' }}" data-tooltip="Subjects">
+                    class="nav-link {{ request()->is('admin/subjects') ? 'active' : '' }}" data-tooltip="{{ __('admin.nav.subjects') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" class="lucide lucide-library-big-icon lucide-library-big">
@@ -200,28 +200,28 @@
                         <path
                             d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z" />
                     </svg>
-                    </span><span class="nav-text">Subjects</span></a>
-                <a href="{{ route('admin.courses') }}" data-tooltip="Classes"
+                    </span><span class="nav-text">{{ __('admin.nav.subjects') }}</span></a>
+                <a href="{{ route('admin.courses') }}" data-tooltip="{{ __('admin.nav.academic_classes') }}"
                     class="nav-link {{ request()->is('admin/courses') ? 'active' : '' }}"><span class="nav-icon"><svg
                             width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M3 3h10a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"
                                 stroke="currentColor" stroke-width="1.3" />
                             <path d="M5 3V2M11 3V2M1 6h14" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
-                        </svg></span><span class="nav-text">Academic Classes</span></a>
+                        </svg></span><span class="nav-text">{{ __('admin.nav.academic_classes') }}</span></a>
 
 
-                <div class="nav-section-label">System</div>
-                <a href="{{ route('admin.teacher-accounts') }}" data-tooltip="Accounts"
+                <div class="nav-section-label">{{ __('admin.sections.system') }}</div>
+                <a href="{{ route('admin.teacher-accounts') }}" data-tooltip="{{ __('admin.nav.accounts') }}"
                     class="nav-link {{ request()->is('admin/teacher-accounts') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M1 14.5V13a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v1.5" stroke="currentColor"
                                 stroke-width="1.3" />
                             <circle cx="8" cy="5" r="3.5" stroke="currentColor"
                                 stroke-width="1.3" />
-                        </svg></span><span class="nav-text">Accounts</span></a>
+                        </svg></span><span class="nav-text">{{ __('admin.nav.accounts') }}</span></a>
                 @if (Auth::user()->isSuperAdmin())
-                    <a href="{{ route('admin.settings') }}" data-tooltip="Settings"
+                    <a href="{{ route('admin.settings') }}" data-tooltip="{{ __('admin.nav.settings') }}"
                         class="nav-link {{ request()->is('admin/settings') ? 'active' : '' }}"><span
                             class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                 <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor"
@@ -229,13 +229,20 @@
                                 <path
                                     d="M8 1v1M8 14v1M1 8h1M14 8h1M3.05 3.05l.7.7M12.25 12.25l.7.7M3.05 12.25l.7-.7M12.25 3.05l.7-.7"
                                     stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-                            </svg></span><span class="nav-text">Settings</span></a>
+                            </svg></span><span class="nav-text">{{ __('admin.nav.settings') }}</span></a>
+                    <a href="{{ route('admin.backup-restore') }}" data-tooltip="{{ __('admin.nav.backup_restore') }}"
+                        class="nav-link {{ request()->is('admin/backup-restore*') ? 'active' : '' }}"><span
+                            class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 3.5h10v9H3z" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M5.5 6.5h5M5.5 9.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                                <path d="M8 1.5v2M8 12.5v2M6.5 13.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg></span><span class="nav-text">{{ __('admin.nav.backup_restore') }}</span></a>
                 @endif
 
             @endif
 
             @if (Auth::user()->role === 'teacher')
-                <div class="nav-section-label">Academic</div>
+                <div class="nav-section-label">{{ __('admin.sections.academic') }}</div>
                 <a href="{{ route('teacher.attendance') }}"
                     class="nav-link {{ request()->is('teacher/attendance') ? 'active' : '' }}">
                     <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -243,7 +250,7 @@
                             <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                             <path d="M11.5 1.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                         </svg></span>
-                    <span class="nav-text">Attendance</span>
+                    <span class="nav-text">{{ __('admin.nav.attendance') }}</span>
                 </a>
                 <a href="{{ route('teacher.attendance.scan') }}"
                     class="nav-link {{ request()->is('teacher/attendance/scan') ? 'active' : '' }}">
@@ -253,7 +260,7 @@
                             <path d="M10 10h1.5v1.5H10V10ZM12.5 10H14v4h-4v-1.5h2.5V10Z" stroke="currentColor"
                                 stroke-width="1.3" stroke-linecap="round" />
                         </svg></span>
-                    <span class="nav-text">QR Check-In</span>
+                    <span class="nav-text">{{ __('admin.nav.qr_check_in') }}</span>
                 </a>
                 <a href="{{ route('teacher.attendance.checkout') }}"
                     class="nav-link {{ request()->is('teacher/attendance/checkout') ? 'active' : '' }}">
@@ -262,14 +269,14 @@
                                 stroke-linecap="round" stroke-linejoin="round" />
                             <path d="M13 2.5v11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                         </svg></span>
-                    <span class="nav-text">Checkout</span>
+                    <span class="nav-text">{{ __('admin.nav.checkout') }}</span>
                 </a>
                 <a href="/teacher/reports" class="nav-link {{ request()->is('teacher/reports') ? 'active' : '' }}">
                     <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <path d="M2 3h12v10H2V3Z" stroke="currentColor" stroke-width="1.3" />
                             <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                         </svg></span>
-                    <span class="nav-text">Reports</span>
+                    <span class="nav-text">{{ __('admin.nav.reports') }}</span>
                 </a>
             @endif
         </nav>
@@ -290,7 +297,7 @@
             <form action="{{ route('logout') }}" method="POST" style="display:inline;">
                 @csrf
                 <button type="submit" class="action-btn"
-                    style="border:none; background:transparent; padding:0; cursor:pointer;" title="Logout">
+                    style="border:none; background:transparent; padding:0; cursor:pointer;" title="{{ __('admin.logout') }}">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
                         stroke-width="1.5">
                         <path d="M10 3H13a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-3M6 12l-4-4 4-4M2 8h8" stroke-linecap="round"
@@ -304,7 +311,7 @@
     <!-- TOPBAR -->
     <header class="topbar">
         <div class="topbar-left" style="display:flex; align-items:center; gap:20px;">
-            <button id="sidebar-toggle" class="topbar-btn" title="Toggle Sidebar">
+            <button id="sidebar-toggle" class="topbar-btn" title="{{ __('admin.toggle_sidebar') }}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -312,7 +319,7 @@
                     <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
             </button>
-            <div class="sys-badge mobile-hidden">SYSTEM OPTIMAL</div>
+            <div class="sys-badge mobile-hidden">{{ __('admin.system_optimal') }}</div>
             <div class="mobile-hidden" style="height:24px; width:1px; background:var(--border);"></div>
             <div style="display:flex; align-items:baseline; gap:8px;">
                 <div id="live-clock"
@@ -325,9 +332,20 @@
         </div>
         <div class="topbar-right" style="display:flex; align-items:center; gap:16px;">
             <div style="display:flex; align-items:center; gap:8px;">
+                @php
+                    $nextLocale = app()->getLocale() === 'km' ? 'en' : 'km';
+                    $nextLocaleLabel = config("app.supported_locales.$nextLocale");
+                @endphp
+                <form class="language-switcher" action="{{ route('language.switch', $nextLocale) }}" method="POST"
+                    aria-label="{{ __('admin.language') }}">
+                    @csrf
+                    <button type="submit" class="language-switcher__btn" title="{{ $nextLocaleLabel }}">
+                        {{ $nextLocale === 'km' ? 'ខ្មែរ' : 'EN' }}
+                    </button>
+                </form>
                 <div id="theme-toggle"
                     style="width:34px; height:34px; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted2); cursor:pointer;"
-                    title="Change Mode">
+                    title="{{ __('admin.change_mode') }}">
                     <svg id="theme-icon" width="14" height="14" viewBox="0 0 16 16" fill="none"
                         stroke="currentColor" stroke-width="1.3">
                         <path
@@ -337,7 +355,7 @@
                 <div id="notif-wrapper" style="position:relative;">
                     <div id="notif-bell"
                         style="width:34px; height:34px; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted2); cursor:pointer; position:relative;"
-                        title="Notifications">
+                        title="{{ __('admin.notifications') }}">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                             <path d="M8 1a5 5 0 0 1 5 5v3.5l1.5 1.5H1.5L3 9.5V6a5 5 0 0 1 5-5Z" stroke="currentColor"
                                 stroke-width="1.3" />
@@ -355,22 +373,21 @@
                             style="padding:12px 16px; border-bottom:1px solid var(--border); background:var(--surface3);">
                             <div
                                 style="font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--text); letter-spacing:.1em; display:flex; justify-content:space-between; align-items:center;">
-                                <span>LATEST ACTIVITY</span>
+                                <span>{{ __('admin.latest_activity') }}</span>
                                 <span
-                                    style="background:var(--accent); color:white; padding:2px 6px; border-radius:4px; font-size:8px;">LIVE</span>
+                                    style="background:var(--accent); color:white; padding:2px 6px; border-radius:4px; font-size:8px;">{{ __('admin.live') }}</span>
                             </div>
                         </div>
                         <div id="notif-list" style="max-height:300px; overflow-y:auto; padding:5px 0;">
                             <div
                                 style="padding:25px; text-align:center; color:var(--muted); font-size:10px; font-family:var(--font-mono);">
-                                NO RECENT EVENTS
+                                {{ __('admin.no_recent_events') }}
                             </div>
                         </div>
                         <div
                             style="padding:10px; border-top:1px solid var(--border); text-align:center; background:var(--surface3);">
                             <a href="#"
-                                style="font-family:var(--font-mono); font-size:8px; color:var(--accent); font-weight:700; text-decoration:none; letter-spacing:.05em;">VIEW
-                                FULL LOGS</a>
+                                style="font-family:var(--font-mono); font-size:8px; color:var(--accent); font-weight:700; text-decoration:none; letter-spacing:.05em;">{{ __('admin.view_full_logs') }}</a>
                         </div>
                     </div>
                 </div>
@@ -387,7 +404,7 @@
         </div>
     </main>
 
-    <div class="toast" id="toast">Copied!</div>
+    <div class="toast" id="toast">{{ __('admin.copied') }}</div>
 
     <script>
         const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -409,6 +426,85 @@
             div.textContent = str;
             return div.innerHTML;
         };
+
+        const legacyTranslations = @json(is_array(trans('admin_legacy')) ? trans('admin_legacy') : []);
+        const normalizeLegacyText = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+        window.__t = function(value) {
+            const text = normalizeLegacyText(value);
+            if (legacyTranslations[text]) return legacyTranslations[text];
+            return value;
+        };
+
+        function translateLegacyNode(root = document.body) {
+            if (!legacyTranslations || !Object.keys(legacyTranslations).length || !root) return;
+
+            const translateElementAttributes = (el) => {
+                if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
+                ['placeholder', 'title', 'aria-label'].forEach((attr) => {
+                    if (!el.hasAttribute(attr)) return;
+                    const current = el.getAttribute(attr);
+                    const translated = window.__t(current);
+                    if (translated !== current) el.setAttribute(attr, translated);
+                });
+            };
+
+            const translateTextNode = (node) => {
+                const parent = node.parentElement;
+                if (!parent || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) return;
+                const original = node.nodeValue;
+                const trimmed = normalizeLegacyText(original);
+                if (!trimmed) return;
+                const translated = window.__t(trimmed);
+                if (translated === trimmed) return;
+                node.nodeValue = original.replace(trimmed, translated);
+            };
+
+            if (root.nodeType === Node.TEXT_NODE) {
+                translateTextNode(root);
+                return;
+            }
+
+            if (root.nodeType === Node.ELEMENT_NODE) {
+                translateElementAttributes(root);
+            }
+
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+            let node;
+            while ((node = walker.nextNode())) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    translateTextNode(node);
+                } else {
+                    translateElementAttributes(node);
+                }
+            }
+        }
+
+        if (Object.keys(legacyTranslations).length) {
+            const nativeConfirm = window.confirm.bind(window);
+            window.confirm = (message) => nativeConfirm(window.__t(message));
+
+            const bootLegacyTranslator = () => {
+                translateLegacyNode();
+
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        mutation.addedNodes.forEach((node) => translateLegacyNode(node));
+                        if (mutation.type === 'characterData') translateLegacyNode(mutation.target.parentElement);
+                    });
+                });
+                observer.observe(document.body, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true,
+                });
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bootLegacyTranslator, { once: true });
+            } else {
+                bootLegacyTranslator();
+            }
+        }
 
         function updateClock() {
             const now = window.getServerTime();
@@ -435,7 +531,7 @@
         function showToast(msg) {
             const t = document.getElementById('toast');
             if (!t) return;
-            t.innerText = msg;
+            t.innerText = window.__t ? window.__t(msg) : msg;
             t.style.display = 'flex';
             setTimeout(() => t.style.display = 'none', 3000);
         }

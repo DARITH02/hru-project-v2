@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Events\TeacherAttendanceUpdated;
+use App\Models\ActivityLog;
 use App\Models\AttendanceSession;
+use App\Models\SemesterAssignment;
 use App\Models\Setting;
 use App\Models\Teacher;
 use App\Models\TeacherAttendanceCorrection;
@@ -547,7 +549,8 @@ class TeacherAttendanceService
     public function approveCorrection(TeacherAttendanceCorrection $correction, Request $request): TeacherAttendanceCorrection
     {
         return DB::transaction(function () use ($correction, $request) {
-            $session = $correction->attendanceSession;
+            $session = $correction->attendanceSession
+                ?: ($correction->schedule ? $this->ensureAttendanceSession($correction->schedule, $request->user()?->id) : null);
             if ($session) {
                 $old = $session->toArray();
                 if ($correction->request_type === 'schedule_change') {
@@ -574,6 +577,9 @@ class TeacherAttendanceService
                     'status' => 'completed',
                     'approved_by' => $request->user()?->id,
                 ]);
+                if ($session->attendance_status === 'permission') {
+                    $this->moveLinkedCourseSessionToEnd($session);
+                }
                 $this->log($session, 'correction_approved', $old, $session->fresh()->toArray(), $request, $correction->reason);
                 event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'correction_approved'));
             }
@@ -624,6 +630,170 @@ class TeacherAttendanceService
         $session->attendance_date = $start->toDateString();
         $session->scheduled_start_time = $start;
         $session->scheduled_end_time = $end;
+    }
+
+    private function moveLinkedCourseSessionToEnd(TeacherAttendanceSession $teacherSession): void
+    {
+        $sourceSession = $teacherSession->schedule?->sourceAttendanceSession;
+        if (!$sourceSession) {
+            return;
+        }
+
+        $nextSlot = $this->calculateNextCourseSlotData($sourceSession);
+        if (!$nextSlot) {
+            throw ValidationException::withMessages([
+                'session' => 'Permission approved, but the linked course session could not be moved to the end of the semester.',
+            ]);
+        }
+
+        $sourceSession->update([
+            'start_time' => $nextSlot['start_time'],
+            'end_time' => $nextSlot['end_time'],
+            'checkin_open_time' => $nextSlot['checkin_open_time'],
+            'checkin_close_time' => $nextSlot['checkin_close_time'],
+            'status' => 'scheduled',
+        ]);
+
+        ActivityLog::create([
+            'action' => 'UPDATE',
+            'target' => "session#{$sourceSession->id}.teacher_permission_move_to_end",
+        ]);
+    }
+
+    private function calculateNextCourseSlotData(AttendanceSession $session): ?array
+    {
+        $class = $session->classRoom;
+        if (!$class) {
+            return null;
+        }
+
+        $lastSession = AttendanceSession::where('class_id', $class->id)
+            ->where('academic_year', $session->academic_year)
+            ->where('semester', $session->semester)
+            ->orderBy('start_time', 'desc')
+            ->first();
+
+        if (!$lastSession) {
+            return null;
+        }
+
+        [$allowedDays, $timeSlots] = $this->parseCourseSchedule($class->schedule);
+        if (empty($allowedDays) || empty($timeSlots)) {
+            return null;
+        }
+
+        $currentDate = Carbon::parse($lastSession->start_time)->startOfDay();
+        $lastSlotIndex = -1;
+        $lastStartTime = Carbon::parse($lastSession->start_time)->format('H:i');
+
+        foreach ($timeSlots as $index => $slot) {
+            if ($slot['start'] === $lastStartTime) {
+                $lastSlotIndex = $index;
+                break;
+            }
+        }
+
+        $nextSlotIndex = $lastSlotIndex + 1;
+        if ($nextSlotIndex >= count($timeSlots)) {
+            $nextSlotIndex = 0;
+            $currentDate->addDay();
+        }
+
+        $assignment = SemesterAssignment::where('class_id', $class->id)
+            ->where('academic_year', $session->academic_year)
+            ->where('semester', $session->semester)
+            ->first();
+
+        $maxIterations = 60;
+        while ($maxIterations > 0) {
+            $maxIterations--;
+
+            if (in_array($currentDate->dayOfWeek, $allowedDays, true)) {
+                $inHoliday = $assignment
+                    && $assignment->holiday_start
+                    && $assignment->holiday_end
+                    && $currentDate->between($assignment->holiday_start, $assignment->holiday_end);
+
+                if (!$inHoliday) {
+                    $slot = $timeSlots[$nextSlotIndex];
+                    $start = $currentDate->copy()->setTimeFromTimeString($slot['start']);
+                    $end = $currentDate->copy()->setTimeFromTimeString($slot['end']);
+
+                    return [
+                        'start_time' => $start,
+                        'end_time' => $end,
+                        'checkin_open_time' => $start->copy()->subMinutes(20),
+                        'checkin_close_time' => $start->copy()->addMinutes(20),
+                    ];
+                }
+            }
+
+            $currentDate->addDay();
+            $nextSlotIndex = 0;
+        }
+
+        return null;
+    }
+
+    private function parseCourseSchedule(?string $schedule): array
+    {
+        $schedule = strtolower($schedule ?? '');
+        if (!$schedule) {
+            return [[], []];
+        }
+
+        $daysMap = ['sun' => 0, 'mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6];
+        $allowedDays = [];
+
+        if (str_contains($schedule, 'mon-fri') || str_contains($schedule, 'weekday')) {
+            $allowedDays = [1, 2, 3, 4, 5];
+        } elseif (str_contains($schedule, 'sat/sun') || str_contains($schedule, 'weekend')) {
+            $allowedDays = [6, 0];
+        } elseif (str_contains($schedule, 'everyday') || str_contains($schedule, 'full-week')) {
+            $allowedDays = [0, 1, 2, 3, 4, 5, 6];
+        } elseif (preg_match('/(mon|tue|wed|thu|fri|sat|sun)\s?[-–—]\s?(mon|tue|wed|thu|fri|sat|sun)/i', $schedule, $matches)) {
+            $start = $daysMap[strtolower($matches[1])];
+            $end = $daysMap[strtolower($matches[2])];
+
+            if ($start <= $end) {
+                for ($day = $start; $day <= $end; $day++) {
+                    $allowedDays[] = $day;
+                }
+            } else {
+                for ($day = $start; $day <= 6; $day++) {
+                    $allowedDays[] = $day;
+                }
+                for ($day = 0; $day <= $end; $day++) {
+                    $allowedDays[] = $day;
+                }
+            }
+        } else {
+            foreach ($daysMap as $dayName => $dayNumber) {
+                if (str_contains($schedule, $dayName)) {
+                    $allowedDays[] = $dayNumber;
+                }
+            }
+        }
+
+        if (empty($allowedDays)) {
+            $allowedDays = [1, 2, 3, 4, 5];
+        }
+
+        preg_match_all('/(\d{1,2}:\d{2}(?::\d{2})?)\s?([AP]M)?\s?[-–—]\s?(\d{1,2}:\d{2}(?::\d{2})?)\s?([AP]M)?/i', $schedule, $matches, PREG_SET_ORDER);
+        $timeSlots = [];
+
+        foreach ($matches as $match) {
+            try {
+                $timeSlots[] = [
+                    'start' => Carbon::parse($match[1] . ($match[2] ?? ''))->format('H:i'),
+                    'end' => Carbon::parse($match[3] . ($match[4] ?? ''))->format('H:i'),
+                ];
+            } catch (\Exception) {
+                continue;
+            }
+        }
+
+        return [$allowedDays, $timeSlots];
     }
 
     public function rejectCorrection(TeacherAttendanceCorrection $correction, Request $request): TeacherAttendanceCorrection
@@ -679,8 +849,13 @@ class TeacherAttendanceService
         return DB::transaction(function () use ($changeRequest, $request) {
             $schedule = $changeRequest->schedule;
             $session = $schedule->attendanceSession ?: $this->ensureAttendanceSession($schedule, $request->user()?->id);
+            $sessionAction = $request->input('session_action', 'skip_reschedule');
 
-            if ($changeRequest->request_type === 'cancellation') {
+            if (!in_array($sessionAction, ['skip_reschedule', 'skip_only'], true)) {
+                $sessionAction = 'skip_reschedule';
+            }
+
+            if ($changeRequest->request_type === 'cancellation' || $sessionAction === 'skip_only') {
                 $schedule->update(['status' => 'cancelled', 'approved_by' => $request->user()?->id]);
                 $session->update(['attendance_status' => 'cancelled', 'approved_by' => $request->user()?->id]);
                 $this->log($session, 'schedule_cancelled', null, $changeRequest->toArray(), $request, $changeRequest->reason);

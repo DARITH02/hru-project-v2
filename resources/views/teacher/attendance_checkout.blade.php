@@ -5,7 +5,7 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
             <h1 class="m-0 text-[32px] font-semibold leading-tight text-[var(--text)]">Teacher Checkout</h1>
-            <p class="mt-1 text-sm text-[var(--muted)]">Every session needs its own checkout, including session 2 after auto check-in.</p>
+            <p class="mt-1 text-sm text-[var(--muted)]">Every session needs its own check-out, including session 2 after auto check-in.</p>
         </div>
         <a href="{{ route('teacher.attendance.scan') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold uppercase tracking-wide text-[var(--accent)]">Scan QR</a>
     </div>
@@ -42,7 +42,7 @@
                 </div>
             </article>
         @empty
-            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)] shadow-sm xl:col-span-2">No sessions currently require checkout.</div>
+            <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)] shadow-sm xl:col-span-2">No sessions currently require check-out.</div>
         @endforelse
     </div>
 </div>

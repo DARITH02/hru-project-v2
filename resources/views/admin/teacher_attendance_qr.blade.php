@@ -15,7 +15,7 @@
                 <span class="breadcrumb-current">QR TOKEN</span>
             </div>
             <h1>Teacher QR Token</h1>
-            <p>Display this QR for the assigned teacher. The phone scan page supports check-in, checkout, teacher code verification, and location settings.</p>
+            <p>Display this QR for the assigned teacher. The phone scan page supports check-in, check-out, teacher code verification, and location settings.</p>
         </div>
         <div class="teacher-qr-single-actions">
             <span class="teacher-qr-live"><i></i> LIVE TOKEN</span>
@@ -104,7 +104,7 @@
 
             <section class="teacher-qr-note">
                 <strong>Teacher Scan Flow</strong>
-                <span>Teacher chooses check-in or checkout, enters the generated teacher code, then submits. Session 1 check-in auto checks in later same-subject sessions; checkout closes the latest open session.</span>
+                <span>Teacher chooses check-in or check-out, enters the generated teacher code, then submits. Session 1 check-in auto checks in later same-subject sessions; check-out closes the latest open session.</span>
             </section>
         </aside>
     </section>

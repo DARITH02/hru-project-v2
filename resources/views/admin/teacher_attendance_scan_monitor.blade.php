@@ -6,55 +6,55 @@
         <div>
             <div class="teacher-monitor-title">
                 <span class="teacher-monitor-icon">⌗</span>
-                <h1>Teacher Scan Monitoring</h1>
-                <span class="teacher-monitor-live"><i></i>Live</span>
+                <h1>{{ __('admin_teacher_scan_monitor.title') }}</h1>
+                <span class="teacher-monitor-live"><i></i>{{ __('admin_teacher_scan_monitor.live') }}</span>
             </div>
-            <p>Real-time teacher QR attendance status - <span id="monitorDateLabel">{{ $date->format('M d, Y') }}</span></p>
+            <p>{{ __('admin_teacher_scan_monitor.subtitle') }} - <span id="monitorDateLabel">{{ $date->format('M d, Y') }}</span></p>
         </div>
         <div class="teacher-monitor-controls">
             <div class="teacher-monitor-clock" id="monitorClock">--:--:--</div>
             <select id="monitorShift">
-                <option value="all">All shifts</option>
-                <option value="morning">Morning shift</option>
-                <option value="afternoon">Afternoon shift</option>
-                <option value="evening">Evening shift</option>
+                <option value="all">{{ __('admin_teacher_scan_monitor.all_shifts') }}</option>
+                <option value="morning">{{ __('admin_teacher_scan_monitor.morning_shift') }}</option>
+                <option value="afternoon">{{ __('admin_teacher_scan_monitor.afternoon_shift') }}</option>
+                <option value="evening">{{ __('admin_teacher_scan_monitor.evening_shift') }}</option>
             </select>
             <select id="monitorDepartment">
-                <option value="all">All departments</option>
+                <option value="all">{{ __('admin_teacher_scan_monitor.all_departments') }}</option>
             </select>
-            <input id="monitorSearch" type="text" placeholder="Search teacher...">
-            <button id="monitorRefresh" type="button"><span id="monitorRefreshIcon">↻</span>Refresh</button>
+            <input id="monitorSearch" type="text" placeholder="{{ __('admin_teacher_scan_monitor.search_placeholder') }}">
+            <button id="monitorRefresh" type="button"><span id="monitorRefreshIcon">↻</span>{{ __('admin_teacher_scan_monitor.refresh') }}</button>
         </div>
     </header>
 
     <section class="teacher-monitor-stats">
-        <article><i class="bar blue"></i><span>Total</span><strong id="statTotal">0</strong><em>Scheduled today</em></article>
-        <article><i class="bar green"></i><span>Present</span><strong id="statPresent">0</strong><em id="statPresentPct">0%</em></article>
-        <article><i class="bar amber"></i><span>Late</span><strong id="statLate">0</strong><em id="statLatePct">0%</em></article>
-        <article><i class="bar red"></i><span>Absent</span><strong id="statAbsent">0</strong><em id="statAbsentPct">0%</em></article>
-        <article><i class="bar purple"></i><span>Permission</span><strong id="statPermission">0</strong><em id="statPermissionPct">0%</em></article>
+        <article><i class="bar blue"></i><span>{{ __('admin_teacher_scan_monitor.total') }}</span><strong id="statTotal">0</strong><em>{{ __('admin_teacher_scan_monitor.scheduled_today') }}</em></article>
+        <article><i class="bar green"></i><span>{{ __('admin_teacher_scan_monitor.present') }}</span><strong id="statPresent">0</strong><em id="statPresentPct">0%</em></article>
+        <article><i class="bar amber"></i><span>{{ __('admin_teacher_scan_monitor.late') }}</span><strong id="statLate">0</strong><em id="statLatePct">0%</em></article>
+        <article><i class="bar red"></i><span>{{ __('admin_teacher_scan_monitor.absent') }}</span><strong id="statAbsent">0</strong><em id="statAbsentPct">0%</em></article>
+        <article><i class="bar purple"></i><span>{{ __('admin_teacher_scan_monitor.permission') }}</span><strong id="statPermission">0</strong><em id="statPermissionPct">0%</em></article>
     </section>
 
     <section class="teacher-monitor-grid">
         <article class="teacher-monitor-panel present">
-            <header><span>Present</span><strong id="countPresent">0</strong></header>
+            <header><span>{{ __('admin_teacher_scan_monitor.present') }}</span><strong id="countPresent">0</strong></header>
             <div class="teacher-monitor-list" id="listPresent"></div>
         </article>
         <article class="teacher-monitor-panel late">
-            <header><span>Late</span><strong id="countLate">0</strong></header>
+            <header><span>{{ __('admin_teacher_scan_monitor.late') }}</span><strong id="countLate">0</strong></header>
             <div class="teacher-monitor-list" id="listLate"></div>
         </article>
         <article class="teacher-monitor-panel absent">
-            <header><span>Absent</span><strong id="countAbsent">0</strong></header>
+            <header><span>{{ __('admin_teacher_scan_monitor.absent') }}</span><strong id="countAbsent">0</strong></header>
             <div class="teacher-monitor-list" id="listAbsent"></div>
         </article>
         <article class="teacher-monitor-panel permission">
-            <header><span>Permission / Leave</span><strong id="countPermission">0</strong></header>
+            <header><span>{{ __('admin_teacher_scan_monitor.permission_leave') }}</span><strong id="countPermission">0</strong></header>
             <div class="teacher-monitor-list" id="listPermission"></div>
         </article>
     </section>
 
-    <footer class="teacher-monitor-footer">ATTENDAI Management System - Teacher Scan Monitoring - Updates after QR scan</footer>
+    <footer class="teacher-monitor-footer">{{ __('admin_teacher_scan_monitor.footer') }}</footer>
 </div>
 
 <div class="teacher-monitor-modal" id="teacherMonitorModal" aria-hidden="true">
@@ -69,14 +69,14 @@
             <span id="modalBadge"></span>
         </div>
         <dl>
-            <div><dt>Subject</dt><dd id="modalSubject"></dd></div>
-            <div><dt>Class</dt><dd id="modalClass"></dd></div>
-            <div><dt>Schedule</dt><dd id="modalSchedule"></dd></div>
-            <div><dt>Shift</dt><dd id="modalShift"></dd></div>
-            <div><dt>Check-in</dt><dd id="modalIn"></dd></div>
-            <div><dt>Check-out</dt><dd id="modalOut"></dd></div>
-            <div><dt>Late</dt><dd id="modalLate"></dd></div>
-            <div><dt>Method</dt><dd id="modalMethod"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.subject') }}</dt><dd id="modalSubject"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.class') }}</dt><dd id="modalClass"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.schedule') }}</dt><dd id="modalSchedule"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.shift') }}</dt><dd id="modalShift"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.check_in') }}</dt><dd id="modalIn"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.check_out') }}</dt><dd id="modalOut"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.late') }}</dt><dd id="modalLate"></dd></div>
+            <div><dt>{{ __('admin_teacher_scan_monitor.method') }}</dt><dd id="modalMethod"></dd></div>
         </dl>
     </div>
 </div>

@@ -11,7 +11,7 @@
 ════════════════════════════════════════════ --}}
     <div id="toast" class="toast">
         <div id="toastIcon" class="toast-icon">✓</div>
-        <span id="toastMsg">Message</span>
+        <span id="toastMsg">{{ __('admin_instructors.message') }}</span>
     </div>
 
     {{-- ════════════════════════════════════════════
@@ -28,20 +28,20 @@
                 </div>
                 <div
                     style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">
-                    Remove Instructor?</div>
+                    {{ __('admin_instructors.remove_instructor_question') }}</div>
                 <div id="deleteSubtitle"
                     style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.06em;line-height:1.7">
-                    This instructor will be permanently removed.<br>All associated class assignments may be affected.
+                    {{ __('admin_instructors.delete_warning') }}
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('deleteModal')" class="btn-secondary">CANCEL</button>
+                <button onclick="closeModal('deleteModal')" class="btn-secondary">{{ __('admin_instructors.cancel') }}</button>
                 <button id="confirmDeleteBtn"
                     style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--red),#F87171);color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(239,68,68,.25)">
                     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    CONFIRM REMOVE
+                    {{ __('admin_instructors.confirm_remove') }}
                 </button>
             </div>
         </div>
@@ -58,7 +58,7 @@
                         style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--violet));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;letter-spacing:.04em">
                         ?
                     </div>
-                    <span id="instructorModalTitle" class="modal-title">Add Instructor</span>
+                    <span id="instructorModalTitle" class="modal-title">{{ __('admin_instructors.add_instructor') }}</span>
                 </div>
                 <button onclick="closeModal('instructorModal')" class="modal-close">
                     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,16 +74,16 @@
 
                     {{-- Name --}}
                     <div class="form-group">
-                        <label class="form-label">Full Name <span class="req">*</span></label>
-                        <input id="modalName" class="form-input" type="text" required placeholder="e.g. Dr. Maria Santos"
+                        <label class="form-label">{{ __('admin_instructors.full_name') }} <span class="req">*</span></label>
+                        <input id="modalName" class="form-input" type="text" required placeholder="{{ __('admin_instructors.name_placeholder') }}"
                             oninput="updateAvatarPreview(this.value)">
                     </div>
 
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label">Department <span class="req">*</span></label>
+                            <label class="form-label">{{ __('admin_instructors.department') }} <span class="req">*</span></label>
                             <select id="modalDept" name="department_id" class="form-input">
-                                <option value="">Select dept.</option>
+                                <option value="">{{ __('admin_instructors.select_department') }}</option>
                                 @foreach ($depts as $dept)
                                     <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                                 @endforeach
@@ -91,11 +91,11 @@
                         </div>
                         {{-- Status --}}
                         <div class="form-group">
-                            <label class="form-label">Status</label>
+                            <label class="form-label">{{ __('admin_instructors.status') }}</label>
                             <select id="modalStatus" class="form-input">
-                                <option value="active">Active</option>
-                                <option value="on_leave">On Leave</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="active">{{ __('admin_instructors.active') }}</option>
+                                <option value="on_leave">{{ __('admin_instructors.on_leave') }}</option>
+                                <option value="inactive">{{ __('admin_instructors.inactive') }}</option>
                             </select>
                         </div>
                     </div>
@@ -103,31 +103,31 @@
                     <div class="form-grid-2">
                         {{-- Email --}}
                         <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input id="modalEmail" class="form-input" type="email" placeholder="instructor@school.edu">
+                            <label class="form-label">{{ __('admin_instructors.email') }}</label>
+                            <input id="modalEmail" class="form-input" type="email" placeholder="{{ __('admin_instructors.email_placeholder') }}">
                         </div>
                         {{-- Phone --}}
                         <div class="form-group">
-                            <label class="form-label">Phone</label>
-                            <input id="modalPhone" class="form-input" type="text" placeholder="+63 9XX XXX XXXX">
+                            <label class="form-label">{{ __('admin_instructors.phone') }}</label>
+                            <input id="modalPhone" class="form-input" type="text" placeholder="{{ __('admin_instructors.phone_placeholder') }}">
                         </div>
                     </div>
 
                     {{-- Specialization --}}
                     <div class="form-group" style="margin-bottom:0">
-                        <label class="form-label">Specialization</label>
+                        <label class="form-label">{{ __('admin_instructors.specialization') }}</label>
                         <input id="modalSpec" class="form-input" type="text"
-                            placeholder="e.g. Machine Learning, Structural Engineering">
+                            placeholder="{{ __('admin_instructors.specialization_placeholder') }}">
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" onclick="closeModal('instructorModal')" class="btn-secondary">CANCEL</button>
+                    <button type="button" onclick="closeModal('instructorModal')" class="btn-secondary">{{ __('admin_instructors.cancel') }}</button>
                     <button type="submit" id="modalSubmitBtn" class="btn-primary">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                         </svg>
-                        <span id="modalSubmitLabel">ADD INSTRUCTOR</span>
+                        <span id="modalSubmitLabel">{{ __('admin_instructors.add_instructor_upper') }}</span>
                     </button>
                 </div>
             </form>
@@ -140,7 +140,7 @@
     <div id="profileModal" class="modal-overlay">
         <div class="modal-box" style="max-width:480px">
             <div class="modal-head">
-                <span class="modal-title">Instructor Profile</span>
+                <span class="modal-title">{{ __('admin_instructors.instructor_profile') }}</span>
                 <button onclick="closeModal('profileModal')" class="modal-close">
                     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -164,7 +164,7 @@
                             style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-top:3px">
                             —</div>
                         <div style="margin-top:8px" id="profileStatusWrap">
-                            <span id="profileStatus" class="status-tag tag-active">ACTIVE</span>
+                            <span id="profileStatus" class="status-tag tag-active">{{ __('admin_instructors.active_upper') }}</span>
                         </div>
                     </div>
                 </div>
@@ -173,26 +173,26 @@
                     <div>
                         <div
                             style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px">
-                            EMAIL</div>
+                            {{ __('admin_instructors.email') }}</div>
                         <div id="profileEmail" style="font-size:12px;color:var(--text2)">—</div>
                     </div>
                     <div>
                         <div
                             style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px">
-                            PHONE</div>
+                            {{ __('admin_instructors.phone') }}</div>
                         <div id="profilePhone" style="font-size:12px;color:var(--text2)">—</div>
                     </div>
                     <div>
                         <div
                             style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px">
-                            ATTENDANCE CODE</div>
+                            {{ __('admin_instructors.attendance_code') }}</div>
                         <div id="profileCode"
                             style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:var(--accent)">—</div>
                     </div>
                     <div>
                         <div
                             style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px">
-                            CLASSES ASSIGNED</div>
+                            {{ __('admin_instructors.classes_assigned') }}</div>
                         <div id="profileClasses"
                             style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)">—
                         </div>
@@ -200,19 +200,19 @@
                     <div>
                         <div
                             style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--muted);margin-bottom:5px">
-                            SPECIALIZATION</div>
+                            {{ __('admin_instructors.specialization') }}</div>
                         <div id="profileSpec" style="font-size:12px;color:var(--text2)">—</div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('profileModal')" class="btn-secondary">CLOSE</button>
+                <button onclick="closeModal('profileModal')" class="btn-secondary">{{ __('admin_instructors.close') }}</button>
                 <button id="profileEditBtn" class="btn-primary">
                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    EDIT PROFILE
+                    {{ __('admin_instructors.edit_profile') }}
                 </button>
             </div>
         </div>
@@ -908,20 +908,20 @@
                         <div class="min-w-0">
                             <div class="mb-2 flex items-center gap-2">
                                 <a href="{{ route('admin.students.overview') }}"
-                                    class="text-xs /30 transition-colors hover:/60">Dashboard</a>
+                                    class="text-xs /30 transition-colors hover:/60">{{ __('admin_instructors.dashboard') }}</a>
                                 <svg class="h-3 w-3 /20" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                     stroke-width="2">
                                     <polyline points="9 18 15 12 9 6" />
                                 </svg>
-                                <span class="text-xs font-bold text-[#00c9a7]">Teachers</span>
+                                <span class="text-xs font-bold text-[#00c9a7]">{{ __('admin_instructors.instructors') }}</span>
                             </div>
-                            <h1 class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">Teacher Overview</h1>
-                            <p class="mt-1.5 text-sm ">Manage and monitor all faculty members - Term 2, 2026</p>
+                            <h1 class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">{{ __('admin_instructors.overview_title') }}</h1>
+                            <p class="mt-1.5 text-sm ">{{ __('admin_instructors.overview_subtitle') }}</p>
                         </div>
                         <div class="teacher-hero-actions">
                             <div class="teacher-topstat teacher-live-pill">
                                 <div class="dot-online h-2 w-2 rounded-full animate-pulse"></div>
-                                <span class="text-xs ">{{ $activeInstructors }} active now</span>
+                                <span class="text-xs ">{{ __('admin_instructors.active_now', ['count' => $activeInstructors]) }}</span>
                             </div>
                             <button onclick="openCreateModal()" class="teacher-add-button">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -929,30 +929,30 @@
                                     <line x1="12" y1="5" x2="12" y2="19" />
                                     <line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
-                                Add Teacher
+                                {{ __('admin_instructors.add_teacher') }}
                             </button>
                         </div>
                     </div>
 
                     <div class="teacher-stat-grid">
                         <div class="teacher-topstat rounded-xl px-4 py-3">
-                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">Total Faculty</div>
+                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">{{ __('admin_instructors.total_faculty') }}</div>
                             <div class="text-xl font-black ">{{ $totalInstructors }}</div>
                         </div>
                         <div class="teacher-topstat rounded-xl px-4 py-3">
-                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">Active</div>
+                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">{{ __('admin_instructors.active') }}</div>
                             <div class="text-xl font-black ">{{ $activeInstructors }}</div>
                         </div>
                         <div class="teacher-topstat rounded-xl px-4 py-3">
-                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">On Leave</div>
+                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">{{ __('admin_instructors.on_leave') }}</div>
                             <div class="text-xl font-black ">{{ $onLeaveInstructors }}</div>
                         </div>
                         <div class="teacher-topstat rounded-xl px-4 py-3">
-                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">Classes</div>
+                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">{{ __('admin_instructors.classes') }}</div>
                             <div class="text-xl font-black text-[#00c9a7]">{{ $coveredClasses }}</div>
                         </div>
                         <div class="teacher-topstat rounded-xl px-4 py-3">
-                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">Departments</div>
+                            <div class="mb-1 text-[10px] font-semibold uppercase tracking-wider ">{{ __('admin_instructors.departments') }}</div>
                             <div class="text-xl font-black ">{{ $depts->count() }}</div>
                         </div>
                     </div>
@@ -962,8 +962,8 @@
             <div class="teacher-content-stack space-y-6">
                 <div class="teacher-chart-grid">
                     <div class="chart-card animate-card" style="animation-delay:.05s">
-                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">By Department</h3>
-                        <p class="mb-4 text-xs text-gray-400">Teacher distribution</p>
+                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">{{ __('admin_instructors.by_department') }}</h3>
+                        <p class="mb-4 text-xs text-gray-400">{{ __('admin_instructors.instructor_distribution') }}</p>
                         <div class="relative h-44"><canvas id="deptChart"></canvas></div>
                         <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
                             @forelse($deptStats as $deptName => $count)
@@ -971,26 +971,26 @@
                                         class="h-2.5 w-2.5 flex-shrink-0 rounded-sm bg-[#00c9a7]"></span>{{ $deptName }}
                                     {{ $count }}</div>
                             @empty
-                                <div class="text-xs text-gray-400">No departments</div>
+                                <div class="text-xs text-gray-400">{{ __('admin_instructors.no_departments') }}</div>
                             @endforelse
                         </div>
                     </div>
 
                     <div class="chart-card animate-card" style="animation-delay:.10s">
-                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">Class Performance</h3>
-                        <p class="mb-4 text-xs text-gray-400">Average score by teacher department.</p>
+                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">{{ __('admin_instructors.class_performance') }}</h3>
+                        <p class="mb-4 text-xs text-gray-400">{{ __('admin_instructors.performance_desc') }}</p>
                         <div class="relative h-44"><canvas id="perfChart"></canvas></div>
                     </div>
 
                     <div class="chart-card animate-card" style="animation-delay:.15s">
-                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">Workload & Attendance</h3>
-                        <p class="mb-4 text-xs text-gray-400">Faculty trend snapshot</p>
+                        <h3 class="mb-0.5 text-[15px] font-black text-[#0d0f1c]">{{ __('admin_instructors.workload_attendance') }}</h3>
+                        <p class="mb-4 text-xs text-gray-400">{{ __('admin_instructors.trend_snapshot') }}</p>
                         <div class="relative h-44"><canvas id="workChart"></canvas></div>
                         <div class="mt-3 flex gap-4">
                             <div class="flex items-center gap-1.5 text-xs text-gray-400"><span
-                                    class="inline-block h-0.5 w-3 rounded bg-[#3b82f6]"></span>Attendance</div>
+                                    class="inline-block h-0.5 w-3 rounded bg-[#3b82f6]"></span>{{ __('admin_instructors.attendance') }}</div>
                             <div class="flex items-center gap-1.5 text-xs text-gray-400"><span
-                                    class="inline-block h-0.5 w-3 rounded bg-[#8b5cf6]"></span>Workload</div>
+                                    class="inline-block h-0.5 w-3 rounded bg-[#8b5cf6]"></span>{{ __('admin_instructors.workload') }}</div>
                         </div>
                     </div>
                 </div>
@@ -1004,12 +1004,12 @@
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
                             <input id="searchInput" name="search" value="{{ request('search') }}" type="text"
-                                placeholder="Search by name, department, email, code..."
+                                placeholder="{{ __('admin_instructors.search_placeholder') }}"
                                 onkeyup="filterInstructors(event)" class="teacher-search-input" />
                         </div>
 
                         <select id="deptFilter" onchange="filterInstructors()" class="teacher-filter-select">
-                            <option value="">All Departments</option>
+                            <option value="">{{ __('admin_instructors.all_departments') }}</option>
                             @foreach ($depts as $dept)
                                 <option value="{{ $dept->id }}" {{ request('dept') == $dept->id ? 'selected' : '' }}>
                                     {{ $dept->name }}</option>
@@ -1017,11 +1017,11 @@
                         </select>
 
                         <select id="statusFilter" onchange="filterInstructors()" class="teacher-filter-select">
-                            <option value="">All Status</option>
-                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="on_leave" {{ request('status') == 'on_leave' ? 'selected' : '' }}>On Leave
+                            <option value="">{{ __('admin_instructors.all_status') }}</option>
+                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>{{ __('admin_instructors.active') }}</option>
+                            <option value="on_leave" {{ request('status') == 'on_leave' ? 'selected' : '' }}>{{ __('admin_instructors.on_leave') }}
                             </option>
-                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive
+                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>{{ __('admin_instructors.inactive') }}
                             </option>
                         </select>
 
@@ -1046,10 +1046,10 @@
                         </div>
 
                         <button onclick="window.open('{{ route('admin.export.instructors') }}', '_blank')"
-                            class="teacher-export-button">Export</button>
+                            class="teacher-export-button">{{ __('admin_instructors.export') }}</button>
 
-                        <div class="teacher-filter-count text-sm text-gray-400">Showing <span id="rowCount"
-                                class="font-bold text-[#0d0f1c]">{{ $instructors->count() }}</span> teachers</div>
+                        <div class="teacher-filter-count text-sm text-gray-400">{{ __('admin_instructors.showing') }} <span id="rowCount"
+                                class="font-bold text-[#0d0f1c]">{{ $instructors->count() }}</span> {{ __('admin_instructors.instructors_suffix') }}</div>
                     </div>
                 </div>
 
@@ -1067,13 +1067,13 @@
                                 ['#22c55e', '#0a2e14'],
                             ];
                             $col2 = $palette[$instructor->id % count($palette)];
-                            $name2 = $instructor->user->name ?? 'N/A';
+                            $name2 = $instructor->user->name ?? __('admin_instructors.not_available');
                             $init2 = collect(explode(' ', $name2))
                                 ->map(fn($part) => substr($part, 0, 1))
                                 ->take(2)
                                 ->join('');
-                            $dept2 = $instructor->department->name ?? 'Unassigned';
-                            $spec2 = $instructor->specialization ?? 'Generalist';
+                            $dept2 = $instructor->department->name ?? __('admin_instructors.unassigned');
+                            $spec2 = $instructor->specialization ?? __('admin_instructors.generalist');
                             $cls2 = $instructor->classes_count ?? 0;
                             $code2 = $instructor->teacher_code ?? '—';
                             $status2 = $instructor->status ?? 'active';
@@ -1093,13 +1093,13 @@
                                 <div class="teacher-card-badges">
                                     @if ($status2 === 'active')
                                         <span class="badge-soft bg-[#00c9a7]/15 text-[#00836e]"><span
-                                                class="dot-online h-1.5 w-1.5 rounded-full"></span>Active</span>
+                                                class="dot-online h-1.5 w-1.5 rounded-full"></span>{{ __('admin_instructors.active') }}</span>
                                     @elseif($status2 === 'on_leave')
                                         <span class="badge-soft bg-[#f5a623]/15 text-[#b87a0f]"><span
-                                                class="dot-busy h-1.5 w-1.5 rounded-full"></span>Leave</span>
+                                                class="dot-busy h-1.5 w-1.5 rounded-full"></span>{{ __('admin_instructors.leave') }}</span>
                                     @else
                                         <span class="badge-soft bg-gray-100 text-gray-500"><span
-                                                class="dot-offline h-1.5 w-1.5 rounded-full"></span>Inactive</span>
+                                                class="dot-offline h-1.5 w-1.5 rounded-full"></span>{{ __('admin_instructors.inactive') }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -1122,16 +1122,15 @@
                                 <p class="teacher-card-code">{{ $code2 }}</p>
                                 <div class="teacher-card-metrics">
                                     <div class="teacher-card-metric">
-                                        <strong>{{ $cls2 }}</strong><span>Classes</span>
+                                        <strong>{{ $cls2 }}</strong><span>{{ __('admin_instructors.classes') }}</span>
                                     </div>
-                                    <div class="teacher-card-metric"><strong>{{ $rate2 }}</strong><span>Rate</span>
+                                    <div class="teacher-card-metric"><strong>{{ $rate2 }}</strong><span>{{ __('admin_instructors.rate') }}</span>
                                     </div>
                                     <div class="teacher-card-metric"><strong
-                                            style="color:#00c9a7">{{ $depts->count() }}</strong><span>Depts</span></div>
+                                            style="color:#00c9a7">{{ $depts->count() }}</strong><span>{{ __('admin_instructors.depts') }}</span></div>
                                 </div>
                                 <div class="mb-3.5">
-                                    <div class="teacher-progress-label"><span>Class
-                                            Coverage</span><strong>{{ $rate2 }}%</strong></div>
+                                    <div class="teacher-progress-label"><span>{{ __('admin_instructors.class_coverage') }}</span><strong>{{ $rate2 }}%</strong></div>
                                     <div class="pbar-track">
                                         <div class="pbar-fill"
                                             style="width:{{ $rate2 }}%;background:{{ $col2[0] }}"></div>
@@ -1142,16 +1141,16 @@
                                     <span class="teacher-skill-tag">{{ $spec2 }}</span>
                                 </div>
                                 <div class="teacher-card-actions">
-                                    <div class="text-xs text-gray-400">{{ $cls2 }} assigned classes</div>
+                                    <div class="text-xs text-gray-400">{{ __('admin_instructors.assigned_classes', ['count' => $cls2]) }}</div>
                                     <div class="flex flex-wrap items-center justify-end gap-1.5">
                                         <button onclick="openProfile(this.closest('.teacher-card'))"
-                                            class="teacher-action-link text-[#00c9a7] hover:bg-[#00c9a7]/10 hover:text-[#00836e]">View</button>
+                                            class="teacher-action-link text-[#00c9a7] hover:bg-[#00c9a7]/10 hover:text-[#00836e]">{{ __('admin_instructors.view') }}</button>
                                         <button onclick="openEditModal(this.closest('.teacher-card'))"
-                                            class="teacher-action-link text-[#3b82f6] hover:bg-[#3b82f6]/10 hover:text-[#1d4ed8]">Edit</button>
+                                            class="teacher-action-link text-[#3b82f6] hover:bg-[#3b82f6]/10 hover:text-[#1d4ed8]">{{ __('admin_instructors.edit') }}</button>
                                         @if (Auth::user()->isSuperAdmin())
                                             <button
                                                 onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name2) }}')"
-                                                class="teacher-action-link text-[#ff5e7e] hover:bg-[#ff5e7e]/10 hover:text-[#c4284a]">Remove</button>
+                                                class="teacher-action-link text-[#ff5e7e] hover:bg-[#ff5e7e]/10 hover:text-[#c4284a]">{{ __('admin_instructors.remove') }}</button>
                                         @endif
                                     </div>
                                 </div>
@@ -1165,12 +1164,12 @@
                     <table class="teacher-list-table w-full text-sm" id="instructorTable">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50">
-                                <th>Teacher</th>
-                                <th>Department</th>
-                                <th>Specialization</th>
-                                <th>Classes</th>
-                                <th>Status</th>
-                                <th style="text-align:right">Actions</th>
+                                <th>{{ __('admin_instructors.table_teacher') }}</th>
+                                <th>{{ __('admin_instructors.table_department') }}</th>
+                                <th>{{ __('admin_instructors.table_specialization') }}</th>
+                                <th>{{ __('admin_instructors.table_classes') }}</th>
+                                <th>{{ __('admin_instructors.table_status') }}</th>
+                                <th style="text-align:right">{{ __('admin_instructors.table_actions') }}</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -1185,13 +1184,13 @@
                                         ['#10B981', '#10B981'],
                                     ];
                                     $col = $avatarColors[$instructor->id % count($avatarColors)];
-                                    $name = $instructor->user->name ?? 'N/A';
+                                    $name = $instructor->user->name ?? __('admin_instructors.not_available');
                                     $init = strtoupper(substr($name, 0, 2));
-                                    $dept = $instructor->department->name ?? 'Unassigned';
-                                    $spec = $instructor->specialization ?? 'Generalist';
+                                    $dept = $instructor->department->name ?? __('admin_instructors.unassigned');
+                                    $spec = $instructor->specialization ?? __('admin_instructors.generalist');
                                     $classes = $instructor->classes_count ?? 0;
                                     $status = $instructor->status ?? 'active';
-                                    $email = $instructor->user->email ?? 'N/A';
+                                    $email = $instructor->user->email ?? __('admin_instructors.not_available');
                                     $code = $instructor->teacher_code ?? '—';
                                 @endphp
                                 <tr data-id="{{ $instructor->id }}" data-name="{{ strtolower($name) }}"
@@ -1244,7 +1243,7 @@
                                                 </div>
                                                 <div
                                                     style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:2px">
-                                                    ASSIGNED</div>
+                                                    {{ __('admin_instructors.assigned') }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -1252,19 +1251,19 @@
                                     {{-- Status --}}
                                     <td>
                                         @if ($status === 'active')
-                                            <span class="status-tag tag-active">ACTIVE</span>
+                                            <span class="status-tag tag-active">{{ __('admin_instructors.active_upper') }}</span>
                                         @elseif($status === 'on_leave')
-                                            <span class="status-tag tag-waiting">ON LEAVE</span>
+                                            <span class="status-tag tag-waiting">{{ __('admin_instructors.on_leave_upper') }}</span>
                                         @else
                                             <span class="status-tag"
-                                                style="background:var(--surface3);color:var(--muted2);border:1px solid var(--border2)">INACTIVE</span>
+                                                style="background:var(--surface3);color:var(--muted2);border:1px solid var(--border2)">{{ __('admin_instructors.inactive_upper') }}</span>
                                         @endif
                                     </td>
 
                                     {{-- Actions --}}
                                     <td style="text-align:right">
                                         <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
-                                            <button class="action-btn btn-view" title="View profile"
+                                            <button class="action-btn btn-view" title="{{ __('admin_instructors.view_profile') }}"
                                                 onclick="openProfile(this.closest('tr'))">
                                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor">
@@ -1274,7 +1273,7 @@
                                                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </button>
-                                            <button class="action-btn btn-edit" title="Edit instructor"
+                                            <button class="action-btn btn-edit" title="{{ __('admin_instructors.edit_profile_title') }}"
                                                 onclick="openEditModal(this.closest('tr'))">
                                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor">
@@ -1282,15 +1281,15 @@
                                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                 </svg>
                                             </button>
-                                            <button class="action-btn btn-enroll" title="View assigned classes"
-                                                onclick="showToast('Class assignment view coming soon','info')">
+                                            <button class="action-btn btn-enroll" title="{{ __('admin_instructors.view_assigned_classes') }}"
+                                                onclick="showToast(instructorText('class_assignment_soon', 'Class assignment view coming soon.'),'info')">
                                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                 </svg>
                                             </button>
-                                            <button class="action-btn" title="Semester Assignment"
+                                            <button class="action-btn" title="{{ __('admin_instructors.semester_assignment') }}"
                                                 style="background:var(--violet)18;border-color:var(--violet)44;color:var(--violet)">
                                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor">
@@ -1299,7 +1298,7 @@
                                                 </svg>
                                             </button>
                                             @if (Auth::user()->isSuperAdmin())
-                                                <button class="action-btn btn-del" title="Remove instructor"
+                                                <button class="action-btn btn-del" title="{{ __('admin_instructors.remove_instructor') }}"
                                                     onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name) }}')">
                                                     <svg width="12" height="12" fill="none"
                                                         viewBox="0 0 24 24" stroke="currentColor">
@@ -1323,8 +1322,8 @@
                                                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                             </div>
-                                            <div class="empty-title">No instructors found</div>
-                                            <div class="empty-desc">Add the first instructor to get started</div>
+                                            <div class="empty-title">{{ __('admin_instructors.no_instructors') }}</div>
+                                            <div class="empty-desc">{{ __('admin_instructors.empty_desc') }}</div>
                                         </div>
                                     </td>
                                 </tr>
@@ -1339,8 +1338,7 @@
                 <div style="margin-top: 20px"
                     class="flex flex-col gap-3 border-t  px-5 pt-7 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <span class="text-xs font-black uppercase tracking-[.14em] text-slate-400">
-                        SHOWING {{ $instructors->firstItem() }}–{{ $instructors->lastItem() }} OF
-                        {{ $instructors->total() }}
+                        {{ __('admin_instructors.showing_range', ['first' => $instructors->firstItem(), 'last' => $instructors->lastItem(), 'total' => $instructors->total()]) }}
                     </span>
                     {{ $instructors->links('vendor.pagination.academy') }}
                 </div>
@@ -1350,6 +1348,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        const instructorT = @json(trans('admin_instructors'));
+        const instructorText = (key, fallback = key) => instructorT[key] || fallback;
+        const instructorReplace = (key, replacements, fallback = key) => {
+            let text = instructorText(key, fallback);
+            Object.entries(replacements).forEach(([name, value]) => {
+                text = text.replace(`:${name}`, value);
+            });
+            return text;
+        };
+
         // ── Overview charts ───────────────────────────
         const teacherDeptLabels = @json($deptLabels);
         const teacherDeptCounts = @json($deptCounts);
@@ -1379,7 +1387,7 @@
                 teacherCharts.push(new Chart(deptCanvas, {
                     type: 'doughnut',
                     data: {
-                        labels: teacherDeptLabels.length ? teacherDeptLabels : ['No department'],
+                        labels: teacherDeptLabels.length ? teacherDeptLabels : [instructorText('no_department', 'No department')],
                         datasets: [{
                             data: teacherDeptCounts.length ? teacherDeptCounts : [0],
                             backgroundColor: ['#00c9a7', '#3b82f6', '#f5a623', '#ff5e7e', '#8b5cf6',
@@ -1404,7 +1412,7 @@
 
             const perfCanvas = document.getElementById('perfChart');
             if (perfCanvas) {
-                const perfLabels = teacherDeptLabels.length ? teacherDeptLabels : ['No department'];
+                const perfLabels = teacherDeptLabels.length ? teacherDeptLabels : [instructorText('no_department', 'No department')];
                 const perfValues = (teacherDeptCounts.length ? teacherDeptCounts : [0]).map((count, index) => Math.min(98,
                     68 + (count * 4) + (index % 3) * 3));
 
@@ -1578,7 +1586,7 @@
             const ic = document.getElementById('toastIcon');
             t.className = `toast show toast-${type}`;
             ic.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'i';
-            document.getElementById('toastMsg').textContent = msg;
+            document.getElementById('toastMsg').textContent = window.__t ? window.__t(msg) : msg;
             clearTimeout(t._t);
             t._t = setTimeout(() => t.classList.remove('show'), 3200);
         }
@@ -1637,14 +1645,14 @@
         function openDeleteModal(id, name) {
             pendingDeleteId = id;
             document.getElementById('deleteSubtitle').innerHTML =
-                `<strong style="color:var(--text2)">${name}</strong> will be permanently removed.<br>All class assignments may be affected.`;
+                instructorReplace('delete_named_warning', { name: `<strong style="color:var(--text2)">${name}</strong>` }, ':name will be permanently removed. All class assignments may be affected.');
             openModal('deleteModal');
         }
         document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
             if (!pendingDeleteId) return;
             const btn = document.getElementById('confirmDeleteBtn');
             const ogHtml = btn.innerHTML;
-            btn.innerHTML = 'DELETING...';
+            btn.innerHTML = instructorText('deleting', 'DELETING...');
             btn.disabled = true;
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                 document.querySelector('input[name="_token"]')?.value || '';
@@ -1679,15 +1687,15 @@
                         el.style.transition = 'opacity .3s';
                         setTimeout(() => el.remove(), 350);
                     });
-                    showToast('Instructor removed from registry.', 'success');
+                    showToast(instructorText('removed_success', 'Instructor removed from registry.'), 'success');
                     closeModal('deleteModal');
                     const countEl = document.getElementById('rowCount');
                     if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
                 } else {
-                    showToast(data.error || 'Failed to delete instructor.', 'error');
+                    showToast(data.error || instructorText('delete_failed', 'Failed to delete instructor.'), 'error');
                 }
             } catch (e) {
-                showToast('Network error: ' + e.message, 'error');
+                showToast(instructorReplace('network_error_prefix', { message: e.message }, 'Network error: :message'), 'error');
             }
             btn.innerHTML = ogHtml;
             btn.disabled = false;
@@ -1719,7 +1727,7 @@
             document.getElementById('profileSpec').textContent = spec;
 
             const stEl = document.getElementById('profileStatus');
-            stEl.textContent = status === 'active' ? 'ACTIVE' : status === 'on_leave' ? 'ON LEAVE' : 'INACTIVE';
+            stEl.textContent = status === 'active' ? instructorText('active_upper', 'ACTIVE') : status === 'on_leave' ? instructorText('on_leave_upper', 'ON LEAVE') : instructorText('inactive_upper', 'INACTIVE');
             stEl.className = 'status-tag ' + (status === 'active' ? 'tag-active' : status === 'on_leave' ? 'tag-waiting' :
                 '');
 
@@ -1732,8 +1740,8 @@
 
         // ── Create ─────────────────────────────────────
         function openCreateModal() {
-            document.getElementById('instructorModalTitle').textContent = 'Add Instructor';
-            document.getElementById('modalSubmitLabel').textContent = 'ADD INSTRUCTOR';
+            document.getElementById('instructorModalTitle').textContent = instructorText('add_instructor', 'Add Instructor');
+            document.getElementById('modalSubmitLabel').textContent = instructorText('add_instructor_upper', 'ADD INSTRUCTOR');
             document.getElementById('modalMode').value = 'create';
             document.getElementById('modalInstructorId').value = '';
             document.getElementById('modalAvatarPreview').textContent = '?';
@@ -1748,8 +1756,8 @@
                 row.dataset.name.replace(/\b\w/g, c => c.toUpperCase()) :
                 (row.querySelector('.subject-name')?.textContent.trim() || '');
             const init = name.trim().split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-            document.getElementById('instructorModalTitle').textContent = 'Edit Instructor';
-            document.getElementById('modalSubmitLabel').textContent = 'SAVE CHANGES';
+            document.getElementById('instructorModalTitle').textContent = instructorText('edit_instructor', 'Edit Instructor');
+            document.getElementById('modalSubmitLabel').textContent = instructorText('save_changes', 'SAVE CHANGES');
             document.getElementById('modalMode').value = 'edit';
             document.getElementById('modalInstructorId').value = row.dataset.id || '';
             document.getElementById('modalName').value = name;
@@ -1769,7 +1777,7 @@
             const btn = document.getElementById('modalSubmitBtn');
             const ogHtml = btn.innerHTML;
             btn.innerHTML =
-                '<span class="loading-spinner" style="width:12px;height:12px;border-width:2px;margin-right:8px"></span> SAVING...';
+                `<span class="loading-spinner" style="width:12px;height:12px;border-width:2px;margin-right:8px"></span> ${instructorText('saving', 'SAVING...')}`;
             btn.disabled = true;
 
             const payload = {
@@ -1797,8 +1805,8 @@
                 const data = await res.json();
                 if (data.success) {
                     const message = data.temporary_password ?
-                        `Instructor added. Temporary password: ${data.temporary_password}` :
-                        (mode === 'create' ? 'Instructor added to registry.' : 'Profile updated successfully.');
+                        instructorReplace('added_with_password', { password: data.temporary_password }, 'Instructor added. Temporary password: :password') :
+                        (mode === 'create' ? instructorText('added_success', 'Instructor added to registry.') : instructorText('updated_success', 'Profile updated successfully.'));
                     showToast(message, 'success');
                     closeModal('instructorModal');
                     setTimeout(() => window.location.reload(), 900);
@@ -1807,10 +1815,10 @@
                     const msgs = Object.values(data.errors).flat().join(' ');
                     showToast(msgs, 'error');
                 } else {
-                    showToast(data.error || data.message || 'Operation failed.', 'error');
+                    showToast(data.error || data.message || instructorText('operation_failed', 'Operation failed.'), 'error');
                 }
             } catch (err) {
-                showToast('Network error.', 'error');
+                showToast(instructorText('network_error', 'Network error.'), 'error');
             }
             btn.innerHTML = ogHtml;
             btn.disabled = false;
