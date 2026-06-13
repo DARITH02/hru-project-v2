@@ -41,6 +41,7 @@ return [
 
     'google_drive' => [
         'credentials' => env('GOOGLE_DRIVE_CREDENTIALS'),
+        'credentials_base64' => env('GOOGLE_DRIVE_CREDENTIALS_BASE64'),
         'credentials_path' => env('GOOGLE_DRIVE_CREDENTIALS_PATH'),
         'client_id' => env('GOOGLE_DRIVE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_DRIVE_CLIENT_SECRET'),

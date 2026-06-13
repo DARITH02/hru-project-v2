@@ -16,6 +16,7 @@ class GoogleDriveServiceTest extends TestCase
 
         config([
             'services.google_drive.credentials' => '{bad-json',
+            'services.google_drive.credentials_base64' => null,
             'services.google_drive.credentials_path' => null,
             'services.google_drive.client_id' => null,
             'services.google_drive.client_secret' => null,
@@ -37,6 +38,7 @@ class GoogleDriveServiceTest extends TestCase
 
         config([
             'services.google_drive.credentials' => json_encode($credentials, JSON_THROW_ON_ERROR),
+            'services.google_drive.credentials_base64' => null,
             'services.google_drive.credentials_path' => null,
             'services.google_drive.folder_id' => 'folder-123',
         ]);
@@ -73,6 +75,7 @@ class GoogleDriveServiceTest extends TestCase
     {
         config([
             'services.google_drive.credentials' => json_encode($this->serviceAccountCredentials(), JSON_THROW_ON_ERROR),
+            'services.google_drive.credentials_base64' => null,
             'services.google_drive.credentials_path' => null,
             'services.google_drive.folder_id' => 'folder-123',
         ]);
@@ -108,6 +111,7 @@ class GoogleDriveServiceTest extends TestCase
 
         config([
             'services.google_drive.credentials' => null,
+            'services.google_drive.credentials_base64' => null,
             'services.google_drive.credentials_path' => null,
             'services.google_drive.client_id' => 'client-id',
             'services.google_drive.client_secret' => 'client-secret',
@@ -149,6 +153,7 @@ class GoogleDriveServiceTest extends TestCase
 
         config([
             'services.google_drive.credentials' => json_encode($this->serviceAccountCredentials(), JSON_THROW_ON_ERROR),
+            'services.google_drive.credentials_base64' => null,
             'services.google_drive.credentials_path' => null,
             'services.google_drive.folder_id' => 'folder-123',
         ]);
@@ -163,6 +168,41 @@ class GoogleDriveServiceTest extends TestCase
         $this->assertSame('zip-content', file_get_contents($destinationPath));
 
         unlink($destinationPath);
+    }
+
+    public function test_credentials_can_be_loaded_from_raw_secret_file_path(): void
+    {
+        $credentialsPath = tempnam(sys_get_temp_dir(), 'drive_credentials_');
+        file_put_contents($credentialsPath, json_encode($this->serviceAccountCredentials(), JSON_THROW_ON_ERROR));
+
+        config([
+            'services.google_drive.credentials' => $credentialsPath,
+            'services.google_drive.credentials_base64' => null,
+            'services.google_drive.credentials_path' => null,
+            'services.google_drive.client_id' => null,
+            'services.google_drive.client_secret' => null,
+            'services.google_drive.refresh_token' => null,
+            'services.google_drive.folder_id' => 'folder-123',
+        ]);
+
+        $this->assertTrue(app(GoogleDriveService::class)->configured());
+
+        unlink($credentialsPath);
+    }
+
+    public function test_credentials_can_be_loaded_from_base64_json(): void
+    {
+        config([
+            'services.google_drive.credentials' => null,
+            'services.google_drive.credentials_base64' => base64_encode(json_encode($this->serviceAccountCredentials(), JSON_THROW_ON_ERROR)),
+            'services.google_drive.credentials_path' => null,
+            'services.google_drive.client_id' => null,
+            'services.google_drive.client_secret' => null,
+            'services.google_drive.refresh_token' => null,
+            'services.google_drive.folder_id' => 'folder-123',
+        ]);
+
+        $this->assertTrue(app(GoogleDriveService::class)->configured());
     }
 
     private function serviceAccountCredentials(): array

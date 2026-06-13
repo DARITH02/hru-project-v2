@@ -236,18 +236,55 @@ class GoogleDriveService
 
     private function credentials(): ?array
     {
-        $raw = config('services.google_drive.credentials');
-        $path = config('services.google_drive.credentials_path');
+        $raw = trim((string) config('services.google_drive.credentials'));
+        $base64 = trim((string) config('services.google_drive.credentials_base64'));
+        $path = trim((string) config('services.google_drive.credentials_path'));
 
-        if ($raw) {
-            return json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
+        if ($raw !== '') {
+            return $this->decodeCredentials($raw);
         }
 
-        if ($path && is_file($path)) {
-            return json_decode(file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+        if ($base64 !== '') {
+            return $this->decodeCredentials($base64, true);
+        }
+
+        if ($path !== '' && is_file($path)) {
+            return $this->decodeCredentials(file_get_contents($path) ?: '');
         }
 
         return null;
+    }
+
+    private function decodeCredentials(string $value, bool $encoded = false): array
+    {
+        if (!$encoded && $this->isReadableCredentialsPath($value)) {
+            $value = file_get_contents($value) ?: '';
+        }
+
+        if ($encoded) {
+            $decoded = base64_decode($value, true);
+
+            if ($decoded === false) {
+                throw new RuntimeException('Google Drive credentials are not valid base64.');
+            }
+
+            $value = $decoded;
+        }
+
+        $credentials = json_decode($value, true, flags: JSON_THROW_ON_ERROR);
+
+        if (!is_array($credentials)) {
+            throw new RuntimeException('Google Drive credentials must decode to a JSON object.');
+        }
+
+        return $credentials;
+    }
+
+    private function isReadableCredentialsPath(string $value): bool
+    {
+        return strlen($value) < 4096
+            && (str_contains($value, DIRECTORY_SEPARATOR) || str_ends_with($value, '.json'))
+            && is_file($value);
     }
 
     private function folderId(): ?string
