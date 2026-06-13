@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @php
+    $timezone = config('app.timezone', 'Asia/Phnom_Penh');
+    $locale = app()->getLocale();
+    $now = \Carbon\CarbonImmutable::now($timezone);
+
     $localTotalBytes = collect($localBackups)->sum(fn ($backup) => (int) ($backup['size'] ?? 0));
     $cloudTotalBytes = collect($cloudBackups)->sum(fn ($backup) => (int) ($backup['size'] ?? 0));
     $latestLocal = collect($localBackups)->first();
@@ -22,29 +26,82 @@
         default => 'is-warning',
     };
 
+    $formatDateTime = static fn ($value): string => \Carbon\Carbon::parse($value)
+        ->timezone($timezone)
+        ->locale($locale)
+        ->translatedFormat('Y-m-d H:i:s');
+
+    $formatNextRun = static function (\Carbon\CarbonImmutable $next) use ($now, $locale): string {
+        $day = match (true) {
+            $next->isSameDay($now) => __('admin.backup_restore.today'),
+            $next->isSameDay($now->addDay()) => __('admin.backup_restore.tomorrow'),
+            default => $next->locale($locale)->translatedFormat('M d'),
+        };
+
+        return $day . ' ' . $next->format('H:i') . ' (' . $next->locale($locale)->diffForHumans($now, [
+            'parts' => 2,
+            'join' => true,
+            'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_TO_NOW,
+        ]) . ')';
+    };
+
+    $nextDailyAt = static function (string $time) use ($now): \Carbon\CarbonImmutable {
+        [$hour, $minute] = array_map('intval', explode(':', $time));
+        $next = $now->setTime($hour, $minute);
+
+        return $next->isPast() ? $next->addDay() : $next;
+    };
+
+    $nextFromDailyTimes = static function (array $times) use ($nextDailyAt): \Carbon\CarbonImmutable {
+        return collect($times)
+            ->map(fn (string $time) => $nextDailyAt($time))
+            ->sort()
+            ->first();
+    };
+
+    $nextWeeklyAt = static function (int $dayOfWeek, string $time) use ($now): \Carbon\CarbonImmutable {
+        [$hour, $minute] = array_map('intval', explode(':', $time));
+        $next = $now->next($dayOfWeek)->setTime($hour, $minute);
+        $today = $now->setTime($hour, $minute);
+
+        return $now->dayOfWeek === $dayOfWeek && !$today->isPast() ? $today : $next;
+    };
+
+    $nextMonthlyAt = static function (int $day, string $time) use ($now): \Carbon\CarbonImmutable {
+        [$hour, $minute] = array_map('intval', explode(':', $time));
+        $next = $now->setDay(min($day, $now->daysInMonth))->setTime($hour, $minute);
+
+        if ($next->isPast()) {
+            $nextMonth = $now->addMonthNoOverflow();
+            return $nextMonth->setDay(min($day, $nextMonth->daysInMonth))->setTime($hour, $minute);
+        }
+
+        return $next;
+    };
+
     $scheduledJobs = [
         [
             'name' => __('admin.backup_restore.schedule_postgresql_full'),
             'frequency' => __('admin.backup_restore.schedule_postgresql_full_frequency'),
-            'next' => __('admin.backup_restore.schedule_postgresql_full_next'),
+            'next' => $formatNextRun($nextDailyAt('02:00')),
             'tone' => 'blue',
         ],
         [
             'name' => __('admin.backup_restore.schedule_user_files_incremental'),
             'frequency' => __('admin.backup_restore.schedule_user_files_incremental_frequency'),
-            'next' => __('admin.backup_restore.schedule_user_files_incremental_next'),
+            'next' => $formatNextRun($nextFromDailyTimes(['08:00', '12:00', '16:00', '20:00'])),
             'tone' => 'green',
         ],
         [
             'name' => __('admin.backup_restore.schedule_media_cdn_sync'),
             'frequency' => __('admin.backup_restore.schedule_media_cdn_sync_frequency'),
-            'next' => __('admin.backup_restore.schedule_media_cdn_sync_next'),
+            'next' => $formatNextRun($nextWeeklyAt(\Carbon\CarbonInterface::SUNDAY, '03:00')),
             'tone' => 'amber',
         ],
         [
             'name' => __('admin.backup_restore.schedule_config_snapshot'),
             'frequency' => __('admin.backup_restore.schedule_config_snapshot_frequency'),
-            'next' => __('admin.backup_restore.schedule_config_snapshot_next'),
+            'next' => $formatNextRun($nextMonthlyAt(1, '04:00')),
             'tone' => 'violet',
         ],
     ];
@@ -778,7 +835,7 @@
                 </div>
                 <div class="backup-meta">
                     <span>{{ __('admin.backup_restore.last_successful_action') }}</span>
-                    <strong>{{ $lastSuccess ? optional($lastSuccess->created_at)->format('M d, Y H:i') : __('admin.backup_restore.no_success_logs_yet') }}</strong>
+                    <strong>{{ $lastSuccess ? $formatDateTime($lastSuccess->created_at) : __('admin.backup_restore.no_success_logs_yet') }}</strong>
                 </div>
             </div>
         </div>
@@ -967,7 +1024,7 @@
                                         </div>
                                     </td>
                                     <td>{{ isset($backup['size']) ? number_format(((int) $backup['size']) / 1024 / 1024, 2) . ' MB' : __('admin.backup_restore.not_available') }}</td>
-                                    <td>{{ isset($backup['createdTime']) ? \Carbon\Carbon::parse($backup['createdTime'])->format('Y-m-d H:i:s') : __('admin.backup_restore.not_available') }}</td>
+                                    <td>{{ isset($backup['createdTime']) ? $formatDateTime($backup['createdTime']) : __('admin.backup_restore.not_available') }}</td>
                                     <td>
                                         <div class="backup-actions">
                                             <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.cloud.download', ['fileId' => $backup['id'], 'fileName' => $backup['name'] ?? __('admin.backup_restore.unknown')]) }}">{{ __('admin.backup_restore.download') }}</a>
@@ -1018,7 +1075,7 @@
                             </div>
                             <div class="backup-log__file" title="{{ $log->file_name ?: __('admin.backup_restore.no_file') }}">{{ $log->file_name ?: __('admin.backup_restore.no_file') }}</div>
                             <div class="backup-log__message">{{ $log->message }}</div>
-                            <div class="backup-log__time">{{ optional($log->created_at)->format('Y-m-d H:i:s') }}</div>
+                            <div class="backup-log__time">{{ $log->created_at ? $formatDateTime($log->created_at) : '' }}</div>
                         </div>
                     </div>
                 @empty
