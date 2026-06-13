@@ -31,7 +31,13 @@ class WebAuthController extends Controller
             Auth::login($user);
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.dashboard'));
+            $defaultRoute = match ($user->role) {
+                'teacher' => route('teacher.attendance'),
+                'student' => route('admin.students.overview'),
+                default => route('admin.dashboard'),
+            };
+
+            return redirect()->intended($defaultRoute);
         }
 
         return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');

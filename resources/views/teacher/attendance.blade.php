@@ -1,5 +1,299 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    .teacher-attendance-page {
+        display: grid;
+        gap: 22px;
+        padding: 24px;
+    }
+
+    .teacher-attendance-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: start;
+    }
+
+    .teacher-attendance-title h1 {
+        margin: 0;
+        color: var(--text);
+        font-size: clamp(30px, 3vw, 42px);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .teacher-attendance-title p {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 15px;
+    }
+
+    .teacher-attendance-actions {
+        display: grid;
+        grid-template-columns: repeat(2, max-content) minmax(150px, 180px);
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .teacher-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 92px;
+        height: 50px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--accent);
+        padding: 0 16px;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .teacher-action.is-primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .teacher-month-card,
+    .teacher-metric,
+    .teacher-panel,
+    .teacher-table-card {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .teacher-month-card {
+        min-height: 64px;
+        padding: 12px 16px;
+    }
+
+    .teacher-kicker {
+        display: block;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .teacher-month-card strong,
+    .teacher-metric strong {
+        display: block;
+        margin-top: 6px;
+        color: var(--accent);
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .teacher-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .teacher-metric {
+        min-height: 86px;
+        padding: 18px;
+    }
+
+    .teacher-metric strong {
+        color: var(--text);
+    }
+
+    .teacher-section {
+        display: grid;
+        gap: 14px;
+    }
+
+    .teacher-section-title {
+        margin: 0;
+        color: var(--text);
+        font-size: 26px;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .teacher-session-grid,
+    .teacher-form-grid {
+        display: grid;
+        gap: 16px;
+    }
+
+    .teacher-session-grid,
+    .teacher-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .teacher-panel {
+        padding: 20px;
+    }
+
+    .teacher-panel h2 {
+        margin: 0 0 14px;
+        color: var(--text);
+        font-size: 24px;
+        line-height: 1.2;
+        font-weight: 800;
+    }
+
+    .teacher-form {
+        display: grid;
+        gap: 12px;
+    }
+
+    .teacher-datetime-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .teacher-control {
+        width: 100%;
+        min-width: 0;
+        height: 50px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface2);
+        color: var(--text);
+        padding: 0 14px;
+        font-size: 14px;
+        outline: none;
+    }
+
+    textarea.teacher-control {
+        min-height: 132px;
+        height: auto;
+        padding: 13px 14px;
+        resize: vertical;
+    }
+
+    .teacher-control:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+
+    .teacher-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 50px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .teacher-empty {
+        grid-column: 1 / -1;
+        border: 1px dashed var(--border);
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 28px;
+        color: var(--muted);
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .teacher-history-filter {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .teacher-table-card {
+        overflow: hidden;
+    }
+
+    .teacher-table-wrap {
+        overflow-x: auto;
+    }
+
+    .teacher-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+    }
+
+    .teacher-table th,
+    .teacher-table td {
+        border-bottom: 1px solid var(--border);
+        padding: 14px 16px;
+        text-align: left;
+    }
+
+    .teacher-table th {
+        background: var(--surface2);
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .teacher-table td {
+        color: var(--text2);
+        font-size: 14px;
+    }
+
+    @media (max-width: 1180px) {
+        .teacher-attendance-header {
+            grid-template-columns: 1fr;
+        }
+
+        .teacher-attendance-actions {
+            grid-template-columns: repeat(2, max-content) minmax(150px, 1fr);
+        }
+
+        .teacher-metrics,
+        .teacher-session-grid,
+        .teacher-form-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 720px) {
+        .teacher-attendance-page {
+            padding: 16px;
+        }
+
+        .teacher-attendance-actions,
+        .teacher-metrics,
+        .teacher-session-grid,
+        .teacher-form-grid,
+        .teacher-datetime-grid,
+        .teacher-history-filter {
+            grid-template-columns: 1fr;
+        }
+
+        .teacher-action,
+        .teacher-month-card {
+            width: 100%;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 @php
     $statusClasses = [
@@ -18,18 +312,18 @@
     ];
 @endphp
 
-<div class="flex flex-col gap-5 p-4 sm:p-6">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h1 class="m-0 text-[32px] font-semibold leading-tight text-[var(--text)]">My Teaching Attendance</h1>
-            <p class="mt-1 text-sm text-[var(--muted)]">Check in and out based on your assigned class schedule.</p>
+<div class="teacher-attendance-page">
+    <div class="teacher-attendance-header">
+        <div class="teacher-attendance-title">
+            <h1>My Teaching Attendance</h1>
+            <p>Check in and out based on your assigned class schedule.</p>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('teacher.attendance.scan') }}" class="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--accent)] px-4 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-blue-700">Scan QR</a>
-            <a href="{{ route('teacher.attendance.checkout') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold uppercase tracking-wide text-[var(--accent)]">Checkout</a>
-            <div class="min-w-36 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-                <span class="block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">This Month</span>
-                <strong class="mt-2 block text-2xl font-semibold text-[var(--accent)]">{{ $percentage }}%</strong>
+        <div class="teacher-attendance-actions">
+            <a href="{{ route('teacher.attendance.scan') }}" class="teacher-action is-primary">Scan QR</a>
+            <a href="{{ route('teacher.attendance.checkout') }}" class="teacher-action">Checkout</a>
+            <div class="teacher-month-card">
+                <span class="teacher-kicker">This Month</span>
+                <strong>{{ $percentage }}%</strong>
             </div>
         </div>
     </div>
@@ -41,16 +335,16 @@
         <div class="rounded-lg border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
     @endif
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><span class="block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Today</span><strong class="mt-2 block text-2xl font-semibold text-[var(--text)]">{{ $todaySessions->count() }}</strong></div>
-        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><span class="block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Upcoming</span><strong class="mt-2 block text-2xl font-semibold text-[var(--text)]">{{ $upcoming->count() }}</strong></div>
-        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><span class="block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Pending Corrections</span><strong class="mt-2 block text-2xl font-semibold text-[var(--text)]">{{ $pendingCorrections }}</strong></div>
-        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><span class="block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Pending Changes</span><strong class="mt-2 block text-2xl font-semibold text-[var(--text)]">{{ $pendingChanges }}</strong></div>
+    <div class="teacher-metrics">
+        <div class="teacher-metric"><span class="teacher-kicker">Today</span><strong>{{ $todaySessions->count() }}</strong></div>
+        <div class="teacher-metric"><span class="teacher-kicker">Upcoming</span><strong>{{ $upcoming->count() }}</strong></div>
+        <div class="teacher-metric"><span class="teacher-kicker">Pending Corrections</span><strong>{{ $pendingCorrections }}</strong></div>
+        <div class="teacher-metric"><span class="teacher-kicker">Pending Changes</span><strong>{{ $pendingChanges }}</strong></div>
     </div>
 
-    <section class="grid gap-3">
-        <h2 class="text-2xl font-semibold text-[var(--text)]">Today's Classes</h2>
-        <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
+    <section class="teacher-section">
+        <h2 class="teacher-section-title">Today's Classes</h2>
+        <div class="teacher-session-grid">
             @forelse($todaySessions as $session)
                 <article class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -85,23 +379,23 @@
                     </div>
                 </article>
             @empty
-                <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--muted)] shadow-sm">No teaching sessions scheduled for today.</div>
+                <div class="teacher-empty">No teaching sessions scheduled for today.</div>
             @endforelse
         </div>
     </section>
 
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-            <h2 class="mb-3 text-2xl font-semibold text-[var(--text)]">Correction Request</h2>
-            <form method="POST" action="{{ route('teacher.attendance.corrections.store') }}" class="grid gap-3">
+    <div class="teacher-form-grid">
+        <section class="teacher-panel">
+            <h2>Correction Request</h2>
+            <form method="POST" action="{{ route('teacher.attendance.corrections.store') }}" class="teacher-form">
                 @csrf
-                <select name="attendance_session_id" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
+                <select name="attendance_session_id" class="teacher-control">
                     <option value="">Select attendance session</option>
                     @foreach ($history as $session)
                         <option value="{{ $session->id }}">{{ $session->attendance_date?->format('M d') }} · {{ $session->subject->name ?? 'Subject' }} · {{ str_replace('_', ' ', $session->attendance_status) }}</option>
                     @endforeach
                 </select>
-                <select name="request_type" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" required>
+                <select name="request_type" class="teacher-control" required>
                     <option value="missing_check_in">Missing Check-In</option>
                     <option value="missing_check_out">Missing Check-Out</option>
                     <option value="wrong_status">Wrong Attendance Status</option>
@@ -109,65 +403,65 @@
                     <option value="schedule_change">Schedule Changes</option>
                     <option value="other">Other</option>
                 </select>
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <input type="datetime-local" name="requested_check_in_time" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
-                    <input type="datetime-local" name="requested_check_out_time" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
+                <div class="teacher-datetime-grid">
+                    <input type="datetime-local" name="requested_check_in_time" class="teacher-control">
+                    <input type="datetime-local" name="requested_check_out_time" class="teacher-control">
                 </div>
-                <select name="requested_status" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
+                <select name="requested_status" class="teacher-control">
                     <option value="">No status change</option>
                     @foreach (['present', 'on_time', 'late', 'very_late', 'completed', 'early_leave', 'permission', 'absent'] as $status)
                         <option value="{{ $status }}">{{ str_replace('_', ' ', $status) }}</option>
                     @endforeach
                 </select>
-                <textarea name="reason" class="min-h-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" required placeholder="Explain the issue"></textarea>
-                <button class="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--accent)] px-4 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-blue-700">Submit Correction</button>
+                <textarea name="reason" class="teacher-control" required placeholder="Explain the issue"></textarea>
+                <button class="teacher-primary">Submit Correction</button>
             </form>
         </section>
 
-        <section class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-            <h2 class="mb-3 text-2xl font-semibold text-[var(--text)]">Cancel / Reschedule</h2>
-            <form method="POST" action="{{ route('teacher.attendance.class-change.store') }}" class="grid gap-3">
+        <section class="teacher-panel">
+            <h2>Cancel / Reschedule</h2>
+            <form method="POST" action="{{ route('teacher.attendance.class-change.store') }}" class="teacher-form">
                 @csrf
-                <select name="schedule_id" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" required>
+                <select name="schedule_id" class="teacher-control" required>
                     <option value="">Select schedule</option>
                     @foreach ($todaySessions->concat($upcoming) as $session)
                         <option value="{{ $session->schedule_id }}">{{ $session->attendance_date?->format('M d') }} · {{ $session->subject->name ?? 'Subject' }} · {{ $session->scheduled_start_time?->format('H:i') }}</option>
                     @endforeach
                 </select>
-                <select name="request_type" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" required>
+                <select name="request_type" class="teacher-control" required>
                     <option value="cancellation">Cancellation</option>
                     <option value="reschedule">Reschedule</option>
                     <option value="replacement">Replacement Session</option>
                 </select>
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <input type="datetime-local" name="requested_start_time" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
-                    <input type="datetime-local" name="requested_end_time" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
+                <div class="teacher-datetime-grid">
+                    <input type="datetime-local" name="requested_start_time" class="teacher-control">
+                    <input type="datetime-local" name="requested_end_time" class="teacher-control">
                 </div>
-                <input type="text" name="requested_room_name" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" placeholder="Requested room">
-                <textarea name="reason" class="min-h-28 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" required placeholder="Reason for change"></textarea>
-                <button class="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--accent)] px-4 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-blue-700">Submit Request</button>
+                <input type="text" name="requested_room_name" class="teacher-control" placeholder="Requested room">
+                <textarea name="reason" class="teacher-control" required placeholder="Reason for change"></textarea>
+                <button class="teacher-primary">Submit Request</button>
             </form>
         </section>
     </div>
 
-    <section class="grid gap-3">
-        <h2 class="text-2xl font-semibold text-[var(--text)]">Attendance History</h2>
-        <form method="GET" class="grid grid-cols-1 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm sm:grid-cols-4">
-            <input type="date" name="from" value="{{ request('from') }}" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
-            <input type="date" name="to" value="{{ request('to') }}" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
-            <select name="status" class="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]">
+    <section class="teacher-section">
+        <h2 class="teacher-section-title">Attendance History</h2>
+        <form method="GET" class="teacher-history-filter teacher-table-card">
+            <input type="date" name="from" value="{{ request('from') }}" class="teacher-control">
+            <input type="date" name="to" value="{{ request('to') }}" class="teacher-control">
+            <select name="status" class="teacher-control">
                 <option value="">All statuses</option>
                 @foreach (['scheduled', 'present', 'on_time', 'late', 'very_late', 'teaching', 'completed', 'early_leave', 'absent', 'permission', 'cancelled', 'rescheduled', 'missing_check_out'] as $status)
                     <option value="{{ $status }}" @selected(request('status') === $status)>{{ str_replace('_', ' ', $status) }}</option>
                 @endforeach
             </select>
-            <button class="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold uppercase tracking-wide text-[var(--accent)] transition hover:border-[var(--accent)] hover:bg-[var(--surface2)]">Filter</button>
+            <button class="teacher-action">Filter</button>
         </form>
 
-        <div class="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px] border-collapse">
-                    <thead class="bg-[var(--surface2)]">
+        <div class="teacher-table-card">
+            <div class="teacher-table-wrap">
+                <table class="teacher-table">
+                    <thead>
                         <tr>
                             <th class="border-b border-[var(--border)] px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Date</th>
                             <th class="border-b border-[var(--border)] px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Subject</th>

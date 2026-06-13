@@ -181,7 +181,7 @@
                         style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow-xl); padding:24px">
                         <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:20px; align-items:center">
                             <div>
-                                <div style="display:inline-block; font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--green); background:var(--green)11; padding:3px 12px; border-radius:20px; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px"
+                                <div style="display:inline-block; font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--green); background:color-mix(in srgb, var(--green) 7%, transparent); padding:3px 12px; border-radius:20px; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px"
                                     id="smStatusBadge">ACTIVE STUDENT</div>
                                 <div style="display:grid; grid-template-columns: 1fr; gap:15px">
                                     <div>
@@ -285,7 +285,7 @@
             </div>
             <div class="modal-body" style="padding:24px">
                 <div
-                    style="background:var(--accent)11;border:1px dashed var(--accent)44;border-radius:12px;padding:32px;text-align:center;">
+                    style="background:color-mix(in srgb, var(--accent) 7%, transparent);border:1px dashed color-mix(in srgb, var(--accent) 27%, transparent);border-radius:12px;padding:32px;text-align:center;">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                         style="color:var(--accent);margin-bottom:16px">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"

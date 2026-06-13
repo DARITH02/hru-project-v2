@@ -17,6 +17,10 @@ class SystemMaintenanceModeMiddleware
             return $next($request);
         }
 
+        if (!$request->user() && $this->shouldRedirectGuestToLogin($request)) {
+            return redirect()->guest(route('login'));
+        }
+
         $message = $maintenance->message();
 
         if ($request->expectsJson() || $request->is('api/*')) {
@@ -52,6 +56,21 @@ class SystemMaintenanceModeMiddleware
             'favicon.ico',
             'storage/*',
             'up',
+        ]);
+    }
+
+    private function shouldRedirectGuestToLogin(Request $request): bool
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return false;
+        }
+
+        return $request->is([
+            'admin',
+            'admin/*',
+            'teacher/attendance',
+            'teacher/attendance/*',
+            'teacher/reports',
         ]);
     }
 }

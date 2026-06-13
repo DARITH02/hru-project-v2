@@ -49,50 +49,50 @@
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section-label">{{ __('admin.sections.main') }}</div>
-
-            <a href="{{ route('admin.dashboard') }}"
-                class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="3" width="7" height="11" rx="1.5" />
-                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="18" width="7" height="3" rx="1.5" />
-                    </svg>
-                </span>
-                <span class="nav-text">{{ __('admin.nav.dashboard') }}</span>
-            </a>
-
-            <a href="{{ route('admin.results') }}"
-                class="nav-link {{ request()->is('admin/results') ? 'active' : '' }}">
-                <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap">
-                        <path
-                            d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-                        <path d="M22 10v6" />
-                        <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-                    </svg></span>
-                <span class="nav-text">{{ __('admin.nav.result_grading') }}</span>
-            </a>
-
-
-            <a href="{{ route('admin.attendance-issues') }}"
-                class="nav-link {{ request()->is('admin/attendance-issues') ? 'active' : '' }}">
-                <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="lucide lucide-alert-triangle">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg></span>
-                <span class="nav-text">{{ __('admin.nav.attendance_issues') }}</span>
-            </a>
-
-
             @if (Auth::user()->isAdmin())
+                <div class="nav-section-label">{{ __('admin.sections.main') }}</div>
+
+                <a href="{{ route('admin.dashboard') }}"
+                    class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="3" width="7" height="11" rx="1.5" />
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="18" width="7" height="3" rx="1.5" />
+                        </svg>
+                    </span>
+                    <span class="nav-text">{{ __('admin.nav.dashboard') }}</span>
+                </a>
+
+                <a href="{{ route('admin.results') }}"
+                    class="nav-link {{ request()->is('admin/results') ? 'active' : '' }}">
+                    <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap">
+                            <path
+                                d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+                            <path d="M22 10v6" />
+                            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+                        </svg></span>
+                    <span class="nav-text">{{ __('admin.nav.result_grading') }}</span>
+                </a>
+
+
+                <a href="{{ route('admin.attendance-issues') }}"
+                    class="nav-link {{ request()->is('admin/attendance-issues') ? 'active' : '' }}">
+                    <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="lucide lucide-alert-triangle">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg></span>
+                    <span class="nav-text">{{ __('admin.nav.attendance_issues') }}</span>
+                </a>
+
+
                 <div class="nav-section-label">{{ __('admin.sections.teachers') }}</div>
                 <a href="{{ route('admin.instructors') }}" data-tooltip="{{ __('admin.nav.instructors') }}"
                     class="nav-link {{ request()->is('admin/instructors') ? 'active' : '' }}"><span
@@ -650,14 +650,14 @@
             const item = document.createElement('div');
             item.style =
                 `padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: start; gap: 10px; transition: background .2s; cursor: pointer; animation: slideDown .3s ease;`;
-            item.onmouseover = () => item.style.background = 'var(--accent)08';
+            item.onmouseover = () => item.style.background = 'color-mix(in srgb, var(--accent) 3%, transparent)';
             item.onmouseout = () => item.style.background = 'transparent';
 
             const initials = act.name ? act.name.trim().split(/\s+/).map(n => n[0]).join('').substring(0, 2).toUpperCase() :
                 'SYS';
 
-            let avatarBg = 'var(--accent)18';
-            let avatarBorder = 'var(--accent)30';
+            let avatarBg = 'color-mix(in srgb, var(--accent) 9%, transparent)';
+            let avatarBorder = 'color-mix(in srgb, var(--accent) 19%, transparent)';
             let avatarColor = 'var(--accent)';
             let statusDot = '';
 

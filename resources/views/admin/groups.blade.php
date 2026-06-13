@@ -176,7 +176,7 @@
                             <div style="font-size:9px;color:var(--muted)">{{ $group->major->department->name ?? 'General' }}</div>
                         </td>
                         <td>
-                            <span style="background:var(--accent)18;color:var(--accent);padding:2px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;font-weight:700">YEAR {{ $group->year_level }}</span>
+                            <span style="background:color-mix(in srgb, var(--accent) 9%, transparent);color:var(--accent);padding:2px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;font-weight:700">YEAR {{ $group->year_level }}</span>
                         </td>
                         <td>
                             <div style="font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--text)">{{ $group->students_count }}</div>

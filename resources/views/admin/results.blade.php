@@ -7,7 +7,7 @@
             <div>
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
                     <div
-                        style="width:32px; height:32px; border-radius:10px; background:var(--accent)22; color:var(--accent); display:flex; align-items:center; justify-content:center;">
+                        style="width:32px; height:32px; border-radius:10px; background:color-mix(in srgb, var(--accent) 13%, transparent); color:var(--accent); display:flex; align-items:center; justify-content:center;">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -113,7 +113,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--accent)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--accent) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -130,7 +130,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--green)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--green) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -146,7 +146,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--violet)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--violet) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -162,7 +162,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--amber)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--amber) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -258,7 +258,7 @@
                 <div style="padding:20px;">
                     @foreach($topStudents as $student)
                         <div
-                            style="padding:15px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border)44; @if($loop->last) border-bottom:none; @endif">
+                            style="padding:15px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid color-mix(in srgb, var(--border) 27%, transparent); @if($loop->last) border-bottom:none; @endif">
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <div
                                     style="width:36px; height:36px; border-radius:50%; background:var(--surface3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; font-weight:800; color:var(--accent);">
@@ -302,7 +302,7 @@
             <div style="padding:0;">
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
-                        <tr style="text-align:left; background:var(--surface3)44;">
+                        <tr style="text-align:left; background:color-mix(in srgb, var(--surface3) 27%, transparent);">
                             <th
                                 style="padding:15px 10px; text-align:center; font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; width:60px;">
                                 {{ __('admin_results.no') }}</th>
@@ -326,7 +326,7 @@
                     <tbody>
                         @foreach($groupedResults as $groupName => $students)
                             {{-- Group Header Row --}}
-                            <tr style="background:var(--surface3)88; border-top:2px solid var(--border);">
+                            <tr style="background:color-mix(in srgb, var(--surface3) 53%, transparent); border-top:2px solid var(--border);">
                                 <td colspan="5" style="padding:12px 30px;">
                                     <div style="display:flex; align-items:center; gap:12px;">
                                         <div style="width:8px; height:8px; border-radius:2px; background:var(--accent);"></div>
@@ -342,7 +342,7 @@
 
                             @foreach($students as $res)
                                 <tr style="border-top:1px solid var(--border); transition:background 0.2s;"
-                                    onmouseover="this.style.background='var(--surface3)44'"
+                                    onmouseover="this.style.background='color-mix(in srgb, var(--surface3) 27%, transparent)'"
                                     onmouseout="this.style.background='transparent'">
                                     <td style="padding:18px 10px; text-align:center;">
                                         <div style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--muted);">{{ $loop->iteration }}</div>
@@ -366,7 +366,7 @@
                                     </td>
                                     <td style="padding:18px 10px; text-align:center;">
                                         <div
-                                            style="width:32px; height:32px; margin:0 auto; border-radius:8px; background:{{ $res['status'] === 'PASSED' ? 'var(--green)11' : 'var(--red)11' }}; color:{{ $res['status'] === 'PASSED' ? 'var(--green)' : 'var(--red)' }}; display:flex; align-items:center; justify-content:center; font-weight:900; font-family:var(--font-display); border:1px solid {{ $res['status'] === 'PASSED' ? 'var(--green)33' : 'var(--red)33' }};">
+                                            style="width:32px; height:32px; margin:0 auto; border-radius:8px; background:{{ $res['status'] === 'PASSED' ? 'color-mix(in srgb, var(--green) 7%, transparent)' : 'color-mix(in srgb, var(--red) 7%, transparent)' }}; color:{{ $res['status'] === 'PASSED' ? 'var(--green)' : 'var(--red)' }}; display:flex; align-items:center; justify-content:center; font-weight:900; font-family:var(--font-display); border:1px solid {{ $res['status'] === 'PASSED' ? 'color-mix(in srgb, var(--green) 20%, transparent)' : 'color-mix(in srgb, var(--red) 20%, transparent)' }};">
                                             {{ $res['grade'] }}
                                         </div>
                                     </td>

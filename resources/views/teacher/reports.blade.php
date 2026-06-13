@@ -19,7 +19,7 @@
         </div>
         <div class="modal-body" style="padding:24px">
             <div id="checkinStudentInfo" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface3);border-radius:10px;margin-bottom:20px;border:1px solid var(--border)">
-                <div id="checkinAvatar" style="width:44px;height:44px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">?</div>
+                <div id="checkinAvatar" style="width:44px;height:44px;border-radius:50%;background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">?</div>
                 <div>
                     <div id="checkinName" style="font-weight:700;font-size:14px;color:var(--text)">Student Name</div>
                     <div id="checkinCode" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">CODE</div>
@@ -27,15 +27,15 @@
             </div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:12px">SET ATTENDANCE STATUS</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-                <button onclick="setCheckin('present')" class="status-choice-btn" id="btnPresent" style="background:var(--green)18;border:2px solid var(--green)44;color:var(--green);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
+                <button onclick="setCheckin('present')" class="status-choice-btn" id="btnPresent" style="background:color-mix(in srgb, var(--green) 9%, transparent);border:2px solid color-mix(in srgb, var(--green) 27%, transparent);color:var(--green);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:block;margin:0 auto 6px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     PRESENT
                 </button>
-                <button onclick="setCheckin('late')" class="status-choice-btn" id="btnLate" style="background:var(--amber)18;border:2px solid var(--amber)44;color:var(--amber);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
+                <button onclick="setCheckin('late')" class="status-choice-btn" id="btnLate" style="background:color-mix(in srgb, var(--amber) 9%, transparent);border:2px solid color-mix(in srgb, var(--amber) 27%, transparent);color:var(--amber);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:block;margin:0 auto 6px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     LATE
                 </button>
-                <button onclick="setCheckin('absent')" class="status-choice-btn" id="btnAbsent" style="background:var(--red)18;border:2px solid var(--red)44;color:var(--red);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
+                <button onclick="setCheckin('absent')" class="status-choice-btn" id="btnAbsent" style="background:color-mix(in srgb, var(--red) 9%, transparent);border:2px solid color-mix(in srgb, var(--red) 27%, transparent);color:var(--red);border-radius:10px;padding:14px 8px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.05em">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:block;margin:0 auto 6px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     ABSENT
                 </button>
@@ -56,7 +56,7 @@
         <p class="page-subtitle">LIVE MONITORING · REPORTS · ANALYTICS</p>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-        <div id="liveSessionBadge" style="display:none;align-items:center;gap:8px;background:var(--green)15;border:1px solid var(--green)40;border-radius:99px;padding:8px 14px">
+        <div id="liveSessionBadge" style="display:none;align-items:center;gap:8px;background:color-mix(in srgb, var(--green) 8%, transparent);border:1px solid color-mix(in srgb, var(--green) 25%, transparent);border-radius:99px;padding:8px 14px">
             <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite"></div>
             <span style="font-family:var(--font-mono);font-size:10px;color:var(--green);font-weight:700;letter-spacing:.08em">LIVE SESSION</span>
         </div>
@@ -126,7 +126,7 @@
                 <button onclick="loadSession({{ $sess->id }})" 
                     data-sid="{{ $sess->id }}"
                     class="session-btn {{ $sess->id == ($selectedSession?->id) ? 'active' : '' }}"
-                    style="width:100%;text-align:left;background:{{ $sess->id == ($selectedSession?->id) ? 'var(--accent)10' : 'transparent' }};border:1px solid {{ $sess->id == ($selectedSession?->id) ? 'var(--accent)40' : 'var(--border)' }};border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s">
+                    style="width:100%;text-align:left;background:{{ $sess->id == ($selectedSession?->id) ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'transparent' }};border:1px solid {{ $sess->id == ($selectedSession?->id) ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--border)' }};border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                         <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted)">#{{ str_pad($sess->id,4,'0',STR_PAD_LEFT) }}</div>
                         <div style="display:flex;align-items:center;gap:5px">
@@ -175,7 +175,7 @@
                         <div>
                             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
                                 @if($isLive)
-                                <div style="display:flex;align-items:center;gap:7px;background:var(--green)18;border:1px solid var(--green)40;border-radius:99px;padding:5px 12px">
+                                <div style="display:flex;align-items:center;gap:7px;background:color-mix(in srgb, var(--green) 9%, transparent);border:1px solid color-mix(in srgb, var(--green) 25%, transparent);border-radius:99px;padding:5px 12px">
                                     <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite"></div>
                                     <span style="font-family:var(--font-mono);font-size:9px;color:var(--green);font-weight:700">LIVE</span>
                                 </div>
@@ -199,7 +199,7 @@
                                 ACTIVATE
                             </button>
                             @else
-                            <button onclick="updateSessionStatus({{ $liveSession->id }}, 'completed')" class="btn-secondary" style="font-size:10px;padding:8px 14px;gap:6px;border-color:var(--amber)44;color:var(--amber)">
+                            <button onclick="updateSessionStatus({{ $liveSession->id }}, 'completed')" class="btn-secondary" style="font-size:10px;padding:8px 14px;gap:6px;border-color:color-mix(in srgb, var(--amber) 27%, transparent);color:var(--amber)">
                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
                                 END SESSION
                             </button>
@@ -212,23 +212,23 @@
 
                     {{-- Quick Stats --}}
                     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:22px">
-                        <div style="background:var(--surface)50;backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
+                        <div style="background:color-mix(in srgb, var(--surface) 31%, transparent);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
                             <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">PRESENT</div>
                             <div id="quickPresent" style="font-weight:800;font-size:22px;color:var(--green)">{{ $presentCount }}</div>
                         </div>
-                        <div style="background:var(--surface)50;backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
+                        <div style="background:color-mix(in srgb, var(--surface) 31%, transparent);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
                             <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">EXCUSED</div>
                             <div id="quickExcused" style="font-weight:800;font-size:22px;color:var(--accent)">{{ $excusedCount }}</div>
                         </div>
-                        <div style="background:var(--surface)50;backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
+                        <div style="background:color-mix(in srgb, var(--surface) 31%, transparent);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
                             <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">ABSENT</div>
                             <div id="quickAbsent" style="font-weight:800;font-size:22px;color:var(--red)">{{ $absentCount }}</div>
                         </div>
-                        <div style="background:var(--surface)50;backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
+                        <div style="background:color-mix(in srgb, var(--surface) 31%, transparent);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
                             <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">TOTAL</div>
                             <div style="font-weight:800;font-size:22px;color:var(--text)">{{ $totalInClass }}</div>
                         </div>
-                        <div style="background:var(--surface)50;backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
+                        <div style="background:color-mix(in srgb, var(--surface) 31%, transparent);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:10px;padding:14px">
                             <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px">RATE</div>
                             <div id="quickRate" style="font-weight:800;font-size:22px;color:{{ $rate >= 75 ? 'var(--green)' : 'var(--amber)' }}">{{ $rate }}%</div>
                         </div>
@@ -340,7 +340,7 @@
                         <td style="text-align:right;padding-right:24px">
                             <button onclick="openCheckin({{ $student->id }}, '{{ addslashes($student->user->name ?? '') }}', '{{ $student->student_code }}', {{ $liveSession->id }})"
                                 class="action-btn btn-edit" title="Override attendance"
-                                style="background:var(--accent)18;border-color:var(--accent)44">
+                                style="background:color-mix(in srgb, var(--accent) 9%, transparent);border-color:color-mix(in srgb, var(--accent) 27%, transparent)">
                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
                         </td>
@@ -384,8 +384,8 @@
                 @endphp
                 <a href="{{ route('teacher.reports') }}?class_id={{ $class->id }}" 
                     class="class-row {{ ($selectedClass && $selectedClass->id == $class->id) ? 'active' : '' }}"
-                    style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px;text-decoration:none;border:1px solid {{ ($selectedClass && $selectedClass->id == $class->id) ? 'var(--accent)40' : 'var(--border)' }};background:{{ ($selectedClass && $selectedClass->id == $class->id) ? 'var(--accent)10' : 'transparent' }};transition:all .2s;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:var(--accent)18;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">
+                    style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px;text-decoration:none;border:1px solid {{ ($selectedClass && $selectedClass->id == $class->id) ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--border)' }};background:{{ ($selectedClass && $selectedClass->id == $class->id) ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'transparent' }};transition:all .2s;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:color-mix(in srgb, var(--accent) 9%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">
                         {{ strtoupper(substr($class->subject->name ?? 'X', 0, 1)) }}
                     </div>
                     <div style="flex:1;min-width:0">
@@ -750,7 +750,7 @@ function showLiveNotification(rec) {
     const init = rec.student_name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
     
     note.innerHTML = `
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--green)15;color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${init}</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:color-mix(in srgb, var(--green) 8%, transparent);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${init}</div>
         <div style="flex:1">
             <div style="font-weight:700;font-size:12px;color:var(--text)">${escapeHTML(rec.student_name)}</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">Verified via ${escapeHTML(rec.method)} · ${escapeHTML(rec.time)}</div>
@@ -787,7 +787,7 @@ function updateRosterRow(rec) {
             methodCell.innerHTML = `<span style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;color:var(--muted2)">${rec.method === 'QR' ? '📱 QR' : '✏️ Manual'}</span>`;
         }
         // Flash row
-        row.style.background = 'var(--accent)08';
+        row.style.background = 'color-mix(in srgb, var(--accent) 3%, transparent)';
         setTimeout(() => row.style.background = '', 2000);
     }
 }
@@ -821,9 +821,9 @@ async function showSessionSummary(sid) {
         
         // Show specialized toast
         const s = document.createElement('div');
-        s.style = `position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; background:var(--surface2); backdrop-filter:blur(25px); border:1px solid var(--accent)40; border-radius:24px; padding:32px; z-index:10000; box-shadow:0 30px 60px rgba(0,0,0,0.5); text-align:center; animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);`;
+        s.style = `position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; background:var(--surface2); backdrop-filter:blur(25px); border:1px solid color-mix(in srgb, var(--accent) 25%, transparent); border-radius:24px; padding:32px; z-index:10000; box-shadow:0 30px 60px rgba(0,0,0,0.5); text-align:center; animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);`;
         s.innerHTML = `
-            <div style="width:60px; height:60px; border-radius:50%; background:var(--accent)18; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:var(--accent);">
+            <div style="width:60px; height:60px; border-radius:50%; background:color-mix(in srgb, var(--accent) 9%, transparent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; color:var(--accent);">
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div style="font-family:var(--font-mono); font-size:10px; color:var(--accent); font-weight:700; letter-spacing:.12em; margin-bottom:8px;">SESSION ARCHIVED</div>
@@ -878,8 +878,8 @@ async function confirmCheckin() {
 </script>
 
 <style>
-.session-btn:hover { background:var(--accent)08 !important; border-color:var(--accent)30 !important; }
-.session-btn.active { background:var(--accent)12 !important; border-color:var(--accent)44 !important; }
+.session-btn:hover { background:color-mix(in srgb, var(--accent) 3%, transparent) !important; border-color:color-mix(in srgb, var(--accent) 19%, transparent) !important; }
+.session-btn.active { background:color-mix(in srgb, var(--accent) 7%, transparent) !important; border-color:color-mix(in srgb, var(--accent) 27%, transparent) !important; }
 #refreshIcon:not([style*="animation"]) { transition: transform .3s; }
 #refreshIcon:not([style*="animation"]):hover { transform: rotate(90deg); }
 @keyframes spin { to { transform: rotate(360deg); } }

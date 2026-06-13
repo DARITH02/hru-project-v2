@@ -320,7 +320,7 @@
     <div id="approveSessionModal" class="modal-overlay" style="z-index:1200;">
         <div class="modal-box" style="max-width:450px;border-radius:24px;overflow:hidden;">
             <div class="modal-body" style="padding:40px 32px;text-align:center;">
-                <div style="width:64px;height:64px;border-radius:20px;background:var(--red)15;color:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 20px var(--red)15;">
+                <div style="width:64px;height:64px;border-radius:20px;background:color-mix(in srgb, var(--red) 8%, transparent);color:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 20px color-mix(in srgb, var(--red) 8%, transparent);">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -338,7 +338,7 @@
                         SKIP & RESCHEDULE TO END
                     </button>
                     <button type="button" id="approveSkipOnlyBtn" class="btn-secondary"
-                        style="width:100%;height:50px;border:1.5px solid var(--red)33;color:var(--red);font-weight:800;font-size:11px;letter-spacing:.05em;background:transparent;">
+                        style="width:100%;height:50px;border:1.5px solid color-mix(in srgb, var(--red) 20%, transparent);color:var(--red);font-weight:800;font-size:11px;letter-spacing:.05em;background:transparent;">
                         JUST SKIP (LOST TIME)
                     </button>
                     <button type="button" id="approveSessionCancelBtn" class="btn-secondary"

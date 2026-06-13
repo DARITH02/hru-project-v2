@@ -1290,7 +1290,7 @@
                                                 </svg>
                                             </button>
                                             <button class="action-btn" title="{{ __('admin_instructors.semester_assignment') }}"
-                                                style="background:var(--violet)18;border-color:var(--violet)44;color:var(--violet)">
+                                                style="background:color-mix(in srgb, var(--violet) 9%, transparent);border-color:color-mix(in srgb, var(--violet) 27%, transparent);color:var(--violet)">
                                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
                                                     stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

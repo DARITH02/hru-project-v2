@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
@@ -32,7 +33,17 @@ class RoleMiddleware
                 return redirect()->route('login')->with('error', 'Your account is pending approval.');
             }
 
-            return redirect()->route('admin.dashboard')->with('error', 'Unauthorized access');
+            $route = match ($request->user()->role) {
+                'teacher' => 'teacher.attendance',
+                'student' => 'admin.students.overview',
+                default => null,
+            };
+
+            if ($route && Route::has($route)) {
+                return redirect()->route($route)->with('error', 'Unauthorized access');
+            }
+
+            abort(403, 'Unauthorized access');
         }
 
         return $next($request);

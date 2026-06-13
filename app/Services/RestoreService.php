@@ -17,6 +17,7 @@ class RestoreService
     public function __construct(
         private BackupService $backupService,
         private TelegramService $telegram,
+        private MaintenanceModeService $maintenance,
     ) {
     }
 
@@ -58,6 +59,7 @@ class RestoreService
             $this->restoreDatabase($extractDir . '/database.sql');
             $this->restorePublicStorage($extractDir . '/storage_public');
 
+            $this->maintenance->disable($userId);
             Artisan::call('optimize:clear');
             Artisan::call('up');
 
@@ -70,6 +72,7 @@ class RestoreService
             $this->notify("✅ <b>Restore succeeded</b>\nFile: " . e($fileName));
         } catch (Throwable $e) {
             try {
+                $this->maintenance->disable($userId);
                 Artisan::call('up');
             } catch (Throwable) {
             }

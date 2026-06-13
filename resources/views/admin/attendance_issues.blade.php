@@ -35,7 +35,7 @@
             <div>
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
                     <div
-                        style="width:32px; height:32px; border-radius:10px; background:var(--red)22; color:var(--red); display:flex; align-items:center; justify-content:center;">
+                        style="width:32px; height:32px; border-radius:10px; background:color-mix(in srgb, var(--red) 13%, transparent); color:var(--red); display:flex; align-items:center; justify-content:center;">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -150,7 +150,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--red)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--red) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -166,7 +166,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--amber)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--amber) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -182,7 +182,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--green)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--green) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -198,7 +198,7 @@
             <div class="stat-card"
                 style="background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:30px; position:relative; overflow:hidden;">
                 <div
-                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:var(--accent)08; border-radius:50%; blur:40px;">
+                    style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:color-mix(in srgb, var(--accent) 3%, transparent); border-radius:50%; blur:40px;">
                 </div>
                 <div
                     style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em;">
@@ -242,7 +242,7 @@
                 <div class="table-responsive">
                     <table class="att-table" style="width:100%;">
                         <thead>
-                            <tr style="text-align:left; background:var(--surface3)44;">
+                            <tr style="text-align:left; background:color-mix(in srgb, var(--surface3) 27%, transparent);">
                                 <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
                                 <th>{{ __('admin_attendance_issues.student_code') }}</th>
                                 <th>{{ __('admin_attendance_issues.major_group') }}</th>
@@ -254,7 +254,7 @@
                         <tbody>
                             @forelse($blacklistedGrouped as $groupName => $items)
                                 {{-- Group Header Row --}}
-                                <tr style="background:var(--surface3)aa; border-top:1px solid var(--border);">
+                                <tr style="background:color-mix(in srgb, var(--surface3) 67%, transparent); border-top:1px solid var(--border);">
                                     <td colspan="6" style="padding:12px 25px;">
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--red);"></div>
@@ -271,7 +271,7 @@
                                     <tr style="border-top:1px solid var(--border);">
                                         <td style="padding:15px 25px;">
                                             <div style="display:flex; align-items:center; gap:12px;">
-                                                <div style="width:36px; height:36px; border-radius:50%; background:var(--red)15; color:var(--red); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">
+                                                <div style="width:36px; height:36px; border-radius:50%; background:color-mix(in srgb, var(--red) 8%, transparent); color:var(--red); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">
                                                     {{ strtoupper(substr($item['student']->user->name, 0, 2)) }}
                                                 </div>
                                                 <div style="font-weight:700; color:var(--text); font-size:13px;">
@@ -350,7 +350,7 @@
                 <div class="table-responsive">
                     <table class="att-table" style="width:100%;">
                         <thead>
-                            <tr style="text-align:left; background:var(--surface3)44;">
+                            <tr style="text-align:left; background:color-mix(in srgb, var(--surface3) 27%, transparent);">
                                 <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
                                 <th>{{ __('admin_attendance_issues.student_code') }}</th>
                                 <th>{{ __('admin_attendance_issues.major_group') }}</th>
@@ -362,7 +362,7 @@
                         <tbody>
                             @forelse($atRiskGrouped as $groupName => $items)
                                 {{-- Group Header Row --}}
-                                <tr style="background:var(--surface3)aa; border-top:1px solid var(--border);">
+                                <tr style="background:color-mix(in srgb, var(--surface3) 67%, transparent); border-top:1px solid var(--border);">
                                     <td colspan="6" style="padding:12px 25px;">
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--amber);"></div>
@@ -379,7 +379,7 @@
                                     <tr style="border-top:1px solid var(--border);">
                                         <td style="padding:15px 25px;">
                                             <div style="display:flex; align-items:center; gap:12px;">
-                                                <div style="width:36px; height:36px; border-radius:50%; background:var(--amber)15; color:var(--amber); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">
+                                                <div style="width:36px; height:36px; border-radius:50%; background:color-mix(in srgb, var(--amber) 8%, transparent); color:var(--amber); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">
                                                     {{ strtoupper(substr($item['student']->user->name, 0, 2)) }}
                                                 </div>
                                                 <div style="font-weight:700; color:var(--text); font-size:13px;">
@@ -454,7 +454,7 @@
                 <div class="table-responsive">
                     <table class="att-table" style="width:100%;">
                         <thead>
-                            <tr style="text-align:left; background:var(--surface3)44;">
+                            <tr style="text-align:left; background:color-mix(in srgb, var(--surface3) 27%, transparent);">
                                 <th style="padding:15px 25px; width:60px;">{{ __('admin_attendance_issues.identity') }}</th>
                                 <th>{{ __('admin_attendance_issues.student_code') }}</th>
                                 <th>{{ __('admin_attendance_issues.major_group') }}</th>
@@ -466,7 +466,7 @@
                         <tbody>
                             @forelse($processedStudentsGrouped as $groupName => $items)
                                 {{-- Group Header Row --}}
-                                <tr style="background:var(--surface3)aa; border-top:1px solid var(--border);">
+                                <tr style="background:color-mix(in srgb, var(--surface3) 67%, transparent); border-top:1px solid var(--border);">
                                     <td colspan="6" style="padding:12px 25px;">
                                         <div style="display:flex; align-items:center; gap:12px;">
                                             <div style="width:8px; height:8px; border-radius:2px; background:var(--accent);"></div>

@@ -135,11 +135,11 @@
                                     @if(strtolower($student['status']) === 'present')
                                         <span class="status-tag tag-active">{{ __('admin_student_overview.present') }}</span>
                                     @elseif(strtolower($student['status']) === 'late')
-                                        <span class="status-tag" style="background:var(--amber)22;color:var(--amber);border:1px solid var(--amber)44">{{ __('admin_student_overview.late') }}</span>
+                                        <span class="status-tag" style="background:color-mix(in srgb, var(--amber) 13%, transparent);color:var(--amber);border:1px solid color-mix(in srgb, var(--amber) 27%, transparent)">{{ __('admin_student_overview.late') }}</span>
                                     @elseif(strtolower($student['status']) === 'excused')
-                                        <span class="status-tag" style="background:var(--accent)22;color:var(--accent);border:1px solid var(--accent)44;cursor:help;" title="{{ __('admin_student_overview.reason') }}: {{ $student['permission'] ?? __('admin_student_overview.default_excused_reason') }}">{{ __('admin_student_overview.excused') }}</span>
+                                        <span class="status-tag" style="background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 27%, transparent);cursor:help;" title="{{ __('admin_student_overview.reason') }}: {{ $student['permission'] ?? __('admin_student_overview.default_excused_reason') }}">{{ __('admin_student_overview.excused') }}</span>
                                     @else
-                                        <span class="status-tag" style="background:var(--red)22;color:var(--red);border:1px solid var(--red)44">{{ __('admin_student_overview.absent') }}</span>
+                                        <span class="status-tag" style="background:color-mix(in srgb, var(--red) 13%, transparent);color:var(--red);border:1px solid color-mix(in srgb, var(--red) 27%, transparent)">{{ __('admin_student_overview.absent') }}</span>
                                     @endif
                                 </td>
                                 <td style="text-align:right;font-family:var(--font-mono);font-size:9px;color:var(--muted2);font-weight:700;">{{ strtoupper($student['method']) }}</td>

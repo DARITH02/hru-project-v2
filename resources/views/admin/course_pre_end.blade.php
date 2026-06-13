@@ -18,7 +18,7 @@
         
         @if($assignment)
         <div style="display:flex; gap:12px;">
-            <button onclick="openFinalModal()" id="headerFinalBtn" class="btn-primary" style="height:48px; padding:0 30px; border-radius:14px; background:var(--red); border:none; font-weight:800; display:flex; align-items:center; gap:10px; box-shadow:0 10px 20px var(--red)33;">
+            <button onclick="openFinalModal()" id="headerFinalBtn" class="btn-primary" style="height:48px; padding:0 30px; border-radius:14px; background:var(--red); border:none; font-weight:800; display:flex; align-items:center; gap:10px; box-shadow:0 10px 20px color-mix(in srgb, var(--red) 20%, transparent);">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 FINALIZE & END CLASS
             </button>
@@ -27,7 +27,7 @@
     </div>
 
     @if(isset($error))
-    <div style="padding:24px; background:var(--red)08; border:1px solid var(--red)33; border-radius:20px; margin-bottom:40px; display:flex; align-items:center; gap:20px;">
+    <div style="padding:24px; background:color-mix(in srgb, var(--red) 3%, transparent); border:1px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius:20px; margin-bottom:40px; display:flex; align-items:center; gap:20px;">
         <div style="width:48px; height:48px; background:var(--red); border-radius:12px; display:flex; align-items:center; justify-content:center; color:white;">
             <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192 3 1.732 3z"/></svg>
         </div>
@@ -61,7 +61,7 @@
                 <svg width="100" height="100" fill="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             </div>
         </div>
-        <div class="stat-card" style="background:{{ $stats['scheduled_count'] > 0 ? 'var(--red)08' : 'var(--green)08' }}; padding:24px; border-radius:20px; border:1px solid {{ $stats['scheduled_count'] > 0 ? 'var(--red)33' : 'var(--green)33' }}; position:relative; overflow:hidden;">
+        <div class="stat-card" style="background:{{ $stats['scheduled_count'] > 0 ? 'color-mix(in srgb, var(--red) 3%, transparent)' : 'color-mix(in srgb, var(--green) 3%, transparent)' }}; padding:24px; border-radius:20px; border:1px solid {{ $stats['scheduled_count'] > 0 ? 'color-mix(in srgb, var(--red) 20%, transparent)' : 'color-mix(in srgb, var(--green) 20%, transparent)' }}; position:relative; overflow:hidden;">
             <div style="font-size:11px; font-weight:800; color:{{ $stats['scheduled_count'] > 0 ? 'var(--red)' : 'var(--green)' }}; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Status</div>
             <div style="font-size:20px; font-weight:900; color:{{ $stats['scheduled_count'] > 0 ? 'var(--red)' : 'var(--green)' }}; font-family:var(--font-display);">
                 {{ $stats['scheduled_count'] > 0 ? $stats['scheduled_count'] . ' PENDING SESSIONS' : 'READY TO END' }}
@@ -193,7 +193,7 @@
 
                 <div class="form-group" style="margin-bottom:20px;">
                     <label class="form-label" style="font-size:10px; color:var(--text); letter-spacing:0.05em">FINAL CLASS SCORE</label>
-                    <input id="adminScoreInput" type="number" step="0.1" min="0" max="100" value="{{ $assignment->admin_score ?? 0 }}" style="width:100%; height:50px; background:var(--surface2); border:1px solid var(--accent)33; border-radius:12px; padding:0 18px; font-weight:900; color:var(--text); font-size:18px; font-family:var(--font-mono);">
+                    <input id="adminScoreInput" type="number" step="0.1" min="0" max="100" value="{{ $assignment->admin_score ?? 0 }}" style="width:100%; height:50px; background:var(--surface2); border:1px solid color-mix(in srgb, var(--accent) 20%, transparent); border-radius:12px; padding:0 18px; font-weight:900; color:var(--text); font-size:18px; font-family:var(--font-mono);">
                 </div>
 
                 <div class="form-group" style="margin-bottom:20px;">
@@ -211,7 +211,7 @@
                 </div>
 
                 @if($assignment && $stats['scheduled_count'] > 0)
-                <div style="padding:15px; background:var(--red)08; border:1px dashed var(--red)33; border-radius:12px; margin-bottom:20px;">
+                <div style="padding:15px; background:color-mix(in srgb, var(--red) 3%, transparent); border:1px dashed color-mix(in srgb, var(--red) 20%, transparent); border-radius:12px; margin-bottom:20px;">
                     <div style="color:var(--red); font-size:11px; font-weight:800; margin-bottom:5px;">CANNOT FINALIZE YET</div>
                     <p style="font-size:10px; color:var(--muted); line-height:1.4; margin:0;">There are still <strong>{{ $stats['scheduled_count'] }}</strong> active sessions. All sessions must be completed or skipped before closing the class.</p>
                 </div>
@@ -227,7 +227,7 @@
                     DOWNLOAD EXCEL REPORT
                 </button>
 
-                <button onclick="openFinalModal()" id="finalEndBtn" class="btn-primary" style="width:100%; height:54px; background:var(--red); border-radius:16px; font-weight:900; border:none; box-shadow:0 12px 24px var(--red)33; color:white; cursor:pointer;">
+                <button onclick="openFinalModal()" id="finalEndBtn" class="btn-primary" style="width:100%; height:54px; background:var(--red); border-radius:16px; font-weight:900; border:none; box-shadow:0 12px 24px color-mix(in srgb, var(--red) 20%, transparent); color:white; cursor:pointer;">
                     FINALIZE & END CLASS
                 </button>
             </div>
@@ -239,7 +239,7 @@
 <div id="finalModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:10000; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--surface); width:100%; max-width:450px; border-radius:32px; border:1px solid var(--border); overflow:hidden; box-shadow:0 40px 100px rgba(0,0,0,0.4); animation:modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
         <div id="modalContentWarning" style="padding:40px; text-align:center;">
-            <div style="width:80px; height:80px; background:var(--amber)22; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+            <div style="width:80px; height:80px; background:color-mix(in srgb, var(--amber) 13%, transparent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
                 <span style="font-size:32px;">⚠️</span>
             </div>
             <h3 style="font-size:22px; font-weight:900; color:var(--text); margin:0 0 12px 0;">Finalization Required</h3>
@@ -248,7 +248,7 @@
         </div>
         
         <div id="modalContentConfirm" style="display:none; padding:40px; text-align:center;">
-            <div style="width:80px; height:80px; background:var(--green)22; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+            <div style="width:80px; height:80px; background:color-mix(in srgb, var(--green) 13%, transparent); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
                 <span style="font-size:32px;">🚀</span>
             </div>
             <h3 style="font-size:22px; font-weight:900; color:var(--text); margin:0 0 12px 0;">Purge & Finalize?</h3>

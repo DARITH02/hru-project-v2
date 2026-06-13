@@ -8,7 +8,7 @@
             --glass-bg: rgba(var(--bg-rgb), 0.7);
             --glass-border: rgba(255, 255, 255, 0.08);
             --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            --accent-glow: 0 0 20px var(--accent)33;
+            --accent-glow: 0 0 20px color-mix(in srgb, var(--accent) 20%, transparent);
         }
 
         .premium-card {
@@ -20,7 +20,7 @@
         }
 
         .premium-card:hover {
-            border-color: var(--accent)44;
+            border-color: color-mix(in srgb, var(--accent) 27%, transparent);
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
         }
@@ -180,7 +180,7 @@
 
         .dropdown-item.text-red:hover {
             color: var(--red);
-            background: var(--red)08;
+            background: color-mix(in srgb, var(--red) 3%, transparent);
         }
 
         .more-btn {
@@ -199,9 +199,9 @@
 
         .more-btn:hover,
         .more-btn.active {
-            background: var(--accent)11;
+            background: color-mix(in srgb, var(--accent) 7%, transparent);
             color: var(--accent);
-            border-color: var(--accent)44;
+            border-color: color-mix(in srgb, var(--accent) 27%, transparent);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
     </style>
@@ -479,7 +479,7 @@
                 style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:42px;height:42px;border-radius:14px;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px var(--accent)22">
+                        style="width:42px;height:42px;border-radius:14px;background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 13%, transparent)">
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -629,7 +629,7 @@
 
         .enroll-row:hover {
             transform: translateX(4px);
-            border-color: var(--accent)44;
+            border-color: color-mix(in srgb, var(--accent) 27%, transparent);
             background: var(--surface2);
         }
 
@@ -708,9 +708,9 @@
         }
 
         .enroll-btn.active {
-            background: var(--red)15;
+            background: color-mix(in srgb, var(--red) 8%, transparent);
             color: var(--red);
-            border: 1px solid var(--red)33;
+            border: 1px solid color-mix(in srgb, var(--red) 20%, transparent);
         }
 
         .enroll-btn.active:hover {
@@ -720,9 +720,9 @@
         }
 
         .enroll-btn.other {
-            background: var(--amber)15;
+            background: color-mix(in srgb, var(--amber) 8%, transparent);
             color: var(--amber);
-            border: 1px solid var(--amber)33;
+            border: 1px solid color-mix(in srgb, var(--amber) 20%, transparent);
         }
 
         .enroll-btn.other:hover {
@@ -837,11 +837,11 @@
             background: var(--accent);
             color: #fff;
             border-color: var(--accent);
-            box-shadow: 0 4px 12px var(--accent)44;
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 27%, transparent);
         }
 
         .day-chip.weekend span {
-            color: var(--red)88;
+            color: color-mix(in srgb, var(--red) 53%, transparent);
         }
 
         .day-chip.weekend input:checked+span {
@@ -874,7 +874,7 @@
                 {{ __('admin_courses.export_system_data') }}
             </button>
             <button class="btn-primary" onclick="openModal('createModal')"
-                style="border-radius: 14px; height: 46px; padding: 0 24px; font-weight: 800; font-size: 11px; background: #364ed9 ; box-shadow: 0 8px 20px var(--accent)33; gap: 10px;">
+                style="border-radius: 14px; height: 46px; padding: 0 24px; font-weight: 800; font-size: 11px; background: #364ed9 ; box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 20%, transparent); gap: 10px;">
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -887,14 +887,14 @@
     <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px;">
         <div class="premium-card" style="padding: 24px; position: relative; overflow: hidden;">
             <div
-                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: var(--accent)08; border-radius: 50%; blur: 40px;">
+                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: color-mix(in srgb, var(--accent) 3%, transparent); border-radius: 50%; blur: 40px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div class="stat-label-new">{{ __('admin_courses.total_catalogue') }}</div>
                     <div class="stat-value-new">{{ $classes->count() }}</div>
                 </div>
-                <div class="glow-icon" style="background: var(--accent)15; color: var(--accent);">
+                <div class="glow-icon" style="background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);">
                     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -910,14 +910,14 @@
 
         <div class="premium-card" style="padding: 24px; position: relative; overflow: hidden;">
             <div
-                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: var(--green)08; border-radius: 50%; blur: 40px;">
+                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: color-mix(in srgb, var(--green) 3%, transparent); border-radius: 50%; blur: 40px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div class="stat-label-new">{{ __('admin_courses.active_roster') }}</div>
                     <div class="stat-value-new">{{ $classes->pluck('teacher_id')->unique()->count() }}</div>
                 </div>
-                <div class="glow-icon" style="background: var(--green)15; color: var(--green);">
+                <div class="glow-icon" style="background: color-mix(in srgb, var(--green) 8%, transparent); color: var(--green);">
                     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -935,14 +935,14 @@
 
         <div class="premium-card" style="padding: 24px; position: relative; overflow: hidden;">
             <div
-                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: var(--amber)08; border-radius: 50%; blur: 40px;">
+                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: color-mix(in srgb, var(--amber) 3%, transparent); border-radius: 50%; blur: 40px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div class="stat-label-new">{{ __('admin_courses.resource_load') }}</div>
                     <div class="stat-value-new">84<span style="font-size: 18px; opacity: 0.5">%</span></div>
                 </div>
-                <div class="glow-icon" style="background: var(--amber)15; color: var(--amber);">
+                <div class="glow-icon" style="background: color-mix(in srgb, var(--amber) 8%, transparent); color: var(--amber);">
                     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -960,14 +960,14 @@
 
         <div class="premium-card" style="padding: 24px; position: relative; overflow: hidden;">
             <div
-                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: var(--violet)08; border-radius: 50%; blur: 40px;">
+                style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: color-mix(in srgb, var(--violet) 3%, transparent); border-radius: 50%; blur: 40px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div class="stat-label-new">{{ __('admin_courses.hub_uptime') }}</div>
                     <div class="stat-value-new">99.9<span style="font-size: 18px; opacity: 0.5">%</span></div>
                 </div>
-                <div class="glow-icon" style="background: var(--violet)15; color: var(--violet);">
+                <div class="glow-icon" style="background: color-mix(in srgb, var(--violet) 8%, transparent); color: var(--violet);">
                     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-7.618 3.04L4 7.424l1.393 11.14c.245 1.956 1.832 3.436 3.805 3.436h5.604c1.973 0 3.56-1.48 3.805-3.436L20 7.424l-1.382-3.44z" />
@@ -991,12 +991,12 @@
         <div class="panel">
 
             {{-- Bulk Actions Toolbar --}}
-            <div id="bulkActionsToolbar" style="display:none; align-items:center; justify-content:space-between; background:var(--surface3); padding:12px 20px; border-radius:12px; margin: 15px; border:1px solid var(--accent)33; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div id="bulkActionsToolbar" style="display:none; align-items:center; justify-content:space-between; background:var(--surface3); padding:12px 20px; border-radius:12px; margin: 15px; border:1px solid color-mix(in srgb, var(--accent) 20%, transparent); box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 <div style="display:flex; align-items:center; gap:12px">
                     <div style="width:12px; height:12px; border-radius:50%; background:var(--red); box-shadow:0 0 10px var(--red)"></div>
                     <span id="selectedClassesCount" style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--text); letter-spacing:0.05em">{{ __('admin_courses.classes_selected', ['count' => 0]) }}</span>
                 </div>
-                <button onclick="confirmBulkDeleteClasses()" class="btn-primary" style="background:var(--red); border:none; height:34px; font-size:10px; padding:0 20px; font-weight:900; box-shadow:0 4px 12px var(--red)44">
+                <button onclick="confirmBulkDeleteClasses()" class="btn-primary" style="background:var(--red); border:none; height:34px; font-size:10px; padding:0 20px; font-weight:900; box-shadow:0 4px 12px color-mix(in srgb, var(--red) 27%, transparent)">
                     {{ __('admin_courses.confirm_bulk_delete') }}
                 </button>
             </div>
@@ -1173,7 +1173,7 @@
                                                         @endphp
                                                         <div style="display:flex; align-items:center; gap:6px">
                                                             <span
-                                                                style="font-family:var(--font-mono); font-size:9px; background:var(--accent)12; color:var(--accent); padding:1px 5px; border-radius:4px; font-weight:800">{{ strtoupper($days) }}</span>
+                                                                style="font-family:var(--font-mono); font-size:9px; background:color-mix(in srgb, var(--accent) 7%, transparent); color:var(--accent); padding:1px 5px; border-radius:4px; font-weight:800">{{ strtoupper($days) }}</span>
                                                             <span
                                                                 style="font-family:var(--font-mono); font-size:9px; color:var(--muted); font-weight:600">{{ str_replace(['(', ')'], '', $times) }}</span>
                                                         </div>
@@ -1196,7 +1196,7 @@
                                                     <div
                                                         style="width:100%; height:4px; background:var(--surface3); border-radius:2px; overflow:hidden;">
                                                         <div
-                                                            style="width:{{ $class->sessions->count() > 0 ? min(100, round(($class->sessions->whereIn('status', ['completed'])->count() / $class->sessions->count()) * 100)) : 0 }}%; height:100%; background:var(--accent); box-shadow:0 0 10px var(--accent)66;">
+                                                            style="width:{{ $class->sessions->count() > 0 ? min(100, round(($class->sessions->whereIn('status', ['completed'])->count() / $class->sessions->count()) * 100)) : 0 }}%; height:100%; background:var(--accent); box-shadow:0 0 10px color-mix(in srgb, var(--accent) 40%, transparent);">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1315,7 +1315,7 @@
 
             {{-- 🟢 GLOBAL SESSION SKIP (New Feature) --}}
             <div class="side-panel"
-                style="border: 1px solid var(--red)33; background: linear-gradient(180deg, var(--surface2), var(--surface3));">
+                style="border: 1px solid color-mix(in srgb, var(--red) 20%, transparent); background: linear-gradient(180deg, var(--surface2), var(--surface3));">
                 <div class="side-panel-head" style="color: var(--red); font-weight: 900;">
                     <span
                         style="width:8px;height:8px;border-radius:2px;background:var(--red);display:inline-block;box-shadow:0 0 10px var(--red)"></span>
@@ -1333,7 +1333,7 @@
                     </button>
 
                     <div
-                        style="margin-top:15px; display:flex; align-items:center; gap:8px; padding:10px; background:var(--red)08; border-radius:10px; border:1px dashed var(--red)33">
+                        style="margin-top:15px; display:flex; align-items:center; gap:8px; padding:10px; background:color-mix(in srgb, var(--red) 3%, transparent); border-radius:10px; border:1px dashed color-mix(in srgb, var(--red) 20%, transparent)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
                             <path
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -1372,7 +1372,7 @@
 
                     {{-- Hub Integrity Integrated --}}
                     <div
-                        style="margin-top:10px; padding:15px; border-radius:15px; background:var(--accent)08; border:1px solid var(--accent)15; display:flex; align-items:center; justify-content:space-between">
+                        style="margin-top:10px; padding:15px; border-radius:15px; background:color-mix(in srgb, var(--accent) 3%, transparent); border:1px solid color-mix(in srgb, var(--accent) 8%, transparent); display:flex; align-items:center; justify-content:space-between">
                         <div>
                             <div
                                 style="font-family:var(--font-mono); font-size:8px; color:var(--muted2); letter-spacing:.05em; margin-bottom:4px">
@@ -1444,7 +1444,7 @@
                 style="padding: 24px 24px 16px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg, var(--violet)22, var(--violet)08);color:var(--violet);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 12px rgba(0,0,0,0.1)">
+                        style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg, color-mix(in srgb, var(--violet) 13%, transparent), color-mix(in srgb, var(--violet) 3%, transparent));color:var(--violet);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 12px rgba(0,0,0,0.1)">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
@@ -1582,7 +1582,7 @@
                                 style="font-family:var(--font-mono); font-size:10px; font-weight:800; letter-spacing:.12em; color:var(--text2)">{{ __('admin_courses.active_assignments') }}</span>
                         </div>
                         <span id="csmCountBadge"
-                            style="font-family:var(--font-mono); font-size:9px; color:var(--accent); background:var(--accent)18; padding:4px 12px; border-radius:20px; font-weight:800; border:1px solid var(--accent)22">{{ __('admin_courses.active_count', ['count' => 0]) }}</span>
+                            style="font-family:var(--font-mono); font-size:9px; color:var(--accent); background:color-mix(in srgb, var(--accent) 9%, transparent); padding:4px 12px; border-radius:20px; font-weight:800; border:1px solid color-mix(in srgb, var(--accent) 13%, transparent)">{{ __('admin_courses.active_count', ['count' => 0]) }}</span>
                     </div>
                     <div id="csmItems">
                         {{-- Cards injected via csmLoad() --}}
@@ -1776,7 +1776,7 @@
                 <button type="button" onclick="closeModal('courseSemesterModal')" class="btn-secondary"
                     style="height: 42px; font-weight: 700;">CANCEL</button>
                 <button type="button" onclick="csmSave()" class="btn-primary" id="csmSaveBtn"
-                    style="height: 42px; flex: 1; font-weight: 700; gap: 8px; box-shadow: 0 4px 15px var(--accent)44;">
+                    style="height: 42px; flex: 1; font-weight: 700; gap: 8px; box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 27%, transparent);">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
@@ -1820,7 +1820,7 @@
                         style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow-xl); padding:24px">
                         <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:20px; align-items:center">
                             <div>
-                                <div style="display:inline-block; font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--green); background:var(--green)18; padding:3px 12px; border-radius:20px; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px"
+                                <div style="display:inline-block; font-family:var(--font-mono); font-size:9px; font-weight:800; color:var(--green); background:color-mix(in srgb, var(--green) 9%, transparent); padding:3px 12px; border-radius:20px; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px"
                                     id="smStatusBadge">ACTIVE STUDENT</div>
                                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px">
                                     <div>
@@ -1895,7 +1895,7 @@
                 style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:42px;height:42px;border-radius:14px;background:var(--amber)22;color:var(--amber);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px var(--amber)22">
+                        style="width:42px;height:42px;border-radius:14px;background:color-mix(in srgb, var(--amber) 13%, transparent);color:var(--amber);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px color-mix(in srgb, var(--amber) 13%, transparent)">
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1935,7 +1935,7 @@
                 style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:42px;height:42px;border-radius:14px;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px var(--accent)22">
+                        style="width:42px;height:42px;border-radius:14px;background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 13%, transparent)">
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -1979,7 +1979,7 @@
         <div class="modal-box" style="max-width:450px; border-radius:24px; overflow:hidden;">
             <div class="modal-body" style="padding:40px 32px; text-align:center;">
                 <div
-                    style="width:64px; height:64px; border-radius:20px; background:var(--red)15; color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px var(--red)15;">
+                    style="width:64px; height:64px; border-radius:20px; background:color-mix(in srgb, var(--red) 8%, transparent); color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px color-mix(in srgb, var(--red) 8%, transparent);">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1999,7 +1999,7 @@
                         SKIP & RESCHEDULE TO END
                     </button>
                     <button id="skipOnlyBtn" class="btn-secondary"
-                        style="width:100%; height:50px; border:1.5px solid var(--red)33; color:var(--red); font-weight:800; font-size:11px; letter-spacing:0.05em; background:transparent;">
+                        style="width:100%; height:50px; border:1.5px solid color-mix(in srgb, var(--red) 20%, transparent); color:var(--red); font-weight:800; font-size:11px; letter-spacing:0.05em; background:transparent;">
                         JUST SKIP (LOST TIME)
                     </button>
                     <button onclick="closeModal('skipConfirmModal')" class="btn-secondary"
@@ -2020,7 +2020,7 @@
                 style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:40px;height:40px;border-radius:12px;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;">
+                        style="width:40px;height:40px;border-radius:12px;background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -2088,7 +2088,7 @@
                             ADMIN SCORE</label>
                         <input id="adminScoreInput" class="form-input" type="number" step="0.1" min="0" max="100"
                             placeholder="0.0"
-                            style="background:var(--surface3); width:100%; height:44px; border-radius:10px; border:1px solid var(--border); padding:0 12px; color:var(--text); font-family:var(--font-mono); font-weight:800; border-color:var(--accent)33">
+                            style="background:var(--surface3); width:100%; height:44px; border-radius:10px; border:1px solid var(--border); padding:0 12px; color:var(--text); font-family:var(--font-mono); font-weight:800; border-color:color-mix(in srgb, var(--accent) 20%, transparent)">
                     </div>
                 </div>
 
@@ -2147,7 +2147,7 @@
                 </div>
 
                 <div id="gradingIncompleteWarning"
-                    style="display:none; margin-top:20px; padding:15px; background:var(--red)08; border:1px dashed var(--red)33; border-radius:12px;">
+                    style="display:none; margin-top:20px; padding:15px; background:color-mix(in srgb, var(--red) 3%, transparent); border:1px dashed color-mix(in srgb, var(--red) 20%, transparent); border-radius:12px;">
                     <div
                         style="display:flex; align-items:center; gap:10px; color:var(--red); font-weight:800; font-size:11px; margin-bottom:5px;">
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2190,7 +2190,7 @@
         <div class="modal-box" style="max-width:400px; border-radius:24px; overflow:hidden;">
             <div class="modal-body" style="padding:40px 30px; text-align:center;">
                 <div
-                    style="width:60px; height:60px; border-radius:20px; background:var(--amber)15; color:var(--amber); display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+                    style="width:60px; height:60px; border-radius:20px; background:color-mix(in srgb, var(--amber) 8%, transparent); color:var(--amber); display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
                     <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -2220,7 +2220,7 @@
         <div class="modal-box" style="max-width:450px; border-radius:24px; overflow:hidden;">
             <div class="modal-body" style="padding:40px 32px; text-align:center;">
                 <div
-                    style="width:64px; height:64px; border-radius:20px; background:var(--red)15; color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px var(--red)15;">
+                    style="width:64px; height:64px; border-radius:20px; background:color-mix(in srgb, var(--red) 8%, transparent); color:var(--red); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px color-mix(in srgb, var(--red) 8%, transparent);">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -2256,7 +2256,7 @@
                 style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:15px">
                     <div
-                        style="width:40px;height:40px;border-radius:12px;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;">
+                        style="width:40px;height:40px;border-radius:12px;background:color-mix(in srgb, var(--accent) 13%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;">
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" />
@@ -2293,7 +2293,7 @@
                 </div>
 
                 <div
-                    style="margin-top:24px; padding:15px; border-radius:12px; background:var(--accent)08; border:1px dashed var(--accent)33;">
+                    style="margin-top:24px; padding:15px; border-radius:12px; background:color-mix(in srgb, var(--accent) 3%, transparent); border:1px dashed color-mix(in srgb, var(--accent) 20%, transparent);">
                     <p style="font-size:10px; color:var(--text2); line-height:1.4; font-family:var(--font-mono)">
                         <span style="color:var(--accent); font-weight:800">NOTE:</span> QR check-in windows will
                         automatically adjust to ±20 minutes from the new start time.
@@ -2312,7 +2312,7 @@
         <div class="modal-box" style="max-width:450px; border-radius:24px; overflow:hidden;">
             <div class="modal-body" style="padding:40px 32px; text-align:center;">
                 <div
-                    style="width:64px; height:64px; border-radius:20px; background:var(--accent)15; color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px var(--accent)15;">
+                    style="width:64px; height:64px; border-radius:20px; background:color-mix(in srgb, var(--accent) 8%, transparent); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 8%, transparent);">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" />
@@ -2335,7 +2335,7 @@
 
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <button id="confirmMoveBtn" class="btn-primary"
-                        style="width:100%; height:50px; background:var(--accent); box-shadow:0 10px 25px var(--accent)33; border:none; font-weight:800; font-size:11px; letter-spacing:0.05em;"
+                        style="width:100%; height:50px; background:var(--accent); box-shadow:0 10px 25px color-mix(in srgb, var(--accent) 20%, transparent); border:none; font-weight:800; font-size:11px; letter-spacing:0.05em;"
                         onclick="finalExecuteMove()">
                         CONFIRM & MOVE SESSION
                     </button>
@@ -2917,7 +2917,7 @@
 
             if (!sv) {
                 previewDiv.innerHTML = `
-                                    <div style="padding:12px; text-align:center; background:var(--surface3)44; border-radius:12px; border:1px dashed var(--border)">
+                                    <div style="padding:12px; text-align:center; background:color-mix(in srgb, var(--surface3) 27%, transparent); border-radius:12px; border:1px dashed var(--border)">
                                         <div style="font-family:var(--font-mono); font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.05em">TIMELINE ARCHITECTURE INACTIVE</div>
                                         <div style="font-size:8px; color:var(--muted); font-family:var(--font-mono); margin-top:2px">Awaiting start date for temporal visualization</div>
                                     </div>
@@ -2938,8 +2938,8 @@
                                     </div>
                                 </div>
                                 <div style="position:relative;height:24px;background:var(--surface2);border-radius:8px;overflow:hidden;border:1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1)">
-                                    <div id="csmPrevBar" style="position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg, var(--violet)44, var(--accent)44);border-radius:8px"></div>
-                                    <div id="csmPrevHolBar" style="position:absolute;top:0;height:100%;background:var(--amber)33; border-left:1px solid var(--amber)44; border-right:1px solid var(--amber)44;"></div>
+                                    <div id="csmPrevBar" style="position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg, color-mix(in srgb, var(--violet) 27%, transparent), color-mix(in srgb, var(--accent) 27%, transparent));border-radius:8px"></div>
+                                    <div id="csmPrevHolBar" style="position:absolute;top:0;height:100%;background:color-mix(in srgb, var(--amber) 20%, transparent); border-left:1px solid color-mix(in srgb, var(--amber) 27%, transparent); border-right:1px solid color-mix(in srgb, var(--amber) 27%, transparent);"></div>
                                     <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:8px;color:var(--text);font-weight:700;letter-spacing:0.1em;text-shadow: 0 1px 2px rgba(0,0,0,0.5)">TEMPORAL SEMESTER PROJECTION</div>
                                 </div>
                                 <div id="csmPrevHol" style="margin-top:10px; font-family:var(--font-mono); font-size:9px; color:var(--amber); font-weight:600; text-align:center"></div>
@@ -3049,8 +3049,8 @@
                 if (!data || !data.length) {
                     badge.textContent = courseText('zero_found', '0 FOUND');
                     c.innerHTML = `
-                                        <div style="padding:40px 20px; text-align:center; background:var(--surface3)44; border-radius:16px; border:1px dashed var(--border); margin:0 4px">
-                                            <div style="width:48px; height:48px; border-radius:50%; background:var(--violet)10; color:var(--violet); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; opacity:0.8">
+                                        <div style="padding:40px 20px; text-align:center; background:color-mix(in srgb, var(--surface3) 27%, transparent); border-radius:16px; border:1px dashed var(--border); margin:0 4px">
+                                            <div style="width:48px; height:48px; border-radius:50%; background:color-mix(in srgb, var(--violet) 6%, transparent); color:var(--violet); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; opacity:0.8">
                                                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                             </div>
                                             <div style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--text); letter-spacing:.05em; margin-bottom:6px">O RECORDS ASSIGNED</div>
@@ -3072,14 +3072,14 @@
                     const isCompleted = a.status === 'completed';
                     const isActive = a.status === 'active';
                     const sc = isActive ? 'var(--green)' : isCompleted ? 'var(--muted)' : 'var(--accent)';
-                    const bg = isActive ? 'var(--green)15' : isCompleted ? 'var(--surface3)' : 'var(--accent)15';
+                    const bg = isActive ? 'color-mix(in srgb, var(--green) 8%, transparent)' : isCompleted ? 'var(--surface3)' : 'color-mix(in srgb, var(--accent) 8%, transparent)';
 
                     const holDisplay = a.holiday_start
                         ? `<span style="color:var(--amber)">${a.holiday_start}</span> <span style="opacity:0.5">TO</span> <span style="color:var(--amber)">${a.holiday_end}</span>`
                         : '<span style="opacity:0.5">NOT DEFINED</span>';
 
                     const notesHtml = a.notes
-                        ? `<div style="background:var(--surface3); border-radius:10px; padding:10px 14px; margin-bottom:15px; display:flex; align-items:flex-start; gap:10px; border-left: 3px solid var(--accent)66">
+                        ? `<div style="background:var(--surface3); border-radius:10px; padding:10px 14px; margin-bottom:15px; display:flex; align-items:flex-start; gap:10px; border-left: 3px solid color-mix(in srgb, var(--accent) 40%, transparent)">
                                             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" style="margin-top:2px; flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             <div style="font-size:10px; color:var(--text2); font-family:var(--font-mono); line-height:1.5">${a.notes}</div>
                                            </div>` : '';
@@ -3128,7 +3128,7 @@
             } catch (e) {
                 console.error(e);
                 c.innerHTML = `
-                                    <div style="padding:24px; text-align:center; color:var(--red); background:var(--red)08; border-radius:12px; border:1px solid var(--red)22">
+                                    <div style="padding:24px; text-align:center; color:var(--red); background:color-mix(in srgb, var(--red) 3%, transparent); border-radius:12px; border:1px solid color-mix(in srgb, var(--red) 13%, transparent)">
                                         <div style="font-family:var(--font-mono); font-size:10px; font-weight:800">DATA SYNCHRONIZATION ERROR</div>
                                         <div style="font-size:9px; margin-top:4px">Failed to resolve academic assignments.</div>
                                     </div>
@@ -3226,12 +3226,12 @@
                     const isCompleted = s.status === 'completed';
                     const isActive = s.status === 'active';
                     const statusClr = isSkipped ? 'var(--red)' : isCompleted ? 'var(--muted)' : isActive ? 'var(--green)' : 'var(--amber)';
-                    const statusBg = isSkipped ? 'var(--red)15' : isCompleted ? 'var(--surface3)' : isActive ? 'var(--green)15' : 'var(--amber)15';
+                    const statusBg = isSkipped ? 'color-mix(in srgb, var(--red) 8%, transparent)' : isCompleted ? 'var(--surface3)' : isActive ? 'color-mix(in srgb, var(--green) 8%, transparent)' : 'color-mix(in srgb, var(--amber) 8%, transparent)';
 
                     const pct = s.total_students_count > 0 ? Math.round((s.presence_count / s.total_students_count) * 100) : 0;
 
                     return `
-                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; background:var(--surface2); transition:all 0.2s" onmouseover="this.style.borderColor='var(--amber)44'; this.style.transform='translateX(4px)'" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
+                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; background:var(--surface2); transition:all 0.2s" onmouseover="this.style.borderColor='color-mix(in srgb, var(--amber) 27%, transparent)'; this.style.transform='translateX(4px)'" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
                                             <div style="display:flex; align-items:center; gap:16px">
                                                 <div style="width:48px; height:48px; border-radius:12px; background:var(--surface3); display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid var(--border)">
                                                     <div style="font-size:9px; font-weight:800; color:var(--muted); font-family:var(--font-mono)">${isNaN(d.getTime()) ? '???' : d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}</div>
@@ -3248,14 +3248,14 @@
                                             </div>
                                             <div style="display:flex; align-items:center; gap:8px">
                                                 ${isSkipped ? `
-                                                <button class="action-btn" onclick="autoMoveToEnd(${s.id}, ${classId})" style="background:var(--green)10; border:1px solid var(--green)22; border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--green)">
+                                                <button class="action-btn" onclick="autoMoveToEnd(${s.id}, ${classId})" style="background:color-mix(in srgb, var(--green) 6%, transparent); border:1px solid color-mix(in srgb, var(--green) 13%, transparent); border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--green)">
                                                     AUTO-MOVE
                                                 </button>
-                                                <button class="action-btn" onclick="openRescheduleModal(${s.id}, ${classId}, '${s.start_time}', '${s.end_time}')" style="background:var(--accent)10; border:1px solid var(--accent)22; border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--accent)">
+                                                <button class="action-btn" onclick="openRescheduleModal(${s.id}, ${classId}, '${s.start_time}', '${s.end_time}')" style="background:color-mix(in srgb, var(--accent) 6%, transparent); border:1px solid color-mix(in srgb, var(--accent) 13%, transparent); border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--accent)">
                                                     MANUAL
                                                 </button>
                                                 ` : `
-                                                <button class="action-btn" onclick="skipSession(${s.id}, ${classId})" style="background:var(--red)10; border:1px solid var(--red)22; border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--red)">
+                                                <button class="action-btn" onclick="skipSession(${s.id}, ${classId})" style="background:color-mix(in srgb, var(--red) 6%, transparent); border:1px solid color-mix(in srgb, var(--red) 13%, transparent); border-radius:10px; padding:8px 12px; font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer; color:var(--red)">
                                                     SKIP
                                                 </button>
                                                 `}
@@ -3684,7 +3684,7 @@
                     const statusClr = isPresent ? (row.status === 'LATE' ? 'var(--amber)' : 'var(--green)') : (isExcused ? 'var(--accent)' : 'var(--red)');
 
                     return `
-                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border)44; cursor:pointer" onmouseover="this.style.background='var(--surface3)'; this.querySelector('.s-name').style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.querySelector('.s-name').style.color='var(--text)'" onclick="openStudentRecordModal(${row.id})">
+                                        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid color-mix(in srgb, var(--border) 27%, transparent); cursor:pointer" onmouseover="this.style.background='var(--surface3)'; this.querySelector('.s-name').style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.querySelector('.s-name').style.color='var(--text)'" onclick="openStudentRecordModal(${row.id})">
                                             <div style="display:flex; align-items:center; gap:12px">
                                                 <div style="width:32px; height:32px; border-radius:50%; background:${statusClr}15; color:${statusClr}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px">
                                                     ${row.name.charAt(0)}
@@ -3802,7 +3802,7 @@
                     style="padding: 24px 28px; background: var(--surface2); border-bottom: 1px solid var(--border);">
                     <div style="display:flex;align-items:center;gap:15px">
                         <div
-                            style="width:40px;height:40px;border-radius:12px;background:var(--red)22;color:var(--red);display:flex;align-items:center;justify-content:center;">
+                            style="width:40px;height:40px;border-radius:12px;background:color-mix(in srgb, var(--red) 13%, transparent);color:var(--red);display:flex;align-items:center;justify-content:center;">
                             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -3836,7 +3836,7 @@
                     </div>
 
                     <div
-                        style="margin-top:24px; padding:15px; border-radius:12px; background:var(--red)08; border:1px dashed var(--red)33;">
+                        style="margin-top:24px; padding:15px; border-radius:12px; background:color-mix(in srgb, var(--red) 3%, transparent); border:1px dashed color-mix(in srgb, var(--red) 20%, transparent);">
                         <p style="font-size:10px; color:var(--red); line-height:1.4; font-family:var(--font-mono)">
                             <span style="font-weight:800">WARNING:</span> This will mark every session from all subjects within
                             this range as "SKIPPED".
