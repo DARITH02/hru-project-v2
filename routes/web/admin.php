@@ -45,9 +45,11 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
         Route::get('/admin/backup-restore', [BackupController::class, 'index'])->name('admin.backup-restore');
         Route::post('/admin/backup-restore/backup', [BackupController::class, 'store'])->name('admin.backup-restore.backup');
         Route::get('/admin/backup-restore/download/{fileName}', [BackupController::class, 'download'])->name('admin.backup-restore.download');
+        Route::get('/admin/backup-restore/cloud/download/{fileId}/{fileName}', [BackupController::class, 'downloadCloud'])->name('admin.backup-restore.cloud.download');
         Route::delete('/admin/backup-restore/local/{fileName}', [BackupController::class, 'destroyLocal'])->name('admin.backup-restore.local.destroy');
         Route::delete('/admin/backup-restore/cloud/{fileId}', [BackupController::class, 'destroyCloud'])->name('admin.backup-restore.cloud.destroy');
         Route::post('/admin/backup-restore/restore', [RestoreController::class, 'store'])->name('admin.backup-restore.restore');
+        Route::post('/admin/backup-restore/restore/cloud', [RestoreController::class, 'storeCloud'])->name('admin.backup-restore.restore.cloud');
     });
 
     Route::get('/admin/students', [AdminUIController::class, 'students'])->name('admin.students');

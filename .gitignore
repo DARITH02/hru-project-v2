@@ -16,6 +16,7 @@
 /public/build
 /public/hot
 /public/storage
+/storage/app/private/google-drive-service-account.json
 /storage/*.key
 /storage/pail
 /vendor

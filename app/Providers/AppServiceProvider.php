@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Filesystem\GoogleDriveAdapter;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
+use League\Flysystem\Filesystem;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Storage::extend('google', function ($app, array $config) {
+            $adapter = new GoogleDriveAdapter($app->make(\App\Services\GoogleDriveService::class));
+
+            return new FilesystemAdapter(
+                new Filesystem($adapter, $config),
+                $adapter,
+                $config
+            );
+        });
+
         // 🛡️ SECURITY: Define Rate Limiters
         \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());

@@ -55,7 +55,7 @@ class RestoreService
 
             File::ensureDirectoryExists($extractDir);
             $this->extractBackup($this->backupService->backupPath($fileName), $extractDir);
-            DB::unprepared(file_get_contents($extractDir . '/database.sql'));
+            $this->restoreDatabase($extractDir . '/database.sql');
             $this->restorePublicStorage($extractDir . '/storage_public');
 
             Artisan::call('optimize:clear');
@@ -64,17 +64,6 @@ class RestoreService
             $log->update([
                 'status' => 'success',
                 'message' => 'Restore completed successfully.',
-                'completed_at' => now(),
-            ]);
-
-            BackupRestoreLog::create([
-                'user_id' => $userId,
-                'action' => 'restore',
-                'file_name' => $fileName,
-                'storage_disk' => 'local',
-                'status' => 'success',
-                'message' => 'Restore completed successfully.',
-                'started_at' => $log->started_at,
                 'completed_at' => now(),
             ]);
 
@@ -88,17 +77,6 @@ class RestoreService
             $log->update([
                 'status' => 'failed',
                 'message' => $e->getMessage(),
-                'completed_at' => now(),
-            ]);
-
-            BackupRestoreLog::create([
-                'user_id' => $userId,
-                'action' => 'restore',
-                'file_name' => $fileName,
-                'storage_disk' => 'local',
-                'status' => 'failed',
-                'message' => $e->getMessage(),
-                'started_at' => $log->started_at,
                 'completed_at' => now(),
             ]);
 
@@ -131,13 +109,52 @@ class RestoreService
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if (str_starts_with($name, '/') || str_contains($name, '../') || str_contains($name, '..\\')) {
+            if (!$name || $this->isUnsafeZipPath($name)) {
                 $zip->close();
                 throw new RuntimeException('Backup zip contains unsafe paths.');
             }
         }
 
         $zip->close();
+    }
+
+    private function restoreDatabase(string $sqlPath): void
+    {
+        if (!is_file($sqlPath)) {
+            throw new RuntimeException('Backup zip is missing database.sql.');
+        }
+
+        $handle = fopen($sqlPath, 'rb');
+        if (!$handle) {
+            throw new RuntimeException('Unable to read backup database dump.');
+        }
+
+        $statement = '';
+
+        try {
+            while (($line = fgets($handle)) !== false) {
+                $statement .= $line;
+
+                if (str_ends_with(rtrim($line), ';')) {
+                    DB::unprepared($statement);
+                    $statement = '';
+                }
+            }
+
+            if (trim($statement) !== '') {
+                DB::unprepared($statement);
+            }
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    private function isUnsafeZipPath(string $name): bool
+    {
+        return str_starts_with($name, '/')
+            || str_starts_with($name, '\\')
+            || preg_match('/^[A-Za-z]:[\/\\\\]/', $name)
+            || preg_match('/(^|[\/\\\\])\.\.([\/\\\\]|$)/', $name);
     }
 
     private function extractBackup(string $path, string $extractDir): void

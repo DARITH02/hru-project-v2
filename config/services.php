@@ -42,6 +42,10 @@ return [
     'google_drive' => [
         'credentials' => env('GOOGLE_DRIVE_CREDENTIALS'),
         'credentials_path' => env('GOOGLE_DRIVE_CREDENTIALS_PATH'),
+        'client_id' => env('GOOGLE_DRIVE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_DRIVE_CLIENT_SECRET'),
+        'refresh_token' => env('GOOGLE_DRIVE_REFRESH_TOKEN'),
+        'redirect_uri' => env('GOOGLE_DRIVE_REDIRECT_URI', 'http://localhost:8080/google-drive/oauth/callback'),
         'folder_id' => env('GOOGLE_DRIVE_FOLDER_ID'),
     ],
 

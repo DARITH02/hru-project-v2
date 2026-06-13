@@ -6,6 +6,7 @@ use App\Models\BackupRestoreLog;
 use App\Services\BackupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Throwable;
 
 class BackupJob implements ShouldQueue
@@ -20,12 +21,17 @@ class BackupJob implements ShouldQueue
     ) {
     }
 
+    public function middleware(): array
+    {
+        return [(new WithoutOverlapping('backup-restore:backup'))->expireAfter($this->timeout)];
+    }
+
     public function handle(BackupService $backupService): void
     {
         $log = BackupRestoreLog::create([
             'user_id' => $this->userId,
             'action' => 'backup',
-            'storage_disk' => $this->uploadToGoogleDrive ? 'local+google_drive' : 'local',
+            'storage_disk' => 'local',
             'status' => 'started',
             'message' => 'Backup job started.',
             'started_at' => now(),
@@ -34,13 +40,14 @@ class BackupJob implements ShouldQueue
         try {
             $backupService->notify("🟦 <b>Backup started</b>\nHRU ATS backup is running.");
 
-            $backup = $backupService->createBackup($this->userId, $this->uploadToGoogleDrive);
+            $backup = $backupService->createBackup($this->userId, $this->uploadToGoogleDrive, writeLog: false);
 
             $log->update([
                 'file_name' => $backup['file_name'],
+                'storage_disk' => $backup['storage_disk'],
                 'backup_size' => $backup['size'],
                 'status' => 'success',
-                'message' => 'Backup completed successfully.',
+                'message' => $backup['message'],
                 'completed_at' => now(),
             ]);
 
