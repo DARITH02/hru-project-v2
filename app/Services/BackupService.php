@@ -274,6 +274,15 @@ class BackupService
 
     private function dumpDatabase(string $sqlPath, ?array $onlyTables = null): array
     {
+        return match (DB::connection()->getDriverName()) {
+            'pgsql' => $this->dumpPostgresDatabase($sqlPath, $onlyTables),
+            'mysql' => $this->dumpMysqlDatabase($sqlPath, $onlyTables),
+            default => throw new RuntimeException('Unsupported database driver for backup: ' . DB::connection()->getDriverName()),
+        };
+    }
+
+    private function dumpMysqlDatabase(string $sqlPath, ?array $onlyTables = null): array
+    {
         $pdo = DB::connection()->getPdo();
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -342,6 +351,300 @@ class BackupService
         }
 
         return $dumpedTables;
+    }
+
+    private function dumpPostgresDatabase(string $sqlPath, ?array $onlyTables = null): array
+    {
+        $tables = $this->postgresTables($onlyTables);
+
+        if ($this->dumpPostgresWithPgDump($sqlPath, $tables)) {
+            return $tables;
+        }
+
+        return $this->dumpPostgresDatabaseWithPhp($sqlPath, $tables);
+    }
+
+    private function dumpPostgresDatabaseWithPhp(string $sqlPath, array $tables): array
+    {
+        $pdo = DB::connection()->getPdo();
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $handle = fopen($sqlPath, 'wb');
+        if (!$handle) {
+            throw new RuntimeException('Unable to create database dump file.');
+        }
+
+        $dumpedTables = [];
+        $transactionStarted = false;
+
+        try {
+            if (!$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+                $transactionStarted = true;
+            }
+
+            $dumpedTables = $tables;
+
+            fwrite($handle, "BEGIN;\n\n");
+
+            foreach ($tables as $table) {
+                $this->writePostgresCreateTable($handle, $table);
+            }
+
+            if ($tables !== []) {
+                $quotedTables = implode(', ', array_map(fn ($table) => $this->quotePostgresIdentifier($table), $tables));
+                fwrite($handle, "TRUNCATE TABLE {$quotedTables} RESTART IDENTITY CASCADE;\n\n");
+            }
+
+            foreach ($tables as $table) {
+                $quotedTable = $this->quotePostgresIdentifier($table);
+                $statement = $pdo->query("SELECT * FROM {$quotedTable}");
+
+                while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+                    $columns = array_map(fn ($column) => $this->quotePostgresIdentifier($column), array_keys($row));
+                    $values = array_map(fn ($value) => $this->quotePostgresValue($pdo, $value), array_values($row));
+                    fwrite($handle, 'INSERT INTO ' . $quotedTable . ' (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $values) . ");\n");
+                }
+
+                $this->writePostgresSequenceResets($handle, $table);
+                fwrite($handle, "\n");
+            }
+
+            fwrite($handle, "COMMIT;\n");
+
+            if ($transactionStarted) {
+                $pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($transactionStarted && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
+        } finally {
+            fclose($handle);
+        }
+
+        return $dumpedTables;
+    }
+
+    private function dumpPostgresWithPgDump(string $sqlPath, array $tables): bool
+    {
+        if ($tables === []) {
+            return false;
+        }
+
+        $pgDump = $this->pgDumpBinary();
+        if (!$pgDump) {
+            return false;
+        }
+
+        $config = config('database.connections.' . config('database.default'));
+        $command = [
+            $pgDump,
+            '--clean',
+            '--if-exists',
+            '--no-owner',
+            '--no-privileges',
+            '--format=plain',
+            '--schema=public',
+            '--file=' . $sqlPath,
+        ];
+
+        if (!empty($config['host'])) {
+            $command[] = '--host=' . $config['host'];
+        }
+
+        if (!empty($config['port'])) {
+            $command[] = '--port=' . $config['port'];
+        }
+
+        if (!empty($config['username'])) {
+            $command[] = '--username=' . $config['username'];
+        }
+
+        foreach ($tables as $table) {
+            $command[] = '--table=public.' . $table;
+        }
+
+        $command[] = $config['database'];
+
+        $descriptors = [
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $env = $_ENV;
+        if (!empty($config['password'])) {
+            $env['PGPASSWORD'] = $config['password'];
+        }
+
+        $process = @proc_open($command, $descriptors, $pipes, base_path(), $env);
+        if (!is_resource($process)) {
+            return false;
+        }
+
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        $exitCode = proc_close($process);
+        if ($exitCode !== 0) {
+            report(new RuntimeException('pg_dump failed; falling back to PHP PostgreSQL dump. ' . trim($stderr ?: $stdout)));
+            return false;
+        }
+
+        return is_file($sqlPath) && filesize($sqlPath) !== false;
+    }
+
+    private function pgDumpBinary(): ?string
+    {
+        foreach (['/usr/bin/pg_dump', '/usr/local/bin/pg_dump'] as $path) {
+            if (is_executable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function postgresTables(?array $onlyTables = null): array
+    {
+        $tables = collect(DB::select(<<<'SQL'
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+                AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        SQL))->pluck('table_name')->all();
+
+        $allowedTables = $onlyTables ? array_flip(array_filter($onlyTables, fn ($table) => Schema::hasTable($table))) : null;
+
+        return array_values(array_filter($tables, fn ($table) => $allowedTables === null || isset($allowedTables[$table])));
+    }
+
+    private function writePostgresCreateTable($handle, string $table): void
+    {
+        $columns = DB::select(<<<'SQL'
+            SELECT
+                column_name,
+                data_type,
+                udt_name,
+                character_maximum_length,
+                numeric_precision,
+                numeric_scale,
+                datetime_precision,
+                is_nullable,
+                column_default
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+                AND table_name = ?
+            ORDER BY ordinal_position
+        SQL, [$table]);
+
+        if ($columns === []) {
+            return;
+        }
+
+        $definitions = [];
+        foreach ($columns as $column) {
+            $definition = '    ' . $this->quotePostgresIdentifier($column->column_name) . ' ' . $this->postgresColumnType($column);
+
+            if ($column->column_default !== null) {
+                $definition .= ' DEFAULT ' . $column->column_default;
+            }
+
+            if ($column->is_nullable === 'NO') {
+                $definition .= ' NOT NULL';
+            }
+
+            $definitions[] = $definition;
+        }
+
+        $primaryKeys = DB::select(<<<'SQL'
+            SELECT kcu.column_name
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+                AND tc.table_name = kcu.table_name
+            WHERE tc.table_schema = 'public'
+                AND tc.table_name = ?
+                AND tc.constraint_type = 'PRIMARY KEY'
+            ORDER BY kcu.ordinal_position
+        SQL, [$table]);
+
+        if ($primaryKeys !== []) {
+            $definitions[] = '    PRIMARY KEY (' . implode(', ', array_map(
+                fn ($key) => $this->quotePostgresIdentifier($key->column_name),
+                $primaryKeys
+            )) . ')';
+        }
+
+        fwrite($handle, 'CREATE TABLE IF NOT EXISTS ' . $this->quotePostgresIdentifier($table) . " (\n");
+        fwrite($handle, implode(",\n", $definitions));
+        fwrite($handle, "\n);\n\n");
+    }
+
+    private function writePostgresSequenceResets($handle, string $table): void
+    {
+        $sequenceColumns = DB::select(<<<'SQL'
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+                AND table_name = ?
+                AND column_default LIKE 'nextval(%'
+            ORDER BY ordinal_position
+        SQL, [$table]);
+
+        foreach ($sequenceColumns as $column) {
+            $quotedTable = $this->quotePostgresIdentifier($table);
+            $quotedColumn = $this->quotePostgresIdentifier($column->column_name);
+            $sequenceLiteral = str_replace("'", "''", 'public.' . $table);
+            $columnLiteral = str_replace("'", "''", $column->column_name);
+
+            fwrite(
+                $handle,
+                "SELECT setval(pg_get_serial_sequence('{$sequenceLiteral}', '{$columnLiteral}'), COALESCE((SELECT MAX({$quotedColumn}) FROM {$quotedTable}), 1), (SELECT MAX({$quotedColumn}) IS NOT NULL FROM {$quotedTable}));\n"
+            );
+        }
+    }
+
+    private function postgresColumnType(object $column): string
+    {
+        return match ($column->data_type) {
+            'character varying' => $column->character_maximum_length ? 'varchar(' . (int) $column->character_maximum_length . ')' : 'varchar',
+            'character' => $column->character_maximum_length ? 'char(' . (int) $column->character_maximum_length . ')' : 'char',
+            'numeric' => $column->numeric_precision
+                ? 'numeric(' . (int) $column->numeric_precision . ($column->numeric_scale !== null ? ', ' . (int) $column->numeric_scale : '') . ')'
+                : 'numeric',
+            'timestamp without time zone' => 'timestamp' . ($column->datetime_precision !== null ? '(' . (int) $column->datetime_precision . ')' : '') . ' without time zone',
+            'timestamp with time zone' => 'timestamp' . ($column->datetime_precision !== null ? '(' . (int) $column->datetime_precision . ')' : '') . ' with time zone',
+            'time without time zone' => 'time' . ($column->datetime_precision !== null ? '(' . (int) $column->datetime_precision . ')' : '') . ' without time zone',
+            'time with time zone' => 'time' . ($column->datetime_precision !== null ? '(' . (int) $column->datetime_precision . ')' : '') . ' with time zone',
+            'ARRAY' => $column->udt_name && str_starts_with($column->udt_name, '_') ? substr($column->udt_name, 1) . '[]' : $column->data_type,
+            'USER-DEFINED' => $column->udt_name ?: $column->data_type,
+            default => $column->data_type,
+        };
+    }
+
+    private function quotePostgresIdentifier(string $identifier): string
+    {
+        return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    private function quotePostgresValue(PDO $pdo, mixed $value): string
+    {
+        if ($value === null) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'TRUE' : 'FALSE';
+        }
+
+        return $pdo->quote((string) $value);
     }
 
     private function ensureBackupDirectory(): void

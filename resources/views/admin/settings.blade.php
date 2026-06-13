@@ -259,6 +259,50 @@
 
     {{-- Right Sidebar --}}
     <div style="display:flex; flex-direction:column; gap:16px;">
+        @if(auth()->user()?->isSuperAdmin())
+            <div class="side-panel" style="background:var(--surface2); border-color:{{ ($maintenanceStatus['enabled'] ?? false) ? 'rgba(245,158,11,.45)' : 'var(--border)' }};">
+                <div class="side-panel-head">
+                    <span style="width:6px;height:6px;border-radius:50%;background:{{ ($maintenanceStatus['enabled'] ?? false) ? 'var(--amber)' : 'var(--green)' }};display:inline-block;box-shadow:0 0 10px {{ ($maintenanceStatus['enabled'] ?? false) ? 'rgba(245,158,11,.65)' : 'rgba(34,197,94,.55)' }}"></span>
+                    {{ __('admin_settings.maintenance_control') }}
+                </div>
+                <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+                    <div style="border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:12px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
+                            <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase;">{{ __('admin_settings.current_status') }}</span>
+                            @if($maintenanceStatus['enabled'] ?? false)
+                                <span style="font-family:var(--font-mono);font-size:9px;color:var(--amber);font-weight:800;">{{ __('admin_settings.maintenance_active') }}</span>
+                            @else
+                                <span style="font-family:var(--font-mono);font-size:9px;color:var(--green);font-weight:800;">{{ __('admin_settings.maintenance_inactive') }}</span>
+                            @endif
+                        </div>
+                        <p style="font-size:10px;color:var(--muted);line-height:1.55;">
+                            {{ ($maintenanceStatus['enabled'] ?? false) ? __('admin_settings.maintenance_active_desc') : __('admin_settings.maintenance_inactive_desc') }}
+                        </p>
+                    </div>
+
+                    @if($maintenanceStatus['enabled'] ?? false)
+                        <form method="POST" action="{{ route('admin.settings.maintenance.disable') }}" onsubmit="return confirm(@js(__('admin_settings.disable_maintenance_confirm')));">
+                            @csrf
+                            <button type="submit" class="btn-primary" style="width:100%;height:38px;background:var(--green);border:none;font-weight:800;">
+                                {{ __('admin_settings.disable_maintenance') }}
+                            </button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('admin.settings.maintenance.enable') }}" onsubmit="return confirm(@js(__('admin_settings.enable_maintenance_confirm')));">
+                            @csrf
+                            <div class="form-group">
+                                <label class="form-label">{{ __('admin_settings.maintenance_message') }}</label>
+                                <textarea name="message" class="form-input" rows="4" maxlength="500" style="resize:vertical;min-height:92px;">{{ $maintenanceStatus['message'] ?? 'System maintenance is active. Please try again later.' }}</textarea>
+                            </div>
+                            <button type="submit" class="btn-primary" style="width:100%;height:38px;background:var(--amber);border:none;color:#111827;font-weight:900;">
+                                {{ __('admin_settings.enable_maintenance') }}
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         <div class="side-panel" style="background:var(--surface2)">
             <div class="side-panel-head">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>

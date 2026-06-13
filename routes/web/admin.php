@@ -50,6 +50,11 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
         Route::delete('/admin/backup-restore/cloud/{fileId}', [BackupController::class, 'destroyCloud'])->name('admin.backup-restore.cloud.destroy');
         Route::post('/admin/backup-restore/restore', [RestoreController::class, 'store'])->name('admin.backup-restore.restore');
         Route::post('/admin/backup-restore/restore/cloud', [RestoreController::class, 'storeCloud'])->name('admin.backup-restore.restore.cloud');
+
+        Route::get('/admin/settings/maintenance', [AdminUIController::class, 'maintenanceStatus'])->name('admin.settings.maintenance.status');
+        Route::post('/admin/settings/maintenance/enable', [AdminUIController::class, 'enableMaintenance'])->name('admin.settings.maintenance.enable');
+        Route::post('/admin/settings/maintenance/disable', [AdminUIController::class, 'disableMaintenance'])->name('admin.settings.maintenance.disable');
+        Route::post('/admin/settings/maintenance/toggle', [AdminUIController::class, 'toggleMaintenance'])->name('admin.settings.maintenance.toggle');
     });
 
     Route::get('/admin/students', [AdminUIController::class, 'students'])->name('admin.students');

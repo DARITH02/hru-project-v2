@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\SemesterAttendanceScoreService;
 use App\Services\TelegramService;
+use App\Services\MaintenanceModeService;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -1547,17 +1548,18 @@ class AdminController extends Controller
         }
     }
 
-    public function settings()
+    public function settings(MaintenanceModeService $maintenance)
     {
         $settings = \App\Models\Setting::all()->pluck('value', 'key');
         $bots = \App\Models\TelegramBot::latest()->get();
+        $maintenanceStatus = $maintenance->status();
 
         // Get available years/semesters for reports
         $academicYears = \App\Models\SemesterAssignment::distinct()->pluck('academic_year');
         if ($academicYears->isEmpty())
             $academicYears = [date('Y') . '-' . (date('Y') + 1)];
 
-        return view('admin.settings', compact('settings', 'bots', 'academicYears'));
+        return view('admin.settings', compact('settings', 'bots', 'academicYears', 'maintenanceStatus'));
     }
 
     public function exportSummaryReport(Request $request)
@@ -1715,6 +1717,76 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
+    }
+
+    public function maintenanceStatus(MaintenanceModeService $maintenance)
+    {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+
+        return response()->json($maintenance->status());
+    }
+
+    public function enableMaintenance(Request $request, MaintenanceModeService $maintenance)
+    {
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
+        $data = $request->validate([
+            'message' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $maintenance->enable($data['message'] ?? null, $request->user()->id);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'maintenance' => $maintenance->status(),
+            ]);
+        }
+
+        return back()->with('success', __('admin_settings.maintenance_enabled'));
+    }
+
+    public function disableMaintenance(Request $request, MaintenanceModeService $maintenance)
+    {
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
+        $maintenance->disable($request->user()->id);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'maintenance' => $maintenance->status(),
+            ]);
+        }
+
+        return back()->with('success', __('admin_settings.maintenance_disabled'));
+    }
+
+    public function toggleMaintenance(Request $request, MaintenanceModeService $maintenance)
+    {
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'message' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        if ($data['enabled']) {
+            $maintenance->enable($data['message'] ?? null, $request->user()->id);
+        } else {
+            $maintenance->disable($request->user()->id);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'maintenance' => $maintenance->status(),
+            ]);
+        }
+
+        return back()->with('success', $data['enabled']
+            ? __('admin_settings.maintenance_enabled')
+            : __('admin_settings.maintenance_disabled'));
     }
 
     public function attendanceIssues(Request $request)

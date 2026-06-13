@@ -16,15 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'demo.readonly' => \App\Http\Middleware\DemoReadOnlyMiddleware::class,
+            'system.maintenance' => \App\Http\Middleware\SystemMaintenanceModeMiddleware::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\SystemMaintenanceModeMiddleware::class,
         ]);
         $middleware->trustProxies(at: '*');
         $middleware->statefulApi();
         
         // 🔒 SECURITY: API Rate Limiting (DDoS Protection)
         $middleware->api(append: [
+            \App\Http\Middleware\SystemMaintenanceModeMiddleware::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':180,1', // 180 requests per minute
         ]);
 

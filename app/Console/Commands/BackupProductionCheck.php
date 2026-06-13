@@ -20,7 +20,7 @@ class BackupProductionCheck extends Command
     {
         $checks = [
             'PHP ZipArchive extension' => class_exists(ZipArchive::class),
-            'MySQL database connection' => DB::connection()->getDriverName() === 'mysql',
+            'Supported database connection' => in_array(DB::connection()->getDriverName(), ['mysql', 'pgsql'], true),
             'Backup log table exists' => Schema::hasTable('backup_restore_logs'),
             'Queue jobs table exists' => Schema::hasTable('jobs'),
             'Failed jobs table exists' => Schema::hasTable('failed_jobs'),
