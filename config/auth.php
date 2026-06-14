@@ -116,4 +116,8 @@ return [
 
     'allow_student_code_login' => env('ALLOW_STUDENT_CODE_LOGIN', false),
 
+    'public_registration_enabled' => (bool) env('PUBLIC_REGISTRATION_ENABLED', false),
+
+    'demo_login_enabled' => (bool) env('DEMO_LOGIN_ENABLED', false),
+
 ];

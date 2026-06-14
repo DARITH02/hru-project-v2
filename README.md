@@ -208,10 +208,122 @@ README នេះជាការបង្ហាញគម្រោងខ្លី�
 ```bash
 docker compose up -d --build
 docker compose exec app php artisan migrate --force
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan view:cache
 ```
 
 Local application:
 
 ```text
 http://localhost:8080
+```
+
+Useful local URLs:
+
+```text
+Login:      http://localhost:8080/login
+Register:   http://localhost:8080/register
+phpMyAdmin: http://localhost:8082
+```
+
+## Authentication Pages
+
+The login and register pages use the same responsive two-panel UI style with HRU ATS branding, language switching, and mobile-friendly layouts.
+
+- **Login page:** `/login`
+- **Register page:** `/register`
+- **Demo account action:** shown on the login page when demo login is enabled.
+- **Register action:** shown on the login page when public registration is enabled.
+- **Language support:** English and Khmer translations are stored in `resources/lang/en/auth.php` and `resources/lang/km/auth.php`.
+- **Dynamic branding:** login/register read `app_name`, `app_sub`, `institution_name`, and `app_logo` from the `settings` table.
+
+## Environment Flags
+
+Important `.env` flags:
+
+```env
+APP_DEBUG=false
+PUBLIC_REGISTRATION_ENABLED=true
+DEMO_LOGIN_ENABLED=true
+ALLOW_STUDENT_CODE_LOGIN=false
+```
+
+Recommended production values:
+
+```env
+APP_DEBUG=false
+PUBLIC_REGISTRATION_ENABLED=false
+DEMO_LOGIN_ENABLED=false
+```
+
+When changing `.env`, refresh cached config:
+
+```bash
+docker compose exec app php artisan config:clear
+docker compose exec app php artisan config:cache
+```
+
+## Demo Account
+
+When `DEMO_LOGIN_ENABLED=true`, the login page shows **View demo account**. Clicking it signs in to a demo admin workspace.
+
+The app creates or updates the demo account automatically:
+
+- **Email:** `demo@example.com`
+- **Password:** `demo123`
+- **Role:** Approved admin
+
+Disable this in production by setting:
+
+```env
+DEMO_LOGIN_ENABLED=false
+```
+
+## Registration
+
+When `PUBLIC_REGISTRATION_ENABLED=true`, the login page shows the **Create one** action and `/register` is available.
+
+Newly registered admin accounts are pending approval unless the correct super admin key is provided.
+
+Disable public registration in production by setting:
+
+```env
+PUBLIC_REGISTRATION_ENABLED=false
+```
+
+## Security Notes
+
+Current security controls include:
+
+- `APP_DEBUG=false` production check.
+- Public registration controlled by `PUBLIC_REGISTRATION_ENABLED`.
+- Demo login controlled by `DEMO_LOGIN_ENABLED`.
+- Login/register/demo route rate limits.
+- Admin/role middleware on protected areas.
+- Request validation for auth and admin actions.
+- Security headers middleware and Nginx headers.
+- Student permission audit logs for assign/revoke actions.
+- Backup readiness check with `php artisan backup:check`.
+
+Run security and backup readiness check:
+
+```bash
+docker compose exec app php artisan backup:check
+```
+
+## Docker Services
+
+The local Docker stack includes:
+
+- `app` - Laravel application with Nginx/PHP
+- `queue` - Laravel queue worker
+- `scheduler` - Laravel scheduler worker
+- `mysql` - MySQL database
+- `redis` - Redis cache
+- `phpmyadmin` - database administration UI
+
+Check service status:
+
+```bash
+docker compose ps
 ```

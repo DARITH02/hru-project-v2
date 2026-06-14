@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\WebLoginRequest;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\Request;
@@ -17,7 +18,12 @@ class WebAuthController extends Controller
     {
     }
 
-    public function showLogin() { return view('auth.login'); }
+    public function showLogin()
+    {
+        $branding = $this->branding();
+
+        return view('auth.login', compact('branding'));
+    }
 
     public function login(WebLoginRequest $request)
     {
@@ -45,6 +51,8 @@ class WebAuthController extends Controller
 
     public function demoLogin(Request $request)
     {
+        abort_unless(config('auth.demo_login_enabled'), 404);
+
         $user = User::updateOrCreate(
             ['email' => 'demo@example.com'],
             [
@@ -61,10 +69,19 @@ class WebAuthController extends Controller
         return redirect()->route('admin.dashboard');
     }
 
-    public function showRegister() { return view('auth.register'); }
+    public function showRegister()
+    {
+        abort_unless(config('auth.public_registration_enabled'), 404);
+
+        $branding = $this->branding();
+
+        return view('auth.register', compact('branding'));
+    }
 
     public function register(RegisterRequest $request)
     {
+        abort_unless(config('auth.public_registration_enabled'), 404);
+
         $role = 'admin';
         $isApproved = false;
 
@@ -100,5 +117,15 @@ class WebAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/');
+    }
+
+    private function branding(): array
+    {
+        return [
+            'app_name' => Setting::get('app_name', 'HRU ATS'),
+            'app_sub' => Setting::get('app_sub', 'Attendance Tracking System'),
+            'institution_name' => Setting::get('institution_name', 'HRU'),
+            'app_logo' => Setting::get('app_logo', 'https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png'),
+        ];
     }
 }

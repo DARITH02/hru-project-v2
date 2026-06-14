@@ -19,6 +19,7 @@ class BackupProductionCheck extends Command
     public function handle(GoogleDriveService $googleDrive): int
     {
         $checks = [
+            'APP_DEBUG disabled' => config('app.debug') === false,
             'PHP ZipArchive extension' => class_exists(ZipArchive::class),
             'Supported database connection' => in_array(DB::connection()->getDriverName(), ['mysql', 'pgsql'], true),
             'Backup log table exists' => Schema::hasTable('backup_restore_logs'),

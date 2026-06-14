@@ -2,924 +2,690 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
+    @php
+        $branding = $branding ?? [];
+        $appName = $branding['app_name'] ?? config('app.name', 'HRU ATS');
+        $appSub = $branding['app_sub'] ?? __('auth.login_subtitle', ['app' => $appName]);
+        $institutionName = $branding['institution_name'] ?? 'HRU';
+        $appLogo = $branding['app_logo'] ?? 'https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png';
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login </title>
+    <title>{{ __('auth.login_title', ['app' => $appName]) }}</title>
     @vite(['resources/css/app.css'])
-    <link rel="icon"
-        href="https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png"
-        type="image/png" sizes="32x32" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="{{ $appLogo }}" type="image/png" sizes="32x32" />
 
     <style>
-        /* ─── Reset ──────────────────────────────────────────── */
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* ─── Dark theme (default) ───────────────────────────── */
         :root {
-            --bg: #0D0D0F;
-            --surface: #141418;
-            --surface2: #0D0D0F;
-            --border: rgba(255, 255, 255, 0.07);
-            --border-hover: rgba(255, 255, 255, 0.13);
-            --border-focus: rgba(99, 59, 246, 0.65);
-            --text: #ffffff;
-            --text-sub: rgba(255, 255, 255, 0.38);
-            --text-muted: rgba(255, 255, 255, 0.22);
-            --label: rgba(255, 255, 255, 0.30);
-            --accent: #633BF6;
-            --teal: #16C4A7;
-            --icon: rgba(255, 255, 255, 0.30);
-            --placeholder: rgba(255, 255, 255, 0.20);
-            --error: #F09595;
-            --error-bg: rgba(226, 75, 74, 0.10);
-            --error-border: rgba(226, 75, 74, 0.28);
-            --chip-bg: rgba(255, 255, 255, 0.04);
-            --chip-border: rgba(255, 255, 255, 0.07);
-            --chip-text: rgba(255, 255, 255, 0.38);
-            --top-line: linear-gradient(90deg, transparent, rgba(99, 59, 246, 0.65) 40%, rgba(22, 196, 167, 0.45) 70%, transparent);
-            --radial1: rgba(99, 59, 246, 0.17);
-            --radial2: rgba(22, 196, 167, 0.09);
-            --toggle-bg: rgba(255, 255, 255, 0.06);
-            --toggle-border: rgba(255, 255, 255, 0.10);
-            --toggle-color: rgba(255, 255, 255, 0.45);
-            --divider: rgba(255, 255, 255, 0.07);
-            --divider-text: rgba(255, 255, 255, 0.20);
+            --login-bg: #eef3f8;
+            --login-panel: #ffffff;
+            --login-panel-soft: #f6f8fb;
+            --login-border: #dbe3ee;
+            --login-text: #142033;
+            --login-muted: #66758a;
+            --login-primary: #1e3a8a;
+            --login-primary-2: #2563eb;
+            --login-accent: #0f9f8f;
+            --login-danger: #c2413d;
+            --login-danger-bg: #fff1f1;
+            --login-shadow: 0 28px 70px rgba(15, 23, 42, .16);
         }
 
-        /* ─── Light theme ────────────────────────────────────── */
-        html.light {
-            --bg: #F0EEF8;
-            --surface: #ffffff;
-            --surface2: #F7F5FF;
-            --border: rgba(99, 59, 246, 0.11);
-            --border-hover: rgba(99, 59, 246, 0.22);
-            --border-focus: #633BF6;
-            --text: #1a1528;
-            --text-sub: #6b6385;
-            --text-muted: #a49dbf;
-            --label: #8e87ad;
-            --accent: #633BF6;
-            --teal: #0FA88F;
-            --icon: #9f99c0;
-            --placeholder: #c7c2dc;
-            --error: #b03030;
-            --error-bg: rgba(176, 48, 48, 0.06);
-            --error-border: rgba(176, 48, 48, 0.22);
-            --chip-bg: rgba(99, 59, 246, 0.05);
-            --chip-border: rgba(99, 59, 246, 0.10);
-            --chip-text: #9991bf;
-            --top-line: linear-gradient(90deg, transparent, rgba(99, 59, 246, 0.45) 40%, rgba(15, 168, 143, 0.35) 70%, transparent);
-            --radial1: rgba(99, 59, 246, 0.08);
-            --radial2: rgba(15, 168, 143, 0.06);
-            --toggle-bg: rgba(99, 59, 246, 0.06);
-            --toggle-border: rgba(99, 59, 246, 0.14);
-            --toggle-color: #7a71c0;
-            --divider: rgba(99, 59, 246, 0.10);
-            --divider-text: #b0abcc;
+        * {
+            box-sizing: border-box;
         }
 
-        /* ─── Base ───────────────────────────────────────────── */
         html,
         body {
-            min-height: 100vh;
+            min-height: 100%;
         }
 
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--bg);
-            background-image:
-                radial-gradient(ellipse 65% 55% at 15% 8%, var(--radial1) 0%, transparent 60%),
-                radial-gradient(ellipse 45% 55% at 85% 92%, var(--radial2) 0%, transparent 55%);
-            padding: 2rem 1rem;
-            font-family: 'DM Sans', sans-serif;
-            transition: background-color .35s;
+            margin: 0;
+            min-height: 100vh;
+            color: var(--login-text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                linear-gradient(110deg, rgba(238, 243, 248, .95), rgba(238, 243, 248, .78)),
+                url("https://image.freshnewsasia.com/2020/id-025/fn-2020-12-26-11-31-31-0.jpg") center / cover fixed;
         }
 
-        /* ─── Card ───────────────────────────────────────────── */
-        .card {
-            width: 100%;
-            max-width: 420px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 36px 34px 32px;
-            position: relative;
+        button,
+        input {
+            font: inherit;
+        }
+
+        .login-shell {
+            width: min(1120px, calc(100% - 32px));
+            min-height: 100vh;
+            margin: 0 auto;
+            display: grid;
+            align-items: center;
+            padding: 32px 0;
+        }
+
+        .login-frame {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) 440px;
+            min-height: 680px;
             overflow: hidden;
-            transition: background .35s, border-color .35s;
-            animation: fadeUp .45s ease both;
+            border: 1px solid rgba(255, 255, 255, .68);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .76);
+            box-shadow: var(--login-shadow);
+            backdrop-filter: blur(16px);
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(18px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* shimmer top border */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: var(--top-line);
-        }
-
-        /* ─── Top row ─────────────────────────────────────────── */
-        .top-row {
+        .brand-panel {
+            position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: space-between;
-            margin-bottom: 28px;
+            min-height: 100%;
+            padding: 36px;
+            color: #fff;
+            background:
+                linear-gradient(150deg, rgba(9, 25, 54, .88), rgba(30, 58, 138, .68)),
+                url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover;
         }
 
-        .brand {
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg, transparent, rgba(5, 12, 24, .5));
+        }
+
+        .brand-top,
+        .brand-copy,
+        .status-row {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-top {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
         }
 
-        .brand-mark {
+        .brand-logo {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .92);
+        }
+
+        .brand-logo img {
             width: 52px;
             height: 52px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .brand-mark img {
-            width: 100%;
-            height: 100%;
             object-fit: contain;
         }
 
-        .brand-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 25px;
-            letter-spacing: .20em;
-            color: blue;
-            transition: color .35s;
+        .brand-name {
+            display: grid;
+            gap: 2px;
         }
 
-        .brand-text span {
-            color: var(--teal);
+        .brand-name strong {
+            font-size: 22px;
+            line-height: 1;
+            letter-spacing: .08em;
         }
 
-        .theme-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--toggle-bg);
-            border: 1px solid var(--toggle-border);
-            color: var(--toggle-color);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .2s;
-            flex-shrink: 0;
-        }
-
-        .theme-btn:hover {
-            opacity: .75;
-        }
-
-        /* ─── Heading ─────────────────────────────────────────── */
-        .headline {
-            font-family: 'Syne', sans-serif;
-            font-size: 21px;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1.2;
-            margin-bottom: 5px;
-            transition: color .35s;
-        }
-
-        .subline {
+        .brand-name span {
             font-size: 13px;
-            font-weight: 300;
-            color: var(--text-sub);
-            margin-bottom: 22px;
-            transition: color .35s;
+            color: rgba(255, 255, 255, .78);
         }
 
-        /* ─── Feature chips ───────────────────────────────────── */
-        .chips {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 22px;
+        .brand-copy {
+            max-width: 560px;
         }
 
-        .chip {
-            flex: 1;
-            background: var(--chip-bg);
-            border: 1px solid var(--chip-border);
+        .brand-copy h1 {
+            margin: 0;
+            max-width: 620px;
+            font-size: clamp(34px, 5vw, 62px);
+            line-height: 1.02;
+            letter-spacing: 0;
+        }
+
+        .brand-copy p {
+            max-width: 520px;
+            margin: 18px 0 0;
+            color: rgba(255, 255, 255, .82);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .status-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .status-item {
+            min-height: 76px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, .18);
             border-radius: 8px;
-            padding: 7px 9px;
+            background: rgba(255, 255, 255, .12);
+        }
+
+        .status-item span {
+            display: block;
+            color: rgba(255, 255, 255, .72);
+            font-size: 12px;
+        }
+
+        .status-item strong {
+            display: block;
+            margin-top: 7px;
+            font-size: 15px;
+            line-height: 1.25;
+        }
+
+        .form-panel {
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: border-color .2s;
+            background: var(--login-panel);
+            padding: 42px;
         }
 
-        .chip:hover {
-            border-color: var(--border-hover);
+        .form-card {
+            width: 100%;
         }
 
-        .chip-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            flex-shrink: 0;
+        .form-kicker {
+            color: var(--login-primary-2);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .13em;
+            text-transform: uppercase;
         }
 
-        .chip span {
-            font-size: 10px;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: .04em;
-            color: var(--chip-text);
+        .form-title {
+            margin: 10px 0 8px;
+            color: var(--login-text);
+            font-size: 30px;
+            line-height: 1.15;
+            letter-spacing: 0;
         }
 
-        /* ─── Error banner ────────────────────────────────────── */
+        .form-subtitle {
+            margin: 0 0 26px;
+            color: var(--login-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
         .alert {
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            letter-spacing: .02em;
             margin-bottom: 18px;
+            padding: 12px 14px;
+            border: 1px solid #f0b8b5;
+            border-radius: 8px;
+            color: var(--login-danger);
+            background: var(--login-danger-bg);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .alert[hidden] {
             display: none;
         }
 
-        .alert.show {
-            display: block;
-        }
-
-        .alert.error {
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            color: var(--error);
-        }
-
-        .alert .a-item {
-            margin-bottom: 2px;
-        }
-
-        .alert .a-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* ─── Field ───────────────────────────────────────────── */
         .field {
-            margin-bottom: 16px;
+            margin-bottom: 17px;
         }
 
         .field label {
             display: block;
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            letter-spacing: .10em;
-            text-transform: uppercase;
-            color: var(--label);
             margin-bottom: 7px;
-            transition: color .35s;
+            color: #314058;
+            font-size: 13px;
+            font-weight: 700;
         }
 
-        /* ─── Input wrapper ───────────────────────────────────── */
-        .inp-wrap {
+        .input-wrap {
             position: relative;
         }
 
-        .inp-wrap .ico {
+        .input-icon,
+        .password-toggle {
             position: absolute;
-            left: 13px;
             top: 50%;
             transform: translateY(-50%);
+            color: #8695a8;
+        }
+
+        .input-icon {
+            left: 14px;
+            display: flex;
             pointer-events: none;
-            color: var(--icon);
-            display: flex;
-            align-items: center;
-            transition: color .35s;
         }
 
-        .inp-wrap input {
+        .input-wrap input {
             width: 100%;
-            padding: 11px 14px 11px 38px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 11px;
-            color: var(--text);
-            font-size: 13.5px;
-            font-family: 'DM Sans', sans-serif;
+            height: 48px;
+            padding: 0 14px 0 42px;
+            border: 1px solid var(--login-border);
+            border-radius: 8px;
+            color: var(--login-text);
+            background: var(--login-panel-soft);
             outline: none;
-            transition: border-color .2s, box-shadow .2s, background .35s, color .35s;
+            transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
         }
 
-        .inp-wrap input::placeholder {
-            color: var(--placeholder);
+        .input-wrap input::placeholder {
+            color: #9aa8ba;
         }
 
-        .inp-wrap input:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(99, 59, 246, .11);
+        .input-wrap input:focus {
+            border-color: var(--login-primary-2);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
         }
 
-        .inp-wrap input.has-toggle {
-            padding-right: 38px;
+        .input-wrap input.invalid {
+            border-color: var(--login-danger);
+            box-shadow: 0 0 0 4px rgba(194, 65, 61, .1);
         }
 
-        /* validation states */
-        .inp-wrap input.invalid {
-            border-color: var(--error) !important;
-            box-shadow: 0 0 0 3px rgba(226, 75, 74, .09) !important;
+        .input-wrap input.has-toggle {
+            padding-right: 46px;
         }
 
-        .inp-wrap input.valid {
-            border-color: var(--teal) !important;
-            box-shadow: 0 0 0 3px rgba(22, 196, 167, .08) !important;
+        .password-toggle {
+            right: 10px;
+            display: grid;
+            width: 32px;
+            height: 32px;
+            place-items: center;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
         }
 
-        /* ─── Eye toggle ──────────────────────────────────────── */
-        .eye-btn {
-            position: absolute;
-            right: 11px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--icon);
-            display: flex;
-            align-items: center;
-            padding: 3px;
-            transition: color .2s;
+        .password-toggle:hover {
+            color: var(--login-primary);
+            background: rgba(30, 58, 138, .08);
         }
 
-        .eye-btn:hover {
-            color: var(--text);
-        }
-
-        /* ─── Field hint ──────────────────────────────────────── */
         .hint {
-            font-size: 10.5px;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: .03em;
-            margin-top: 5px;
-            color: var(--error);
             display: none;
+            margin-top: 6px;
+            color: var(--login-danger);
+            font-size: 12px;
         }
 
         .hint.show {
             display: block;
         }
 
-        /* ─── Forgot password row ─────────────────────────────── */
-        .forgot-row {
-            display: flex;
-            justify-content: flex-end;
-            margin: -6px 0 18px;
-        }
-
-        .forgot-row a {
-            font-size: 11.5px;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: .04em;
-            color: var(--label);
-            text-decoration: none;
-            transition: color .2s;
-        }
-
-        .forgot-row a:hover {
-            color: var(--teal);
-        }
-
-        /* ─── Demo credentials ───────────────────────────────── */
-        .demo-account {
-            display: grid;
-            gap: 10px;
-            margin: -2px 0 18px;
-            padding: 12px;
-            background: var(--chip-bg);
-            border: 1px solid var(--chip-border);
-            border-radius: 12px;
-        }
-
-        .demo-account__top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .demo-account__label {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            color: var(--label);
-        }
-
-        .demo-account__button {
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: var(--surface2);
-            color: var(--teal);
-            cursor: pointer;
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            letter-spacing: .04em;
-            padding: 7px 9px;
-            transition: border-color .2s, color .2s, background .2s;
+        .submit-btn,
+        .demo-btn {
             width: 100%;
+            height: 48px;
+            border-radius: 8px;
+            font-weight: 800;
+            transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
         }
 
-        .demo-account__button:hover {
-            border-color: var(--border-hover);
-            color: var(--text);
-        }
-
-        .demo-account__credentials {
-            display: grid;
-            gap: 5px;
-            color: var(--text-sub);
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            line-height: 1.5;
-            min-width: 0;
-        }
-
-        .demo-account__credentials span {
-            color: var(--text);
-            word-break: break-word;
-        }
-
-        /* ─── Submit button ───────────────────────────────────── */
-        .btn-submit {
-            width: 100%;
-            padding: 13px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #633BF6 0%, #4A2ECE 50%, #16C4A7 100%);
-            border: none;
+        .submit-btn {
+            border: 0;
             color: #fff;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            letter-spacing: .02em;
-            transition: opacity .2s, transform .15s;
+            background: linear-gradient(135deg, var(--login-primary), var(--login-primary-2));
+            box-shadow: 0 14px 24px rgba(37, 99, 235, .22);
         }
 
-        .btn-submit::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(255, 255, 255, .08) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .btn-submit:hover {
-            opacity: .91;
+        .submit-btn:hover {
             transform: translateY(-1px);
+            box-shadow: 0 18px 30px rgba(37, 99, 235, .26);
         }
 
-        .btn-submit:active {
-            transform: translateY(0);
+        .demo-box {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid var(--login-border);
+            border-radius: 8px;
+            background: #f8fafc;
         }
 
-        /* ─── Divider ─────────────────────────────────────────── */
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 22px 0;
+        .demo-box p {
+            margin: 0 0 10px;
+            color: var(--login-muted);
+            font-size: 13px;
+            line-height: 1.55;
         }
 
-        .divider hr {
-            flex: 1;
-            border: none;
-            border-top: 1px solid var(--divider);
+        .demo-btn {
+            border: 1px solid #b7c6d9;
+            color: var(--login-primary);
+            background: #fff;
         }
 
-        .divider span {
-            font-size: 10px;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: .06em;
-            color: var(--divider-text);
-            white-space: nowrap;
+        .demo-btn:hover {
+            border-color: var(--login-primary-2);
+            background: #eef5ff;
         }
 
-        /* ─── SSO buttons ─────────────────────────────────────── */
-        .sso-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 4px;
+        .form-footer {
+            margin-top: 22px;
+            color: var(--login-muted);
+            font-size: 13px;
+            text-align: center;
         }
 
-        .sso-btn {
-            display: flex;
+        .form-footer a {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 11px;
-            background: var(--chip-bg);
-            border: 1px solid var(--chip-border);
-            color: var(--text-sub);
-            font-size: 12.5px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 400;
-            cursor: pointer;
+            min-height: 34px;
+            margin-left: 6px;
+            padding: 0 12px;
+            border: 1px solid rgba(37, 99, 235, .22);
+            border-radius: 8px;
+            color: var(--login-primary-2);
+            font-weight: 800;
             text-decoration: none;
-            transition: border-color .2s, background .2s, color .2s;
+            background: rgba(37, 99, 235, .06);
         }
 
-        .sso-btn:hover {
-            border-color: var(--border-hover);
-            color: var(--text);
-            background: var(--chip-bg);
+        .form-footer a:hover {
+            border-color: rgba(37, 99, 235, .42);
+            background: rgba(37, 99, 235, .1);
         }
 
-        /* ─── Footer ──────────────────────────────────────────── */
-        .card-footer {
-            margin-top: 22px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-sub);
-            transition: color .35s;
-        }
-
-        .card-footer a {
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-            transition: opacity .15s;
-        }
-
-        .card-footer a:hover {
-            opacity: .72;
-        }
-
-        /* ─── Responsive ──────────────────────────────────────── */
-        @media (max-width: 480px) {
-            .card {
-                padding: 28px 22px 26px;
+        @media (max-width: 900px) {
+            body {
+                background:
+                    linear-gradient(120deg, rgba(238, 243, 248, .94), rgba(238, 243, 248, .86)),
+                    url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover fixed;
             }
 
-            .chips {
-                flex-wrap: wrap;
+            .login-shell {
+                width: min(520px, calc(100% - 24px));
             }
 
-            .sso-row {
-                grid-template-columns: 1fr;
+            .login-frame {
+                display: block;
+                min-height: 0;
+            }
+
+            .brand-panel {
+                min-height: 230px;
+                padding: 24px;
+            }
+
+            .brand-copy {
+                margin-top: 48px;
+            }
+
+            .brand-copy h1 {
+                font-size: 32px;
+            }
+
+            .brand-copy p,
+            .status-row {
+                display: none;
+            }
+
+            .form-panel {
+                padding: 28px 22px 30px;
             }
         }
 
-        body {
-            /* background: url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg"); */
-            background: url("https://image.freshnewsasia.com/2020/id-025/fn-2020-12-26-11-31-31-0.jpg");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+        @media (max-width: 420px) {
+            .login-shell {
+                width: 100%;
+                padding: 0;
+            }
 
+            .login-frame {
+                min-height: 100vh;
+                border: 0;
+                border-radius: 0;
+            }
+
+            .brand-panel {
+                min-height: 190px;
+            }
+
+            .brand-logo {
+                width: 48px;
+                height: 48px;
+            }
+
+            .brand-logo img {
+                width: 42px;
+                height: 42px;
+            }
+
+            .brand-name strong {
+                font-size: 19px;
+            }
+
+            .form-title {
+                font-size: 26px;
+            }
         }
     </style>
-
 </head>
 
 <body>
-
-    <div class="card">
-
-        {{-- ── Top row: brand + theme toggle ──────────────────────── --}}
-        <div class="top-row">
-            <div class="brand">
-                <div class="brand-mark">
-                    <img src="https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png"
-                        alt="Logo">
+    <main class="login-shell">
+        <section class="login-frame" aria-label="{{ __('auth.login_aria', ['app' => $appName]) }}">
+            <aside class="brand-panel">
+                <div class="brand-top">
+                    <div class="brand-logo">
+                        <img src="{{ $appLogo }}" alt="{{ $appName }}">
+                    </div>
+                    <div class="brand-name">
+                        <strong>{{ $appName }}</strong>
+                        <span>{{ $appSub ?: $institutionName }}</span>
+                    </div>
                 </div>
-                <div class="brand-text">HRU <span>ATS</span></div>
-            </div>
 
-            <button class="theme-btn" id="themeBtn" type="button" title="Toggle light / dark">
-                {{-- Moon icon (dark mode) --}}
-                <svg id="ico-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </svg>
-                {{-- Sun icon (light mode) --}}
-                <svg id="ico-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="display:none;">
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-            </button>
-        </div>
-
-        {{-- ── Heading ──────────────────────────────────────────────── --}}
-        <p class="headline">Welcome back</p>
-        <p class="subline">Sign in to your workspace</p>
-
-        {{-- ── Feature chips ────────────────────────────────────────── --}}
-        <div class="chips">
-            <div class="chip">
-                <div class="chip-dot" style="background:#16C4A7;"></div>
-                <span>Live tracking</span>
-            </div>
-            <div class="chip">
-                <div class="chip-dot" style="background:#633BF6;"></div>
-                <span>AI insights</span>
-            </div>
-            <div class="chip">
-                <div class="chip-dot" style="background:#F09595;"></div>
-                <span>Smart alerts</span>
-            </div>
-        </div>
-
-        {{-- ── Laravel server-side error banner ───────────────────── --}}
-        @if ($errors->any())
-            <div class="alert error show">
-                @foreach ($errors->all() as $err)
-                    <div class="a-item">• {{ $err }}</div>
-                @endforeach
-            </div>
-        @endif
-
-        {{-- Client-side validation banner (hidden by default) --}}
-        <div class="alert error" id="jsAlert"></div>
-
-        {{-- ── Form ─────────────────────────────────────────────────── --}}
-        <form action="{{ route('login.post') }}" method="POST" id="loginForm" novalidate>
-            @csrf
-
-            {{-- Email --}}
-            <div class="field">
-                <label for="email">Email address</label>
-                <div class="inp-wrap">
-                    <span class="ico">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="4" width="20" height="16" rx="2" />
-                            <path d="M2 7l10 7 10-7" />
-                        </svg>
-                    </span>
-                    <input type="email" id="email" name="email" placeholder="you@company.com"
-                        value="{{ old('email') }}" autocomplete="email" required>
+                <div class="brand-copy">
+                    <h1>{{ __('auth.hero_title') }}</h1>
+                    <p>{{ __('auth.hero_description') }}</p>
                 </div>
-                <div class="hint" id="hint-email">Enter a valid email address</div>
-            </div>
 
-            {{-- Password --}}
-            <div class="field">
-                <label for="password">Password</label>
-                <div class="inp-wrap">
-                    <span class="ico">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" />
-                            <path d="M7 11V7a5 5 0 0110 0v4" />
-                        </svg>
-                    </span>
-                    <input type="password" id="password" name="password" placeholder="••••••••"
-                        autocomplete="current-password" class="has-toggle" required>
-                    <button type="button" class="eye-btn" data-target="password" aria-label="Show password">
-                        <svg class="eye-open" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        <svg class="eye-closed" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            style="display:none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
-                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
-                            <line x1="1" y1="1" x2="23" y2="23" />
-                        </svg>
-                    </button>
+                <div class="status-row" aria-label="{{ __('auth.system_highlights') }}">
+                    <div class="status-item">
+                        <span>{{ __('auth.access') }}</span>
+                        <strong>{{ __('auth.role_protected') }}</strong>
+                    </div>
+                    <div class="status-item">
+                        <span>{{ __('auth.records') }}</span>
+                        <strong>{{ __('auth.audit_logged') }}</strong>
+                    </div>
+                    <div class="status-item">
+                        <span>{{ __('auth.backups') }}</span>
+                        <strong>{{ __('auth.automated') }}</strong>
+                    </div>
                 </div>
-                <div class="hint" id="hint-password">Password is required</div>
+            </aside>
+
+            <div class="form-panel">
+                <div class="form-card">
+                    <div class="form-kicker">{{ __('auth.secure_sign_in') }}</div>
+                    <h2 class="form-title">{{ __('auth.welcome_back') }}</h2>
+                    <p class="form-subtitle">{{ __('auth.login_subtitle', ['app' => $appName]) }}</p>
+
+                    @if ($errors->any())
+                        <div class="alert">
+                            @foreach ($errors->all() as $err)
+                                <div>{{ $err }}</div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="alert" id="jsAlert" hidden></div>
+
+                    <form action="{{ route('login.post') }}" method="POST" id="loginForm" novalidate>
+                        @csrf
+
+                        <div class="field">
+                            <label for="email">{{ __('auth.email_address') }}</label>
+                            <div class="input-wrap">
+                                <span class="input-icon" aria-hidden="true">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                                        <path d="m22 7-10 7L2 7" />
+                                    </svg>
+                                </span>
+                                <input type="email" id="email" name="email" placeholder="{{ __('auth.email_placeholder') }}"
+                                    value="{{ old('email') }}" autocomplete="email" required>
+                            </div>
+                            <div class="hint" id="hint-email">{{ __('auth.email_invalid') }}</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="password">{{ __('auth.password') }}</label>
+                            <div class="input-wrap">
+                                <span class="input-icon" aria-hidden="true">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                </span>
+                                <input type="password" id="password" name="password" placeholder="{{ __('auth.password_placeholder') }}"
+                                    autocomplete="current-password" class="has-toggle" required>
+                                <button type="button" class="password-toggle" data-target="password"
+                                    aria-label="{{ __('auth.show_password') }}">
+                                    <svg class="eye-open" width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    <svg class="eye-closed" width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" hidden>
+                                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                        <path d="M6.61 6.61C3.54 8.33 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61" />
+                                        <path d="m2 2 20 20" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="hint" id="hint-password">{{ __('auth.password_required') }}</div>
+                        </div>
+
+                        <button type="submit" class="submit-btn">{{ __('auth.sign_in') }}</button>
+                    </form>
+
+                    @if (config('auth.demo_login_enabled'))
+                        <form action="{{ route('demo.login') }}" method="POST" class="demo-box">
+                            @csrf
+                            <p>{{ __('auth.demo_description') }}</p>
+                            <button type="submit" class="demo-btn">{{ __('auth.try_demo') }}</button>
+                        </form>
+                    @endif
+
+                    @if (config('auth.public_registration_enabled'))
+                        <div class="form-footer">
+                            {{ __('auth.need_account') }} <a href="{{ route('register') }}">{{ __('auth.create_account') }}</a>
+                        </div>
+                    @endif
+                </div>
             </div>
+        </section>
+    </main>
 
-            {{-- Forgot password --}}
-            <div class="forgot-row">
-                <a href="">forgot password?</a>
-            </div>
+    @php
+        $authText = [
+            'showPassword' => __('auth.show_password'),
+            'hidePassword' => __('auth.hide_password'),
+            'emailRequired' => __('auth.email_required'),
+            'emailInvalid' => __('auth.email_invalid'),
+            'passwordRequired' => __('auth.password_required'),
+        ];
+    @endphp
 
-            <button type="submit" class="btn-submit">Sign in</button>
-        </form>
-
-        <form action="{{ route('demo.login') }}" method="POST" class="demo-account" aria-label="Demo system access">
-            @csrf
-            <div class="demo-account__top">
-                <div class="demo-account__label">Demo system</div>
-            </div>
-            <div class="demo-account__credentials">
-                <div>Open a ready admin demo workspace to review dashboard, attendance, students, instructors, courses, and reports.</div>
-            </div>
-            <button type="submit" class="demo-account__button">Try demo system</button>
-        </form>
-
-        {{-- ── Divider ───────────────────────────────────────────────── --}}
-        <div class="divider">
-            <hr><span>or continue with</span>
-            <hr>
-        </div>
-
-        {{-- ── SSO buttons ──────────────────────────────────────────── --}}
-        <!-- <div class="sso-row">
-        <a href="#" class="sso-btn">
-            {{-- Google --}}
-            <svg width="15" height="15" viewBox="0 0 48 48" fill="none">
-                <path d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.2-3z" fill="#4285F4"/>
-                <path d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.4-17.7 10.7z" fill="#EA4335"/>
-                <path d="M24 43c5.5 0 10.4-1.9 14.2-5l-6.6-5.4C29.6 34.5 27 35.5 24 35.5c-6 0-10.6-3.9-11.9-9.1l-7 5.4C8 38.4 15.4 43 24 43z" fill="#34A853"/>
-                <path d="M43.6 20H24v8h11.8c-.7 2.6-2.3 4.8-4.4 6.3l6.6 5.4C41.4 36.1 44 30 44 23c0-1-.1-2-.4-3z" fill="#FBBC05"/>
-            </svg>
-            Google
-        </a>
-        <a href="#" class="sso-btn">
-            {{-- Microsoft --}}
-            <svg width="14" height="14" viewBox="0 0 21 21" fill="none">
-                <rect x="1"  y="1"  width="9" height="9" fill="#F25022"/>
-                <rect x="11" y="1"  width="9" height="9" fill="#7FBA00"/>
-                <rect x="1"  y="11" width="9" height="9" fill="#00A4EF"/>
-                <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-            </svg>
-            Microsoft
-        </a>
-    </div> -->
-
-        {{-- ── Footer ────────────────────────────────────────────────── --}}
-        <div class="card-footer">
-            Don't have an account? <a href="{{ route('register') }}">Join now</a>
-        </div>
-
-    </div>
-
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
-    {{--  JavaScript                                                     --}}
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
     <script>
-        /* ── Theme toggle ────────────────────────────────────────────────── */
-        (function() {
-            var html = document.documentElement;
-            var btn = document.getElementById('themeBtn');
-            var moon = document.getElementById('ico-moon');
-            var sun = document.getElementById('ico-sun');
-            var isLight = localStorage.getItem('ai-theme') === 'light';
+        const authText = @json($authText);
 
-            function applyTheme() {
-                if (isLight) {
-                    html.classList.add('light');
-                    moon.style.display = 'none';
-                    sun.style.display = 'block';
-                } else {
-                    html.classList.remove('light');
-                    moon.style.display = 'block';
-                    sun.style.display = 'none';
-                }
-            }
-
-            applyTheme();
-
-            btn.addEventListener('click', function() {
-                isLight = !isLight;
-                localStorage.setItem('ai-theme', isLight ? 'light' : 'dark');
-                applyTheme();
-            });
-        })();
-
-        /* ── Show / hide password ────────────────────────────────────────── */
-        document.querySelectorAll('.eye-btn').forEach(function(btn) {
+        document.querySelectorAll('.password-toggle').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var input = document.getElementById(btn.dataset.target);
                 var isText = input.type === 'text';
                 input.type = isText ? 'password' : 'text';
-                btn.querySelector('.eye-open').style.display = isText ? 'block' : 'none';
-                btn.querySelector('.eye-closed').style.display = isText ? 'none' : 'block';
+                btn.querySelector('.eye-open').hidden = !isText;
+                btn.querySelector('.eye-closed').hidden = isText;
+                btn.setAttribute('aria-label', isText ? authText.showPassword : authText.hidePassword);
             });
         });
 
-        /* ── Helpers ─────────────────────────────────────────────────────── */
         function setFieldState(input, state) {
-            input.classList.remove('valid', 'invalid');
-            if (state) input.classList.add(state);
+            input.classList.remove('invalid');
+            if (state === 'invalid') {
+                input.classList.add('invalid');
+            }
         }
 
         function showHint(id, msg) {
             var el = document.getElementById(id);
             el.textContent = msg;
-            el.className = 'hint show';
+            el.classList.add('show');
         }
 
         function clearHint(id) {
-            document.getElementById(id).className = 'hint';
+            document.getElementById(id).classList.remove('show');
         }
 
-        /* ── Blur validation ─────────────────────────────────────────────── */
-        document.getElementById('email').addEventListener('blur', function() {
-            var v = this.value.trim();
-            var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-            if (!v) {
-                setFieldState(this, 'invalid');
-                showHint('hint-email', 'Email is required');
-            } else if (!ok) {
-                setFieldState(this, 'invalid');
-                showHint('hint-email', 'Enter a valid email address');
-            } else {
-                setFieldState(this, 'valid');
-                clearHint('hint-email');
-            }
-        });
-
-        document.getElementById('password').addEventListener('blur', function() {
-            if (!this.value) {
-                setFieldState(this, 'invalid');
-                showHint('hint-password', 'Password is required');
-            } else {
-                setFieldState(this, 'valid');
-                clearHint('hint-password');
-            }
-        });
-
-        /* ── Submit validation ───────────────────────────────────────────── */
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             var errors = [];
             var emailEl = document.getElementById('email');
             var pwEl = document.getElementById('password');
             var emailVal = emailEl.value.trim();
-            var pwVal = pwEl.value;
-
-            /* email */
             var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+
             if (!emailVal) {
                 setFieldState(emailEl, 'invalid');
-                showHint('hint-email', 'Email is required');
-                errors.push('Email is required');
+                showHint('hint-email', authText.emailRequired);
+                errors.push(authText.emailRequired);
             } else if (!emailOk) {
                 setFieldState(emailEl, 'invalid');
-                showHint('hint-email', 'Enter a valid email address');
-                errors.push('Invalid email address');
+                showHint('hint-email', authText.emailInvalid);
+                errors.push(authText.emailInvalid);
             } else {
-                setFieldState(emailEl, 'valid');
+                setFieldState(emailEl);
                 clearHint('hint-email');
             }
 
-            /* password */
-            if (!pwVal) {
+            if (!pwEl.value) {
                 setFieldState(pwEl, 'invalid');
-                showHint('hint-password', 'Password is required');
-                errors.push('Password is required');
+                showHint('hint-password', authText.passwordRequired);
+                errors.push(authText.passwordRequired);
             } else {
-                setFieldState(pwEl, 'valid');
+                setFieldState(pwEl);
                 clearHint('hint-password');
             }
 
             var alert = document.getElementById('jsAlert');
-            if (errors.length > 0) {
+            if (errors.length) {
                 e.preventDefault();
-                alert.className = 'alert error show';
-                alert.innerHTML = errors.map(function(m) {
-                    return '<div class="a-item">• ' + m + '</div>';
+                alert.hidden = false;
+                alert.innerHTML = errors.map(function(error) {
+                    return '<div>' + error + '</div>';
                 }).join('');
             } else {
-                alert.className = 'alert error';
+                alert.hidden = true;
+                alert.innerHTML = '';
             }
         });
     </script>
 
-@include('partials.legacy-translator')
+    @include('partials.legacy-translator')
 </body>
 
 </html>

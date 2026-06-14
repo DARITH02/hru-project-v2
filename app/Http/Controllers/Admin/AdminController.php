@@ -1517,22 +1517,36 @@ class AdminController extends Controller
 
     public function storePermission(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'student_id' => 'required|exists:students,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'reason' => 'required|string',
-            'type' => 'required|string'
+            'reason' => 'required|string|max:1000',
+            'type' => 'required|in:sick,event,personal,official',
         ]);
 
-        \App\Models\StudentPermission::create($request->all());
+        $permission = \App\Models\StudentPermission::create($data);
+
+        ActivityLog::create([
+            'action' => 'ASSIGN_PERMISSION',
+            'target' => 'student_permission#' . $permission->id . ' student#' . $permission->student_id,
+        ]);
 
         return redirect()->back()->with('success', 'Permission assigned successfully.');
     }
 
     public function destroyPermission($id)
     {
-        \App\Models\StudentPermission::findOrFail($id)->delete();
+        $permission = \App\Models\StudentPermission::findOrFail($id);
+        $target = 'student_permission#' . $permission->id . ' student#' . $permission->student_id;
+
+        $permission->delete();
+
+        ActivityLog::create([
+            'action' => 'REVOKE_PERMISSION',
+            'target' => $target,
+        ]);
+
         return redirect()->back()->with('success', 'Permission removed.');
     }
 
@@ -2079,13 +2093,12 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Access denied. Only Super Administrators can drop event history records.');
         }
 
-        $ids = $request->input('ids', []);
+        $data = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:student_restore_histories,id',
+        ]);
 
-        if (empty($ids)) {
-            return redirect()->back()->with('error', 'No records selected to drop.');
-        }
-
-        $deleted = \App\Models\StudentRestoreHistory::whereIn('id', $ids)->delete();
+        $deleted = \App\Models\StudentRestoreHistory::whereIn('id', $data['ids'])->delete();
 
         return redirect()
             ->back()
@@ -2096,14 +2109,21 @@ class AdminController extends Controller
     {
         $student = Student::findOrFail($id);
         
-        $academicYear = $request->get('academic_year', date('Y') . '-' . (date('Y') + 1));
-        $semester = (int) $request->get('semester', 1);
+        $data = $request->validate([
+            'academic_year' => 'nullable|string|max:20',
+            'semester' => 'nullable|integer|min:1|max:12',
+            'authorizer_name' => 'nullable|string|max:255',
+            'reason' => 'nullable|string|max:1000',
+        ]);
+
+        $academicYear = $data['academic_year'] ?? date('Y') . '-' . (date('Y') + 1);
+        $semester = (int) ($data['semester'] ?? 1);
 
         $isCurrentlyBlacklisted = $student->isBlacklistedInSemester($academicYear, $semester);
         $newStatus = $isCurrentlyBlacklisted ? 'active' : 'blacklisted';
 
-        $authorizerName = $request->input('authorizer_name', 'System Admin');
-        $reason = $request->input('reason', $newStatus === 'active' ? 'Restored by Administrator' : 'Manually Blacklisted by Administrator');
+        $authorizerName = $data['authorizer_name'] ?? 'System Admin';
+        $reason = $data['reason'] ?? ($newStatus === 'active' ? 'Restored by Administrator' : 'Manually Blacklisted by Administrator');
 
         if ($newStatus === 'active') {
             // Check restore limit (2 restores per student per semester)

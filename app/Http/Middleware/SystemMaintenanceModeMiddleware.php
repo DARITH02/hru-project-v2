@@ -44,6 +44,8 @@ class SystemMaintenanceModeMiddleware
         if ($request->routeIs([
             'login',
             'login.post',
+            'register',
+            'register.post',
             'logout',
             'language.switch',
             'google-drive.oauth.callback',
