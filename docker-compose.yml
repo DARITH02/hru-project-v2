@@ -23,6 +23,7 @@ services:
     depends_on:
       - mysql
       - redis
+    restart: unless-stopped
     networks:
       - attendance_net
 
@@ -94,6 +95,7 @@ services:
   redis:
     image: redis:7
     container_name: redis_cache_two
+    restart: unless-stopped
     networks:
       - attendance_net
 

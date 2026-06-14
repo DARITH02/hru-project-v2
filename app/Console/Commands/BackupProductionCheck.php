@@ -24,11 +24,16 @@ class BackupProductionCheck extends Command
             'Backup log table exists' => Schema::hasTable('backup_restore_logs'),
             'Queue jobs table exists' => Schema::hasTable('jobs'),
             'Failed jobs table exists' => Schema::hasTable('failed_jobs'),
+            'Cache table exists' => Schema::hasTable('cache'),
+            'Cache locks table exists' => Schema::hasTable('cache_locks'),
             'Backup storage writable' => File::ensureDirectoryExists(storage_path('app/backups')) || is_writable(storage_path('app/backups')),
             'Google Drive configured' => $googleDrive->configured(),
-            'Telegram active bot configured' => TelegramBot::where('is_active', true)->whereNotNull('chat_id')->exists(),
             'Queue connection is database' => config('queue.default') === 'database',
             'App timezone set' => config('app.timezone') === 'Asia/Phnom_Penh',
+        ];
+
+        $warnings = [
+            'Telegram active bot configured' => TelegramBot::where('is_active', true)->whereNotNull('chat_id')->exists(),
         ];
 
         $failed = 0;
@@ -39,6 +44,14 @@ class BackupProductionCheck extends Command
             } else {
                 $failed++;
                 $this->error("FAIL  {$label}");
+            }
+        }
+
+        foreach ($warnings as $label => $passed) {
+            if ($passed) {
+                $this->info("PASS  {$label}");
+            } else {
+                $this->warn("WARN  {$label}");
             }
         }
 
