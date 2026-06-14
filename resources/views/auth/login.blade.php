@@ -7,7 +7,9 @@
         $appName = $branding['app_name'] ?? config('app.name', 'HRU ATS');
         $appSub = $branding['app_sub'] ?? __('auth.login_subtitle', ['app' => $appName]);
         $institutionName = $branding['institution_name'] ?? 'HRU';
-        $appLogo = $branding['app_logo'] ?? 'https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png';
+        $appLogo =
+            $branding['app_logo'] ??
+            'https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png';
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -541,8 +543,9 @@
                                         <path d="m22 7-10 7L2 7" />
                                     </svg>
                                 </span>
-                                <input type="email" id="email" name="email" placeholder="{{ __('auth.email_placeholder') }}"
-                                    value="{{ old('email') }}" autocomplete="email" required>
+                                <input type="email" id="email" name="email"
+                                    placeholder="{{ __('auth.email_placeholder') }}" value="{{ old('email') }}"
+                                    autocomplete="email" required>
                             </div>
                             <div class="hint" id="hint-email">{{ __('auth.email_invalid') }}</div>
                         </div>
@@ -558,20 +561,22 @@
                                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                     </svg>
                                 </span>
-                                <input type="password" id="password" name="password" placeholder="{{ __('auth.password_placeholder') }}"
-                                    autocomplete="current-password" class="has-toggle" required>
+                                <input type="password" id="password" name="password"
+                                    placeholder="{{ __('auth.password_placeholder') }}" autocomplete="current-password"
+                                    class="has-toggle" required>
                                 <button type="button" class="password-toggle" data-target="password"
                                     aria-label="{{ __('auth.show_password') }}">
-                                    <svg class="eye-open" width="17" height="17" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    <svg class="eye-open" width="17" height="17" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">
                                         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                         <circle cx="12" cy="12" r="3" />
                                     </svg>
-                                    <svg class="eye-closed" width="17" height="17" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    <svg class="eye-closed" width="17" height="17" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round" hidden>
-                                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                        <path
+                                            d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
                                         <path d="M6.61 6.61C3.54 8.33 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61" />
                                         <path d="m2 2 20 20" />
                                     </svg>
@@ -593,7 +598,8 @@
 
                     @if (config('auth.public_registration_enabled'))
                         <div class="form-footer">
-                            {{ __('auth.need_account') }} <a href="{{ route('register') }}">{{ __('auth.create_account') }}</a>
+                            {{ __('auth.need_account') }} <a
+                                href="{{ route('register') }}">{{ __('auth.create_account') }}</a>
                         </div>
                     @endif
                 </div>
