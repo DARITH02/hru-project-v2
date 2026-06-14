@@ -1504,8 +1504,15 @@ class AdminController extends Controller
 
         $permissions = $query->latest()->paginate(10)->appends($request->all());
         $students = Student::with(['user', 'major.department', 'group.major.department'])->get()->sortBy('user.name');
+        $permissionStudents = $students->map(fn ($student) => [
+            'id' => $student->id,
+            'name' => $student->user->name ?? 'Unknown Student',
+            'code' => $student->student_code,
+            'group' => $student->group->name ?? null,
+            'major' => $student->major->name ?? optional(optional($student->group)->major)->name,
+        ])->values();
 
-        return view('admin.permissions', compact('permissions', 'students'));
+        return view('admin.permissions', compact('permissions', 'students', 'permissionStudents'));
     }
 
     public function storePermission(Request $request)

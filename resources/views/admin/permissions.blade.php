@@ -342,13 +342,7 @@
     </style>
 
     <script>
-        const permissionStudents = @json($students->map(fn ($student) => [
-            'id' => $student->id,
-            'name' => $student->user->name ?? 'Unknown Student',
-            'code' => $student->student_code,
-            'group' => $student->group->name ?? null,
-            'major' => $student->major->name ?? $student->group?->major?->name,
-        ])->values());
+        const permissionStudents = @json($permissionStudents);
 
         function openModal(id) {
             const m = document.getElementById(id);
