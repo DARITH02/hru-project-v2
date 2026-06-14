@@ -31,12 +31,17 @@
 
                     <div class="form-group">
                         <label class="form-label">Select Student <span class="req">*</span></label>
-                        <select name="student_id" class="form-input" required>
-                            <option value="">Choose a student…</option>
-                            @foreach($students as $s)
-                                <option value="{{ $s->id }}">{{ $s->user->name }} — {{ $s->student_code }}</option>
-                            @endforeach
-                        </select>
+                        <div class="student-combobox" data-student-combobox>
+                            <input type="hidden" name="student_id" data-student-id required>
+                            <input
+                                type="text"
+                                class="form-input student-combobox__input"
+                                placeholder="Enter student name or code…"
+                                autocomplete="off"
+                                data-student-search
+                                required>
+                            <div class="student-combobox__menu" data-student-options></div>
+                        </div>
                     </div>
 
                     <div class="form-grid-2">
@@ -274,10 +279,81 @@
         @endif
     </div>
 
+    <style>
+        .student-combobox {
+            position: relative;
+        }
+
+        .student-combobox__menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            z-index: 40;
+            display: none;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .student-combobox.is-open .student-combobox__menu {
+            display: block;
+        }
+
+        .student-combobox__option {
+            width: 100%;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 9px 10px;
+            text-align: left;
+        }
+
+        .student-combobox__option:hover,
+        .student-combobox__option.is-active {
+            background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+
+        .student-combobox__name {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .student-combobox__meta,
+        .student-combobox__empty {
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: .05em;
+        }
+
+        .student-combobox__empty {
+            padding: 10px;
+        }
+    </style>
+
     <script>
+        const permissionStudents = @json($students->map(fn ($student) => [
+            'id' => $student->id,
+            'name' => $student->user->name ?? 'Unknown Student',
+            'code' => $student->student_code,
+            'group' => $student->group->name ?? null,
+            'major' => $student->major->name ?? $student->group?->major?->name,
+        ])->values());
+
         function openModal(id) {
             const m = document.getElementById(id);
             m.classList.add('open');
+            m.querySelector('[data-student-search]')?.focus();
         }
         function closeModal(id) {
             const m = document.getElementById(id);
@@ -285,6 +361,150 @@
         }
         document.querySelectorAll('.modal-overlay').forEach(el => {
             el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+        });
+
+        document.querySelectorAll('[data-student-combobox]').forEach((combobox) => {
+            const input = combobox.querySelector('[data-student-search]');
+            const hidden = combobox.querySelector('[data-student-id]');
+            const menu = combobox.querySelector('[data-student-options]');
+            let activeIndex = -1;
+            let visibleStudents = [];
+
+            const studentLabel = (student) => `${student.name} — ${student.code || 'NO CODE'}`;
+            const searchableText = (student) => [
+                student.name,
+                student.code,
+                student.group,
+                student.major,
+            ].filter(Boolean).join(' ').toLowerCase();
+            const findTypedStudent = () => {
+                const typed = input.value.trim().toLowerCase();
+
+                if (!typed) {
+                    return null;
+                }
+
+                const exactMatch = permissionStudents.find((student) => {
+                    return studentLabel(student).toLowerCase() === typed
+                        || String(student.name || '').toLowerCase() === typed
+                        || String(student.code || '').toLowerCase() === typed;
+                });
+
+                if (exactMatch) {
+                    return exactMatch;
+                }
+
+                return visibleStudents.length === 1 ? visibleStudents[0] : null;
+            };
+
+            const selectStudent = (student) => {
+                input.value = studentLabel(student);
+                hidden.value = student.id;
+                input.setCustomValidity('');
+                combobox.classList.remove('is-open');
+                activeIndex = -1;
+            };
+
+            const renderOptions = () => {
+                const query = input.value.trim().toLowerCase();
+                visibleStudents = permissionStudents
+                    .filter((student) => !query || searchableText(student).includes(query))
+                    .slice(0, 30);
+
+                menu.innerHTML = '';
+
+                if (visibleStudents.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'student-combobox__empty';
+                    empty.textContent = 'No matching students';
+                    menu.appendChild(empty);
+                    combobox.classList.add('is-open');
+                    return;
+                }
+
+                visibleStudents.forEach((student, index) => {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'student-combobox__option';
+                    option.dataset.index = String(index);
+                    option.innerHTML = `
+                        <span class="student-combobox__name"></span>
+                        <span class="student-combobox__meta"></span>
+                    `;
+                    option.querySelector('.student-combobox__name').textContent = student.name;
+                    option.querySelector('.student-combobox__meta').textContent = [
+                        student.code,
+                        student.group,
+                        student.major,
+                    ].filter(Boolean).join(' · ');
+                    option.addEventListener('mousedown', (event) => {
+                        event.preventDefault();
+                        selectStudent(student);
+                    });
+                    menu.appendChild(option);
+                });
+
+                combobox.classList.add('is-open');
+            };
+
+            const syncActiveOption = () => {
+                menu.querySelectorAll('.student-combobox__option').forEach((option) => {
+                    option.classList.toggle('is-active', Number(option.dataset.index) === activeIndex);
+                });
+            };
+
+            input.addEventListener('focus', renderOptions);
+            input.addEventListener('input', () => {
+                hidden.value = '';
+                input.setCustomValidity('');
+                activeIndex = -1;
+                renderOptions();
+            });
+            input.addEventListener('keydown', (event) => {
+                if (!combobox.classList.contains('is-open') && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+                    renderOptions();
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    activeIndex = Math.min(activeIndex + 1, visibleStudents.length - 1);
+                    syncActiveOption();
+                } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    activeIndex = Math.max(activeIndex - 1, 0);
+                    syncActiveOption();
+                } else if (event.key === 'Enter' && activeIndex >= 0) {
+                    event.preventDefault();
+                    selectStudent(visibleStudents[activeIndex]);
+                } else if (event.key === 'Escape') {
+                    combobox.classList.remove('is-open');
+                }
+            });
+            input.addEventListener('blur', () => {
+                const matchedStudent = findTypedStudent();
+
+                if (matchedStudent) {
+                    selectStudent(matchedStudent);
+                }
+
+                setTimeout(() => combobox.classList.remove('is-open'), 120);
+            });
+
+            input.form?.addEventListener('submit', (event) => {
+                if (!hidden.value) {
+                    const matchedStudent = findTypedStudent();
+
+                    if (matchedStudent) {
+                        selectStudent(matchedStudent);
+                    }
+                }
+
+                if (!hidden.value) {
+                    input.setCustomValidity('Choose a student from the matching results.');
+                    input.reportValidity();
+                    event.preventDefault();
+                }
+            });
         });
     </script>
 
