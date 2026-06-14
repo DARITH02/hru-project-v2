@@ -88,7 +88,7 @@
             color: #fff;
             background:
                 linear-gradient(150deg, rgba(9, 25, 54, .88), rgba(30, 58, 138, .68)),
-                url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover;
+                url("{{ asset('images/bg-banner.jpg') }}") center / cover;
         }
 
         .brand-panel::after {

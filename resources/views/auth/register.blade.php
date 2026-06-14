@@ -45,9 +45,13 @@
             color: var(--register-text);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background:
-                linear-gradient(110deg, rgba(238, 243, 248, .95), rgba(238, 243, 248, .78)),
+                radial-gradient(circle at 18% 18%, rgba(37, 99, 235, .16), transparent 34%),
+                radial-gradient(circle at 82% 30%, rgba(15, 159, 143, .14), transparent 30%),
+                linear-gradient(110deg, rgba(238, 243, 248, .92), rgba(238, 243, 248, .72)),
                 url("https://image.freshnewsasia.com/2020/id-025/fn-2020-12-26-11-31-31-0.jpg") center / cover fixed;
-        }
+              
+            
+            }
 
         button,
         input {
@@ -84,8 +88,8 @@
             padding: 36px;
             color: #fff;
             background:
-                linear-gradient(150deg, rgba(9, 25, 54, .88), rgba(30, 58, 138, .68)),
-                url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover;
+                linear-gradient(150deg, rgba(9, 25, 54, .9), rgba(30, 58, 138, .72)),
+                url("{{ asset('images/bg-banner.jpg') }}") center / cover;
         }
 
         .brand-panel::after {
