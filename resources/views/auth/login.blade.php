@@ -406,7 +406,7 @@
             body {
                 background:
                     linear-gradient(120deg, rgba(238, 243, 248, .94), rgba(238, 243, 248, .86)),
-                    url("https://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover fixed;
+                    url("http://www.hru.edu.kh/wp-content/uploads/2023/08/350773696_210061804722310_6900832573841793976_n-745x400.jpg") center / cover fixed;
             }
 
             .login-shell {
