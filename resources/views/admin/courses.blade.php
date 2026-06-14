@@ -109,19 +109,20 @@
         }
 
         .action-dropdown-menu {
-            position: absolute;
-            right: 0;
-            top: 100%;
+            position: fixed;
+            right: auto;
+            top: auto;
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-            z-index: 1000;
-            min-width: 180px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+            z-index: 2200;
+            width: 225px;
             display: none;
-            margin-top: 5px;
+            margin-top: 0;
             padding: 6px;
             backdrop-filter: blur(10px);
+            transform-origin: top right;
         }
 
         .action-dropdown-menu.show {
@@ -160,6 +161,7 @@
             border: none;
             width: 100%;
             text-align: left;
+            white-space: nowrap;
         }
 
         .dropdown-item:hover {
@@ -2358,31 +2360,80 @@
         // ═════════════════════════════════════════════════════════════════════
         // ACTION DROPDOWN LOGIC
         // ═════════════════════════════════════════════════════════════════════
+        let activeActionMenu = null;
+        let activeActionButton = null;
+
+        function closeActionMenus() {
+            if (activeActionMenu && activeActionMenu._origin) {
+                activeActionMenu.classList.remove('show');
+                activeActionMenu.removeAttribute('style');
+                activeActionMenu._origin.appendChild(activeActionMenu);
+            }
+
+            document.querySelectorAll('.action-dropdown-menu').forEach(m => {
+                m.classList.remove('show');
+                if (m._origin && m.parentElement !== m._origin) {
+                    m.removeAttribute('style');
+                    m._origin.appendChild(m);
+                }
+            });
+            document.querySelectorAll('.more-btn').forEach(b => b.classList.remove('active'));
+            activeActionMenu = null;
+            activeActionButton = null;
+        }
+
         function toggleActionMenu(e, btn) {
             e.stopPropagation();
 
-            // Close all other menus first
-            document.querySelectorAll('.action-dropdown-menu').forEach(m => {
-                if (m !== btn.nextElementSibling) m.classList.remove('show');
-            });
-            document.querySelectorAll('.more-btn').forEach(b => {
-                if (b !== btn) b.classList.remove('active');
-            });
-
             const menu = btn.nextElementSibling;
-            menu.classList.toggle('show');
-            btn.classList.toggle('active');
+            const isOpen = activeActionMenu === menu && menu.classList.contains('show');
+            closeActionMenus();
+
+            if (isOpen) return;
+
+            menu._origin = menu.parentElement;
+            document.body.appendChild(menu);
+            menu.classList.add('show');
+            btn.classList.add('active');
+
+            const buttonRect = btn.getBoundingClientRect();
+            const menuRect = menu.getBoundingClientRect();
+            const gap = 8;
+            const margin = 12;
+
+            let left = buttonRect.right - menuRect.width;
+            let top = buttonRect.bottom + gap;
+
+            if (left < margin) left = margin;
+            if (left + menuRect.width > window.innerWidth - margin) {
+                left = window.innerWidth - menuRect.width - margin;
+            }
+            if (top + menuRect.height > window.innerHeight - margin) {
+                top = Math.max(margin, buttonRect.top - menuRect.height - gap);
+            }
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+            activeActionMenu = menu;
+            activeActionButton = btn;
         }
 
         // Close menu when clicking anywhere else
-        window.addEventListener('click', function () {
-            document.querySelectorAll('.action-dropdown-menu').forEach(m => m.classList.remove('show'));
-            document.querySelectorAll('.more-btn').forEach(b => b.classList.remove('active'));
+        window.addEventListener('click', closeActionMenus);
+        window.addEventListener('scroll', closeActionMenus, true);
+        window.addEventListener('resize', closeActionMenus);
+        window.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeActionMenus();
         });
 
         // Prevent menu from closing when clicking inside it
-        document.querySelectorAll('.action-dropdown-menu').forEach(m => {
-            m.addEventListener('click', e => e.stopPropagation());
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.action-dropdown-menu')) {
+                if (e.target.closest('.dropdown-item')) {
+                    setTimeout(closeActionMenus, 0);
+                }
+                e.stopPropagation();
+            }
         });
 
         function openModal(id) { document.getElementById(id).classList.add('open'); }
