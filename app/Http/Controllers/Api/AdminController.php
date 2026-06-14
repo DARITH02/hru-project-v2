@@ -1799,9 +1799,14 @@ class AdminController extends Controller
     public function importStudents(Request $request)
     {
         $request->validate(['file' => 'required|file']);
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(120);
+        }
+
         $file = $request->file('file');
         $handle = fopen($file->getRealPath(), "r");
-        $headerRow = fgetcsv($handle, 1000, ",");
+        $headerRow = fgetcsv($handle, 0, ",");
 
         if (!$headerRow) {
             return response()->json(['error' => 'Empty CSV file.'], 400);
@@ -1832,56 +1837,166 @@ class AdminController extends Controller
             $statusIdx = array_search('status', $headers) !== false ? array_search('status', $headers) : 6;
         }
 
-        DB::beginTransaction();
         try {
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            $now = now();
+            $rows = [];
+            $skipped = [];
+            $seenEmails = [];
+            $seenCodes = [];
+            $rowNumber = 1;
+
+            while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+                $rowNumber++;
+
                 if (count($data) < 2) {
+                    $skipped[] = ['row' => $rowNumber, 'reason' => 'Not enough columns.'];
                     continue;
                 }
 
                 $name = trim($data[$nameIdx] ?? '');
                 $studentCode = trim($data[$codeIdx] ?? '');
-                $email = trim($data[$emailIdx] ?? '');
+                $email = strtolower(trim($data[$emailIdx] ?? ''));
                 $phone = trim($data[$phoneIdx] ?? '');
                 $groupId = trim($data[$groupIdIdx] ?? '');
                 $majorId = trim($data[$majorIdIdx] ?? '');
-                $status = trim($data[$statusIdx] ?? 'active');
+                $status = strtolower(trim($data[$statusIdx] ?? 'active'));
 
                 if (empty($name) || empty($studentCode)) {
+                    $skipped[] = ['row' => $rowNumber, 'reason' => 'Name and student_code are required.'];
                     continue;
                 }
 
-                // If email is empty, generate a unique fallback email to avoid database constraint failures
                 if (empty($email)) {
-                    $email = strtolower(str_replace(' ', '', $name)) . '.' . strtolower($studentCode) . '@university.edu';
+                    $email = strtolower(preg_replace('/[^a-z0-9]+/i', '', $name)) . '.' . strtolower($studentCode) . '@university.edu';
                 }
 
-                // Check if user already exists with this email to avoid unique constraint crashes
-                $existingUser = User::where('email', $email)->first();
-                if ($existingUser) {
+                if (isset($seenEmails[$email])) {
+                    $skipped[] = ['row' => $rowNumber, 'reason' => "Duplicate email in file: {$email}."];
                     continue;
                 }
 
-                $user = User::create([
+                if (isset($seenCodes[$studentCode])) {
+                    $skipped[] = ['row' => $rowNumber, 'reason' => "Duplicate student code in file: {$studentCode}."];
+                    continue;
+                }
+
+                $seenEmails[$email] = true;
+                $seenCodes[$studentCode] = true;
+
+                $rows[] = [
                     'name' => $name,
                     'email' => $email,
-                    'phone' => !empty($phone) ? $phone : null,
-                    'password' => Hash::make(Str::password(16)),
-                    'role' => 'student',
-                ]);
-
-                Student::create([
-                    'user_id' => $user->id,
+                    'phone' => $phone !== '' ? $phone : null,
                     'student_code' => $studentCode,
                     'group_id' => is_numeric($groupId) ? (int) $groupId : null,
                     'major_id' => is_numeric($majorId) ? (int) $majorId : null,
-                    'status' => !empty($status) ? strtolower($status) : 'active',
-                ]);
+                    'status' => $status !== '' ? $status : 'active',
+                ];
             }
+
+            if (empty($rows)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No valid student rows found.',
+                    'skipped' => $skipped,
+                ], 422);
+            }
+
+            $emails = array_column($rows, 'email');
+            $studentCodes = array_column($rows, 'student_code');
+            $groupIds = array_values(array_unique(array_filter(array_column($rows, 'group_id'))));
+            $majorIds = array_values(array_unique(array_filter(array_column($rows, 'major_id'))));
+
+            $existingEmails = User::whereIn('email', $emails)->pluck('email')->flip();
+            $existingCodes = Student::whereIn('student_code', $studentCodes)->pluck('student_code')->flip();
+            $validGroups = empty($groupIds) ? collect() : ClassGroup::whereIn('id', $groupIds)->get()->keyBy('id');
+            $validGroupIds = $validGroups->keys()->flip();
+            $validMajorIds = empty($majorIds) ? collect() : Major::whereIn('id', $majorIds)->pluck('id')->flip();
+
+            $validRows = [];
+            foreach ($rows as $index => $row) {
+                $sourceRow = $index + 2;
+
+                if ($existingEmails->has($row['email'])) {
+                    $skipped[] = ['row' => $sourceRow, 'reason' => "Email already exists: {$row['email']}."];
+                    continue;
+                }
+
+                if ($existingCodes->has($row['student_code'])) {
+                    $skipped[] = ['row' => $sourceRow, 'reason' => "Student code already exists: {$row['student_code']}."];
+                    continue;
+                }
+
+                if ($row['group_id'] && !$validGroupIds->has($row['group_id'])) {
+                    $skipped[] = ['row' => $sourceRow, 'reason' => "Invalid group_id: {$row['group_id']}."];
+                    continue;
+                }
+
+                if ($row['major_id'] && !$validMajorIds->has($row['major_id'])) {
+                    $skipped[] = ['row' => $sourceRow, 'reason' => "Invalid major_id: {$row['major_id']}."];
+                    continue;
+                }
+
+                if (!$row['major_id'] && $row['group_id'] && $validGroups->has($row['group_id'])) {
+                    $row['major_id'] = $validGroups[$row['group_id']]->major_id;
+                }
+
+                $validRows[] = $row;
+            }
+
+            if (empty($validRows)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No new students imported. All rows were skipped.',
+                    'skipped' => $skipped,
+                ], 422);
+            }
+
+            $temporaryPasswordHash = Hash::make(Str::password(16));
+
+            DB::beginTransaction();
+
+            User::insert(array_map(fn ($row) => [
+                'name' => $row['name'],
+                'email' => $row['email'],
+                'phone' => $row['phone'],
+                'password' => $temporaryPasswordHash,
+                'role' => 'student',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $validRows));
+
+            $usersByEmail = User::whereIn('email', array_column($validRows, 'email'))
+                ->pluck('id', 'email');
+
+            Student::insert(array_map(fn ($row) => [
+                'user_id' => $usersByEmail[$row['email']],
+                'student_code' => $row['student_code'],
+                'group_id' => $row['group_id'],
+                'major_id' => $row['major_id'],
+                'status' => $row['status'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $validRows));
+
+            ActivityLog::create([
+                'action' => 'IMPORT',
+                'target' => 'students.bulk_import.' . count($validRows),
+            ]);
+
             DB::commit();
-            return response()->json(['success' => true]);
+
+            return response()->json([
+                'success' => true,
+                'imported_count' => count($validRows),
+                'skipped_count' => count($skipped),
+                'skipped' => array_slice($skipped, 0, 25),
+            ]);
         } catch (\Exception $e) {
-            DB::rollback();
+            if (DB::transactionLevel() > 0) {
+                DB::rollback();
+            }
+
             return response()->json(['error' => 'Import failed: ' . $e->getMessage()], 500);
         } finally {
             fclose($handle);

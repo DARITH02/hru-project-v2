@@ -528,13 +528,15 @@
                                 ];
                                 $col = $avatarColors[$loop->index % count($avatarColors)];
                                 $init = strtoupper(substr($student->user->name, 0, 2));
-                                $major = $student->major ?? 'N/A';
+                                $displayMajor = $student->major ?? $student->group?->major;
+                                $displayMajorId = $student->major_id ?? $student->group?->major_id;
+                                $displayMajorName = $displayMajor?->name ?? 'N/A';
                                 $className = $student->classRoom->subject->name ?? 'Unassigned';
                             @endphp
                             <tr data-id="{{ $student->id }}" data-name="{{ strtolower($student->user->name) }}"
                                 data-email="{{ strtolower($student->user->email) }}"
                                 data-phone="{{ $student->user->phone ?? '—' }}"
-                                data-code="{{ strtolower($student->student_code) }}" data-major-id="{{ $student->major_id }}"
+                                data-code="{{ strtolower($student->student_code) }}" data-major-id="{{ $displayMajorId }}"
                                 data-group-id="{{ $student->group_id }}" data-status="{{ $student->status }}"
                                 data-rate="{{ 85 + ($loop->index % 15) }}"
                                 data-joined="{{ $student->created_at ? $student->created_at->format('M Y') : 'SEP 2025' }}"
@@ -572,7 +574,7 @@
                                 {{-- Major & Group --}}
                                 <td>
                                     <div style="display:flex;align-items:center;gap:6px">
-                                        <div style="font-size:12px;color:var(--text2)">{{ $student->major->name ?? 'N/A' }}
+                                        <div style="font-size:12px;color:var(--text2)">{{ $displayMajorName }}
                                         </div>
                                     </div>
                                     <div
@@ -668,13 +670,15 @@
                         ];
                         $col2 = $avatarColors[$loop->index % count($avatarColors)];
                         $init2 = strtoupper(substr($student->user->name, 0, 2));
-                        $majorDisplay = $student->major->name ?? 'N/A';
+                        $displayMajor2 = $student->major ?? $student->group?->major;
+                        $displayMajorId2 = $student->major_id ?? $student->group?->major_id;
+                        $majorDisplay = $displayMajor2?->name ?? 'N/A';
                         $rate2 = 85 + ($loop->index % 15);
                     @endphp
                     <div class="instructor-card fade-up" data-id="{{ $student->id }}"
                         data-name="{{ strtolower($student->user->name) }}" data-email="{{ strtolower($student->user->email) }}"
                         data-phone="{{ $student->user->phone ?? '—' }}" data-code="{{ strtolower($student->student_code) }}"
-                        data-major-id="{{ $student->major_id }}" data-group-id="{{ $student->group_id }}"
+                        data-major-id="{{ $displayMajorId2 }}" data-group-id="{{ $student->group_id }}"
                         data-status="{{ $student->status }}" data-rate="{{ $rate2 }}"
                         data-joined="{{ $student->created_at ? $student->created_at->format('M Y') : 'SEP 2025' }}"
                         data-subject="{{ strtolower($className2 ?? 'Unassigned') }}"
@@ -1110,10 +1114,19 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Bulk enrollment complete!', 'success');
+                    const imported = data.imported_count ?? 0;
+                    const skipped = data.skipped_count ?? 0;
+                    const message = skipped > 0
+                        ? `Imported ${imported} student(s). Skipped ${skipped} row(s).`
+                        : `Imported ${imported} student(s).`;
+                    status.textContent = message;
+                    showToast(message, 'success');
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showToast(data.error || 'Import failed.', 'error');
+                    const skipped = Array.isArray(data.skipped) && data.skipped.length
+                        ? ` ${data.skipped.slice(0, 3).map(row => `Row ${row.row}: ${row.reason}`).join(' ')}`
+                        : '';
+                    showToast((data.error || 'Import failed.') + skipped, 'error');
                     status.style.display = 'none';
                 }
             } catch (e) {

@@ -923,7 +923,7 @@ class AdminController extends Controller
     public function students(Request $request)
     {
         $this->syncDatabaseSchema();
-        $query = Student::with(['user', 'group', 'major']);
+        $query = Student::with(['user', 'group.major', 'major']);
         $majors = \App\Models\Major::orderBy('name')->get();
         $classGroups = \App\Models\ClassGroup::orderBy('name')->get();
 
@@ -943,7 +943,12 @@ class AdminController extends Controller
         }
 
         if ($request->filled('major')) {
-            $query->where('major_id', $request->major);
+            $query->where(function ($majorQuery) use ($request) {
+                $majorQuery->where('major_id', $request->major)
+                    ->orWhereHas('group', function ($groupQuery) use ($request) {
+                        $groupQuery->where('major_id', $request->major);
+                    });
+            });
         }
 
 
