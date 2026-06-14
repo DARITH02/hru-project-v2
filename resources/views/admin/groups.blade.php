@@ -410,7 +410,7 @@ document.getElementById('majorForm').addEventListener('submit', async (e) => {
 });
 
 async function deleteMajor(id) {
-    if (!confirm('This action will remove the academic major. All linked student cohorts will be affected. Continue?')) return;
+    if (!await confirmAction('This action will remove the academic major. All linked student cohorts will be affected. Continue?')) return;
     
     try {
         const res = await fetch(`/api/admin/majors/${id}`, {

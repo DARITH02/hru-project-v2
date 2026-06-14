@@ -110,6 +110,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::post('/admin/students/import', [AdminController::class, 'importStudents']);
         Route::post('/admin/students', [AdminController::class, 'storeStudent']);
         Route::put('/admin/students/{studentId}', [AdminController::class, 'updateStudent']);
+        Route::middleware('role:super_admin')->delete('/admin/students/bulk-delete', [AdminController::class, 'bulkDeleteStudents']);
         Route::middleware('role:super_admin')->delete('/admin/students/{studentId}', [AdminController::class, 'deleteStudent']);
         Route::get('/admin/students/{studentId}/attendance', [AdminController::class, 'listStudentAttendance']);
 
@@ -141,6 +142,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::put('/admin/instructors/{teacherId}', [AdminController::class, 'updateInstructor']);
         Route::post('/admin/accounts/{userId}/update', [AdminController::class, 'updateUserAccount']);
         Route::middleware('role:super_admin')->post('/admin/generate-calendar', [AdminController::class, 'generateAcademicCalendar']);
+        Route::middleware('role:super_admin')->delete('/admin/instructors/bulk-delete', [AdminController::class, 'bulkDeleteInstructors']);
         Route::middleware('role:super_admin')->delete('/admin/instructors/{teacherId}', [AdminController::class, 'deleteInstructor']);
 
         //  Semester Assignments (Admin)

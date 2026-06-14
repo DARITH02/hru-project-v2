@@ -966,7 +966,7 @@
                                         <div class="backup-actions">
                                             <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.download', $backup['name']) }}">{{ __('admin.backup_restore.download') }}</a>
                                             <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] }}" data-source="local">{{ __('admin.backup_restore.restore') }}</button>
-                                            <form method="POST" action="{{ route('admin.backup-restore.local.destroy', $backup['name']) }}" onsubmit="return confirm(@js(__('admin.backup_restore.delete_local_confirm')))">
+                                            <form method="POST" action="{{ route('admin.backup-restore.local.destroy', $backup['name']) }}" onsubmit="return confirmSubmit(event, @js(__('admin.backup_restore.delete_local_confirm')))">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn-secondary backup-action is-delete" type="submit">{{ __('admin.backup_restore.delete') }}</button>
@@ -1029,7 +1029,7 @@
                                         <div class="backup-actions">
                                             <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.cloud.download', ['fileId' => $backup['id'], 'fileName' => $backup['name'] ?? __('admin.backup_restore.unknown')]) }}">{{ __('admin.backup_restore.download') }}</a>
                                             <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}" data-source="cloud" data-file-id="{{ $backup['id'] }}">{{ __('admin.backup_restore.restore') }}</button>
-                                            <form method="POST" action="{{ route('admin.backup-restore.cloud.destroy', $backup['id']) }}" onsubmit="return confirm(@js(__('admin.backup_restore.delete_google_drive_confirm')))">
+                                            <form method="POST" action="{{ route('admin.backup-restore.cloud.destroy', $backup['id']) }}" onsubmit="return confirmSubmit(event, @js(__('admin.backup_restore.delete_google_drive_confirm')))">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn-secondary backup-action is-delete" type="submit">{{ __('admin.backup_restore.delete') }}</button>

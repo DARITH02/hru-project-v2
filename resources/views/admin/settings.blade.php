@@ -179,7 +179,7 @@
                                             @endif
                                             <button type="button" onclick="botAction('{{ route('admin.telegram-bots.sync', $bot->id) }}')" title="{{ __('admin_settings.sync_chat_id') }}" style="background:none; border:none; color:var(--accent); cursor:pointer"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                                             <button type="button" onclick="botAction('{{ route('admin.telegram-bots.test', $bot->id) }}')" title="{{ __('admin_settings.send_test') }}" @if(!$bot->chat_id) disabled style="opacity:.3; cursor:not-allowed" @endif style="background:none; border:none; color:#0088cc; cursor:pointer"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                                            <button type="button" onclick="if(confirm('{{ __('admin_settings.delete_bot_confirm') }}')) botAction('{{ route('admin.telegram-bots.destroy', $bot->id) }}', 'DELETE')" title="{{ __('admin_settings.delete') }}" style="background:none; border:none; color:var(--red); cursor:pointer"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                                            <button type="button" onclick="confirmAction(@js(__('admin_settings.delete_bot_confirm')), () => botAction('{{ route('admin.telegram-bots.destroy', $bot->id) }}', 'DELETE'))" title="{{ __('admin_settings.delete') }}" style="background:none; border:none; color:var(--red); cursor:pointer"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -281,14 +281,14 @@
                     </div>
 
                     @if($maintenanceStatus['enabled'] ?? false)
-                        <form method="POST" action="{{ route('admin.settings.maintenance.disable') }}" onsubmit="return confirm(@js(__('admin_settings.disable_maintenance_confirm')));">
+                        <form method="POST" action="{{ route('admin.settings.maintenance.disable') }}" onsubmit="return confirmSubmit(event, @js(__('admin_settings.disable_maintenance_confirm')));">
                             @csrf
                             <button type="submit" class="btn-primary" style="width:100%;height:38px;background:var(--green);border:none;font-weight:800;">
                                 {{ __('admin_settings.disable_maintenance') }}
                             </button>
                         </form>
                     @else
-                        <form method="POST" action="{{ route('admin.settings.maintenance.enable') }}" onsubmit="return confirm(@js(__('admin_settings.enable_maintenance_confirm')));">
+                        <form method="POST" action="{{ route('admin.settings.maintenance.enable') }}" onsubmit="return confirmSubmit(event, @js(__('admin_settings.enable_maintenance_confirm')));">
                             @csrf
                             <div class="form-group">
                                 <label class="form-label">{{ __('admin_settings.maintenance_message') }}</label>

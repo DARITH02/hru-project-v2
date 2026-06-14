@@ -48,6 +48,39 @@
     </div>
 
     {{-- ════════════════════════════════════════════
+     BULK DELETE MODAL
+════════════════════════════════════════════ --}}
+    <div id="bulkDeleteModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:420px">
+            <div class="modal-body" style="text-align:center;padding:32px 24px 20px">
+                <div class="delete-modal-icon">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16" />
+                    </svg>
+                </div>
+                <div
+                    style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">
+                    Delete Selected Instructors?</div>
+                <div id="bulkDeleteSubtitle"
+                    style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.06em;line-height:1.7">
+                    Selected instructors will be permanently removed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('bulkDeleteModal')" class="btn-secondary">{{ __('admin_instructors.cancel') }}</button>
+                <button id="confirmBulkDeleteBtn"
+                    style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--red),#F87171);color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(239,68,68,.25)">
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    DELETE SELECTED
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════
      CREATE / EDIT MODAL
 ════════════════════════════════════════════ --}}
     <div id="instructorModal" class="modal-overlay">
@@ -392,6 +425,7 @@
         }
 
         .teacher-card {
+            position: relative;
             display: flex;
             min-height: 360px;
             flex-direction: column;
@@ -1048,6 +1082,14 @@
                         <button onclick="window.open('{{ route('admin.export.instructors') }}', '_blank')"
                             class="teacher-export-button">{{ __('admin_instructors.export') }}</button>
 
+                        @if (Auth::user()->isSuperAdmin())
+                            <button id="bulkDeleteInstructorsBtn" onclick="bulkDeleteInstructors()"
+                                class="teacher-export-button" disabled
+                                style="border-color:rgba(255,94,126,.35);color:#ff5e7e;opacity:.45;cursor:not-allowed">
+                                DELETE SELECTED (<span id="selectedInstructorsCount">0</span>)
+                            </button>
+                        @endif
+
                         <div class="teacher-filter-count text-sm text-gray-400">{{ __('admin_instructors.showing') }} <span id="rowCount"
                                 class="font-bold text-[#0d0f1c]">{{ $instructors->count() }}</span> {{ __('admin_instructors.instructors_suffix') }}</div>
                     </div>
@@ -1086,6 +1128,14 @@
                             data-status="{{ $status2 }}" data-spec="{{ strtolower($spec2) }}"
                             data-email="{{ strtolower($instructor->user->email ?? '') }}"
                             data-phone="{{ $instructor->user->phone ?? '—' }}" data-classes="{{ $cls2 }}">
+                            @if (Auth::user()->isSuperAdmin())
+                                <label style="position:absolute;top:10px;right:10px;z-index:5;background:rgba(255,255,255,.95);border:1px solid rgba(148,163,184,.35);border-radius:8px;padding:5px;cursor:pointer"
+                                    onclick="event.stopPropagation()">
+                                    <input type="checkbox" class="instructor-select" value="{{ $instructor->id }}"
+                                        data-name="{{ $name2 }}" data-classes="{{ $cls2 }}"
+                                        onchange="updateInstructorSelection()">
+                                </label>
+                            @endif
                             <div class="teacher-card-banner" style="background:{{ $col2[1] }}">
                                 <div class="teacher-card-banner-glow"
                                     style="background:radial-gradient(circle at 30% 50%, {{ $col2[0] }}88, transparent 70%)">
@@ -1149,7 +1199,7 @@
                                             class="teacher-action-link text-[#3b82f6] hover:bg-[#3b82f6]/10 hover:text-[#1d4ed8]">{{ __('admin_instructors.edit') }}</button>
                                         @if (Auth::user()->isSuperAdmin())
                                             <button
-                                                onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name2) }}')"
+                                                onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name2) }}', {{ (int) $cls2 }})"
                                                 class="teacher-action-link text-[#ff5e7e] hover:bg-[#ff5e7e]/10 hover:text-[#c4284a]">{{ __('admin_instructors.remove') }}</button>
                                         @endif
                                     </div>
@@ -1164,6 +1214,11 @@
                     <table class="teacher-list-table w-full text-sm" id="instructorTable">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50">
+                                @if (Auth::user()->isSuperAdmin())
+                                    <th style="width:42px">
+                                        <input type="checkbox" id="selectAllInstructors" onchange="toggleAllInstructors(this.checked)">
+                                    </th>
+                                @endif
                                 <th>{{ __('admin_instructors.table_teacher') }}</th>
                                 <th>{{ __('admin_instructors.table_department') }}</th>
                                 <th>{{ __('admin_instructors.table_specialization') }}</th>
@@ -1200,6 +1255,14 @@
                                     data-phone="{{ $instructor->user->phone ?? '—' }}"
                                     data-classes="{{ $classes }}" class="fade-up">
 
+                                    {{-- Instructor --}}
+                                    @if (Auth::user()->isSuperAdmin())
+                                        <td>
+                                            <input type="checkbox" class="instructor-select" value="{{ $instructor->id }}"
+                                                data-name="{{ $name }}" data-classes="{{ $classes }}"
+                                                onchange="updateInstructorSelection()" onclick="event.stopPropagation()">
+                                        </td>
+                                    @endif
                                     {{-- Instructor --}}
                                     <td>
                                         <div class="subject-cell">
@@ -1299,7 +1362,7 @@
                                             </button>
                                             @if (Auth::user()->isSuperAdmin())
                                                 <button class="action-btn btn-del" title="{{ __('admin_instructors.remove_instructor') }}"
-                                                    onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name) }}')">
+                                                    onclick="openDeleteModal({{ $instructor->id }}, '{{ addslashes($name) }}', {{ (int) $classes }})">
                                                     <svg width="12" height="12" fill="none"
                                                         viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -1312,7 +1375,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="{{ Auth::user()->isSuperAdmin() ? 7 : 6 }}">
                                         <div class="empty-state">
                                             <div class="empty-icon">
                                                 <svg width="22" height="22" fill="none" viewBox="0 0 24 24"
@@ -1642,12 +1705,151 @@
         // ── Delete ─────────────────────────────────────
         let pendingDeleteId = null;
 
-        function openDeleteModal(id, name) {
+        function openDeleteModal(id, name, classes = 0) {
+            if (Number(classes) > 0) {
+                showToast(`${name} cannot be deleted because assigned classes exist.`, 'error');
+                return;
+            }
             pendingDeleteId = id;
             document.getElementById('deleteSubtitle').innerHTML =
                 instructorReplace('delete_named_warning', { name: `<strong style="color:var(--text2)">${name}</strong>` }, ':name will be permanently removed. All class assignments may be affected.');
             openModal('deleteModal');
         }
+
+        function selectedInstructorRows() {
+            const selected = new Map();
+            document.querySelectorAll('.instructor-select:checked').forEach(input => {
+                selected.set(String(input.value), {
+                    id: Number(input.value),
+                    name: input.dataset.name || `#${input.value}`,
+                    classes: Number(input.dataset.classes || 0)
+                });
+            });
+            return Array.from(selected.values());
+        }
+
+        function updateInstructorSelection() {
+            const selected = selectedInstructorRows();
+            const selectedIds = new Set(selected.map(item => String(item.id)));
+            document.querySelectorAll('.instructor-select').forEach(input => {
+                input.checked = selectedIds.has(String(input.value));
+            });
+
+            const countEl = document.getElementById('selectedInstructorsCount');
+            const btn = document.getElementById('bulkDeleteInstructorsBtn');
+            const selectAll = document.getElementById('selectAllInstructors');
+
+            if (countEl) countEl.textContent = selected.length;
+            if (btn) {
+                btn.disabled = selected.length === 0;
+                btn.style.opacity = selected.length ? '1' : '.45';
+                btn.style.cursor = selected.length ? 'pointer' : 'not-allowed';
+            }
+            if (selectAll) {
+                const visibleRows = Array.from(document.querySelectorAll('#tableBody tr[data-id]'))
+                    .filter(row => row.style.display !== 'none');
+                selectAll.checked = visibleRows.length > 0 && visibleRows.every(row => selectedIds.has(String(row.dataset.id)));
+                selectAll.indeterminate = visibleRows.some(row => selectedIds.has(String(row.dataset.id))) && !selectAll.checked;
+            }
+        }
+
+        function toggleAllInstructors(checked) {
+            document.querySelectorAll('#tableBody tr[data-id]').forEach(row => {
+                if (row.style.display === 'none') return;
+                document.querySelectorAll(`.instructor-select[value="${row.dataset.id}"]`).forEach(input => {
+                    input.checked = checked;
+                });
+            });
+            updateInstructorSelection();
+        }
+
+        let pendingBulkInstructors = [];
+
+        function bulkDeleteInstructors() {
+            const selected = selectedInstructorRows();
+            if (!selected.length) return;
+
+            const blocked = selected.filter(item => item.classes > 0);
+            if (blocked.length) {
+                const names = blocked.slice(0, 3).map(item => `${item.name} (${item.classes})`).join(', ');
+                showToast(`Cannot delete instructors with assigned classes: ${names}${blocked.length > 3 ? '...' : ''}`, 'error');
+                return;
+            }
+
+            pendingBulkInstructors = selected;
+            document.getElementById('bulkDeleteSubtitle').innerHTML =
+                `<strong style="color:var(--text2)">${selected.length}</strong> selected instructor${selected.length === 1 ? '' : 's'} will be permanently removed.<br>This action cannot be undone.`;
+            openModal('bulkDeleteModal');
+        }
+
+        document.getElementById('confirmBulkDeleteBtn').addEventListener('click', async () => {
+            const selected = pendingBulkInstructors;
+            if (!selected.length) return;
+
+            const btn = document.getElementById('bulkDeleteInstructorsBtn');
+            const modalBtn = document.getElementById('confirmBulkDeleteBtn');
+            const ogHtml = btn ? btn.innerHTML : '';
+            const modalOgHtml = modalBtn.innerHTML;
+            if (btn) {
+                btn.innerHTML = instructorText('deleting', 'DELETING...');
+                btn.disabled = true;
+            }
+            modalBtn.innerHTML = instructorText('deleting', 'DELETING...');
+            modalBtn.disabled = true;
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                document.querySelector('input[name="_token"]')?.value || '';
+
+            try {
+                const res = await fetch('/api/admin/instructors/bulk-delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        teacher_ids: selected.map(item => item.id)
+                    })
+                });
+                const data = await res.json().catch(() => ({
+                    success: res.ok
+                }));
+
+                if (data.success || res.ok) {
+                    selected.forEach(item => {
+                        document.querySelectorAll(`[data-id="${item.id}"]`).forEach(el => {
+                            el.style.opacity = '0';
+                            el.style.transition = 'opacity .3s';
+                            setTimeout(() => el.remove(), 350);
+                        });
+                    });
+                    const countEl = document.getElementById('rowCount');
+                    if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent || '0') - selected.length);
+                    showToast(`${selected.length} instructor${selected.length === 1 ? '' : 's'} removed.`, 'success');
+                    closeModal('bulkDeleteModal');
+                    pendingBulkInstructors = [];
+                } else {
+                    const serverBlocked = Array.isArray(data.blocked) ? data.blocked : [];
+                    if (serverBlocked.length) {
+                        const names = serverBlocked.slice(0, 3).map(item => `${item.name} (${item.classes_count})`).join(', ');
+                        showToast(`Cannot delete instructors with assigned classes: ${names}${serverBlocked.length > 3 ? '...' : ''}`, 'error');
+                    } else {
+                        showToast(data.error || instructorText('delete_failed', 'Failed to delete instructor.'), 'error');
+                    }
+                }
+            } catch (e) {
+                showToast(instructorReplace('network_error_prefix', { message: e.message }, 'Network error: :message'), 'error');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = ogHtml;
+                    btn.disabled = selectedInstructorRows().length === 0;
+                }
+                modalBtn.innerHTML = modalOgHtml;
+                modalBtn.disabled = false;
+                updateInstructorSelection();
+            }
+        });
         document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
             if (!pendingDeleteId) return;
             const btn = document.getElementById('confirmDeleteBtn');

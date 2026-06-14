@@ -10,6 +10,55 @@
         type="image/png" sizes="32x32" />
     <title>{{ $title ?? 'HRU · Dashboard' }}</title>
     <script>
+        window.confirmAction = function(message, onConfirm, options = {}) {
+            const modal = document.getElementById('appConfirmModal');
+            const msgEl = document.getElementById('appConfirmMessage');
+            const titleEl = document.getElementById('appConfirmTitle');
+            const cancelBtn = document.getElementById('appConfirmCancel');
+            const okBtn = document.getElementById('appConfirmOk');
+
+            if (!modal || !msgEl || !titleEl || !cancelBtn || !okBtn) {
+                return Promise.resolve(false);
+            }
+
+            titleEl.textContent = options.title || 'Confirm Action';
+            msgEl.textContent = message || 'Continue with this action?';
+            okBtn.textContent = options.confirmText || 'CONFIRM';
+            cancelBtn.textContent = options.cancelText || 'CANCEL';
+            modal.style.display = 'flex';
+
+            return new Promise(resolve => {
+                const finish = accepted => {
+                    modal.style.display = 'none';
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    modal.onclick = null;
+                    document.removeEventListener('keydown', onKeyDown);
+                    if (accepted && typeof onConfirm === 'function') onConfirm();
+                    resolve(accepted);
+                };
+                const onKeyDown = event => {
+                    if (event.key === 'Escape') finish(false);
+                };
+
+                okBtn.onclick = () => finish(true);
+                cancelBtn.onclick = () => finish(false);
+                modal.onclick = event => {
+                    if (event.target === modal) finish(false);
+                };
+                document.addEventListener('keydown', onKeyDown);
+            });
+        };
+
+        window.confirmSubmit = function(event, message, options = {}) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            window.confirmAction(message, () => form.submit(), options);
+            return false;
+        };
+    </script>
+
+    <script>
         (function() {
             const theme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
@@ -20,6 +69,40 @@
 </head>
 
 <body>
+
+    <div id="appConfirmModal"
+        style="position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.56);backdrop-filter:blur(4px);padding:20px">
+        <div role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle"
+            style="width:min(420px,100%);background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(15,23,42,.28);overflow:hidden">
+            <div style="padding:30px 24px 20px;text-align:center">
+                <div
+                    style="width:46px;height:46px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red);border:1px solid color-mix(in srgb,var(--red) 24%,transparent)">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                    </svg>
+                </div>
+                <div id="appConfirmTitle"
+                    style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px">
+                    Confirm Action</div>
+                <div id="appConfirmMessage"
+                    style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.05em;line-height:1.7">
+                    Continue with this action?
+                </div>
+            </div>
+            <div
+                style="display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;background:var(--surface2);border-top:1px solid var(--border)">
+                <button type="button" id="appConfirmCancel"
+                    style="display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;font-weight:700;cursor:pointer">
+                    CANCEL
+                </button>
+                <button type="button" id="appConfirmOk"
+                    style="display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 16px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--red),#F87171);color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,.24)">
+                    CONFIRM
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- SIDEBAR OVERLAY -->
     <div id="sidebar-overlay"
@@ -480,9 +563,6 @@
         }
 
         if (Object.keys(legacyTranslations).length) {
-            const nativeConfirm = window.confirm.bind(window);
-            window.confirm = (message) => nativeConfirm(window.__t(message));
-
             const bootLegacyTranslator = () => {
                 translateLegacyNode();
 
@@ -710,6 +790,73 @@
         }
         document.addEventListener('click', () => {
             if (dropdown) dropdown.style.display = 'none';
+        });
+
+        window.closeTopModal = function() {
+            const appConfirm = document.getElementById('appConfirmModal');
+            if (appConfirm && getComputedStyle(appConfirm).display !== 'none') {
+                return false;
+            }
+
+            const modalSelectors = [
+                '.modal-overlay',
+                '#finalModal',
+                '#teacherMonitorModal',
+                '#actionModal',
+                '#unauthorizedModal'
+            ];
+
+            const visibleModals = Array.from(document.querySelectorAll(modalSelectors.join(',')))
+                .filter((modal) => {
+                    const style = getComputedStyle(modal);
+                    return style.display !== 'none' &&
+                        style.visibility !== 'hidden' &&
+                        style.opacity !== '0';
+                })
+                .sort((a, b) => {
+                    const az = parseInt(getComputedStyle(a).zIndex, 10) || 0;
+                    const bz = parseInt(getComputedStyle(b).zIndex, 10) || 0;
+                    if (az !== bz) return az - bz;
+                    return Array.prototype.indexOf.call(document.body.querySelectorAll('*'), a) -
+                        Array.prototype.indexOf.call(document.body.querySelectorAll('*'), b);
+                });
+
+            const modal = visibleModals[visibleModals.length - 1];
+            if (!modal) return false;
+
+            if (modal.id === 'finalModal' && typeof window.closeFinalModal === 'function') {
+                window.closeFinalModal();
+                return true;
+            }
+
+            if (modal.id === 'actionModal' && typeof window.closeActionModal === 'function') {
+                window.closeActionModal();
+                return true;
+            }
+
+            if (modal.id === 'unauthorizedModal' && typeof window.closeUnauthorizedModal === 'function') {
+                window.closeUnauthorizedModal();
+                return true;
+            }
+
+            modal.classList.remove('open', 'is-open');
+
+            if (!modal.classList.contains('modal-overlay')) {
+                modal.style.display = 'none';
+            } else if (!modal.classList.contains('open') && getComputedStyle(modal).display !== 'none') {
+                const hadInlineDisplay = modal.style.display && modal.style.display !== 'none';
+                if (hadInlineDisplay) modal.style.display = 'none';
+            }
+
+            return true;
+        };
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            if (window.closeTopModal()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
         });
     </script>
     <style>

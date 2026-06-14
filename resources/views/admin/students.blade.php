@@ -44,6 +44,39 @@
     </div>
 
     {{-- ════════════════════════════════════════════
+    BULK DELETE MODAL
+    ════════════════════════════════════════════ --}}
+    <div id="bulkDeleteModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:420px">
+            <div class="modal-body" style="text-align:center;padding:32px 24px 20px">
+                <div class="delete-modal-icon">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16" />
+                    </svg>
+                </div>
+                <div
+                    style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">
+                    Delete Selected Students?</div>
+                <div id="bulkDeleteSubtitle"
+                    style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.06em;line-height:1.7">
+                    Selected students will be permanently removed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('bulkDeleteModal')" class="btn-secondary">CANCEL</button>
+                <button id="confirmBulkDeleteBtn"
+                    style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-md);border:none;background:linear-gradient(135deg,var(--red),#F87171);color:#fff;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(239,68,68,.25)">
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    DELETE SELECTED
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════
     CREATE / EDIT MODAL
     ════════════════════════════════════════════ --}}
     <div id="studentModal" class="modal-overlay">
@@ -358,6 +391,16 @@
                     IMPORT BULK
                 </button>
             @endif
+            @if(Auth::user()->isSuperAdmin())
+                <button id="bulkDeleteStudentsBtn" onclick="bulkDeleteStudents()" class="btn-secondary" disabled
+                    style="gap:7px;border-color:rgba(239,68,68,.25);color:var(--red);opacity:.45;cursor:not-allowed">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3" />
+                    </svg>
+                    DELETE SELECTED (<span id="selectedStudentsCount">0</span>)
+                </button>
+            @endif
             <button onclick="openCreateModal()" class="btn-primary" style="gap:7px">
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -460,6 +503,11 @@
                 <table class="att-table" id="studentTable">
                     <thead>
                         <tr>
+                            @if(Auth::user()->isSuperAdmin())
+                                <th style="width:42px">
+                                    <input type="checkbox" id="selectAllStudents" onchange="toggleAllStudents(this.checked)">
+                                </th>
+                            @endif
                             <th>STUDENT IDENTITY</th>
                             <th>STUDENT CODE</th>
                             <th>MAJOR / COURSE</th>
@@ -493,6 +541,13 @@
                                 data-subject="{{ strtolower($className) }}"
                                 data-room="{{ strtolower($student->classRoom->room_number ?? 'N/A') }}" class="fade-up">
 
+                                {{-- Student --}}
+                                @if(Auth::user()->isSuperAdmin())
+                                    <td>
+                                        <input type="checkbox" class="student-select" value="{{ $student->id }}"
+                                            onchange="updateStudentSelection()" onclick="event.stopPropagation()">
+                                    </td>
+                                @endif
                                 {{-- Student --}}
                                 <td>
                                     <div class="subject-cell">
@@ -582,7 +637,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6">
+                                <td colspan="{{ Auth::user()->isSuperAdmin() ? 7 : 6 }}">
                                     <div class="empty-state">
                                         <div class="empty-icon">
                                             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -627,6 +682,14 @@
                         style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transition:all .2s;cursor:pointer;position:relative;overflow:hidden"
                         onmouseenter="this.style.borderColor='var(--border2)';this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shadow-md)'"
                         onmouseleave="this.style.borderColor='var(--border)';this.style.transform='';this.style.boxShadow=''">
+
+                        @if(Auth::user()->isSuperAdmin())
+                            <label style="position:absolute;top:10px;right:10px;z-index:2;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px;cursor:pointer"
+                                onclick="event.stopPropagation()">
+                                <input type="checkbox" class="student-select" value="{{ $student->id }}"
+                                    onchange="updateStudentSelection()">
+                            </label>
+                        @endif
 
                         <div
                             style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{{ $col2[0] }},{{ $col2[1] }})">
@@ -788,6 +851,99 @@
                 }
             } catch (e) { showToast('Error deleting record.', 'error'); }
             pendingDeleteId = null;
+        });
+
+        function selectedStudentIds() {
+            return [...document.querySelectorAll('.student-select:checked')]
+                .map(input => input.value)
+                .filter((value, index, values) => values.indexOf(value) === index);
+        }
+
+        function updateStudentSelection() {
+            const ids = selectedStudentIds();
+            const btn = document.getElementById('bulkDeleteStudentsBtn');
+            const count = document.getElementById('selectedStudentsCount');
+            const selectAll = document.getElementById('selectAllStudents');
+
+            if (count) count.textContent = ids.length;
+            if (btn) {
+                btn.disabled = ids.length === 0;
+                btn.style.opacity = ids.length ? '1' : '.45';
+                btn.style.cursor = ids.length ? 'pointer' : 'not-allowed';
+            }
+
+            if (selectAll) {
+                const tableChecks = [...document.querySelectorAll('#studentTable .student-select')];
+                const checked = tableChecks.filter(input => input.checked);
+                selectAll.checked = tableChecks.length > 0 && checked.length === tableChecks.length;
+                selectAll.indeterminate = checked.length > 0 && checked.length < tableChecks.length;
+            }
+        }
+
+        function toggleAllStudents(checked) {
+            document.querySelectorAll('#studentTable .student-select').forEach(input => {
+                input.checked = checked;
+            });
+            updateStudentSelection();
+        }
+
+        let pendingBulkStudentIds = [];
+
+        function bulkDeleteStudents() {
+            const ids = selectedStudentIds();
+            if (!ids.length) return;
+
+            pendingBulkStudentIds = ids;
+            document.getElementById('bulkDeleteSubtitle').innerHTML =
+                `<strong style="color:var(--text2)">${ids.length}</strong> selected student(s) will be permanently removed.<br>This action cannot be undone.`;
+            openModal('bulkDeleteModal');
+        }
+
+        document.getElementById('confirmBulkDeleteBtn').addEventListener('click', async () => {
+            const ids = pendingBulkStudentIds;
+            if (!ids.length) return;
+
+            const btn = document.getElementById('bulkDeleteStudentsBtn');
+            const modalBtn = document.getElementById('confirmBulkDeleteBtn');
+            const oldText = btn.innerHTML;
+            const oldModalText = modalBtn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = 'DELETING...';
+            modalBtn.disabled = true;
+            modalBtn.innerHTML = 'DELETING...';
+
+            try {
+                const res = await fetch('/api/admin/students/bulk-delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ student_ids: ids })
+                });
+                const data = await res.json().catch(() => ({ success: res.ok }));
+
+                if (!res.ok || !data.success) {
+                    showToast(data.error || data.message || 'Failed to delete selected students.', 'error');
+                    return;
+                }
+
+                ids.forEach(id => {
+                    document.querySelectorAll(`tr[data-id="${id}"], .instructor-card[data-id="${id}"]`).forEach(el => el.remove());
+                });
+                showToast(`${data.deleted_count || ids.length} student(s) deleted.`, 'success');
+                closeModal('bulkDeleteModal');
+                pendingBulkStudentIds = [];
+                updateStudentSelection();
+            } catch (e) {
+                showToast('Network error deleting selected students.', 'error');
+            } finally {
+                btn.innerHTML = oldText;
+                modalBtn.innerHTML = oldModalText;
+                modalBtn.disabled = false;
+                updateStudentSelection();
+            }
         });
 
         // ── View Profile ───────────────────────────────

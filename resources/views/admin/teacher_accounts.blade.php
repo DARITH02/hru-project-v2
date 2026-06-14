@@ -145,7 +145,7 @@
                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 11-7.743-5.743L11 3l1 1 1-1 1 1 1-1 1 1 1-1 1 1"/></svg>
                             </button>
 
-                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Are you sure you want to delete this account? This action cannot be undone.')">
+                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline" onsubmit="return confirmSubmit(event, 'Are you sure you want to delete this account? This action cannot be undone.')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="action-btn" style="color:var(--red); background:color-mix(in srgb, var(--red) 8%, transparent)" title="Delete Account">

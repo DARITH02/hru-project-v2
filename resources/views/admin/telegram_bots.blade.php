@@ -110,7 +110,7 @@
                                             </form>
 
                                             <!-- Delete -->
-                                            <form action="{{ route('admin.telegram-bots.destroy', $bot->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this bot?')">
+                                            <form action="{{ route('admin.telegram-bots.destroy', $bot->id) }}" method="POST" onsubmit="return confirmSubmit(event, 'Are you sure you want to delete this bot?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Bot">

@@ -16,6 +16,8 @@ use App\Models\Attendance;
 use App\Models\SemesterAssignment;
 use App\Models\Major;
 use App\Models\ClassGroup;
+use App\Models\TeacherAttendanceSession;
+use App\Models\TeacherSchedule;
 use App\Services\SemesterAttendanceScoreService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -483,12 +485,28 @@ class AdminController extends Controller
     public function deleteClass($classId)
     {
         $class = ClassRoom::findOrFail($classId);
-        $class->delete();
-        ActivityLog::create([
-            'action' => 'DELETE',
-            'target' => "catalog.classes#{$classId}"
-        ]);
-        return response()->json(['success' => true]);
+
+        DB::beginTransaction();
+        try {
+            $deleted = $this->deleteClassDependencies((int) $classId);
+
+            $class->delete();
+            ActivityLog::create([
+                'action' => 'DELETE',
+                'target' => "catalog.classes#{$classId}",
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'deleted' => $deleted,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function bulkDeleteClasses(Request $request)
@@ -498,17 +516,43 @@ class AdminController extends Controller
             'class_ids.*' => 'integer|exists:classes,id'
         ]);
 
-        $ids = $request->class_ids;
-        ClassRoom::whereIn('id', $ids)->delete();
+        $ids = collect($request->class_ids)->map(fn ($id) => (int) $id)->all();
 
-        foreach ($ids as $id) {
-            ActivityLog::create([
-                'action' => 'DELETE',
-                'target' => "catalog.classes#{$id}"
+        DB::beginTransaction();
+        try {
+            $summary = [
+                'student_attendance_sessions' => 0,
+                'teacher_attendance_sessions' => 0,
+                'teacher_schedules' => 0,
+            ];
+
+            foreach ($ids as $id) {
+                $deleted = $this->deleteClassDependencies($id);
+
+                foreach ($summary as $key => $count) {
+                    $summary[$key] += $deleted[$key] ?? 0;
+                }
+
+                ActivityLog::create([
+                    'action' => 'DELETE',
+                    'target' => "catalog.classes#{$id}",
+                ]);
+            }
+
+            ClassRoom::whereIn('id', $ids)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => count($ids) . ' classes deleted successfully.',
+                'deleted' => $summary,
             ]);
-        }
+        } catch (\Throwable $e) {
+            DB::rollBack();
 
-        return response()->json(['success' => true, 'message' => count($ids) . ' classes deleted successfully.']);
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function endClassSchedule($classId)
@@ -613,6 +657,28 @@ class AdminController extends Controller
             'text' => $message,
             'parse_mode' => 'Markdown'
         ]);
+    }
+
+    private function deleteClassDependencies(int $classId): array
+    {
+        $teacherScheduleIds = TeacherSchedule::where('class_id', $classId)->pluck('id');
+
+        $teacherAttendanceQuery = TeacherAttendanceSession::where('class_id', $classId);
+        if ($teacherScheduleIds->isNotEmpty()) {
+            $teacherAttendanceQuery->orWhereIn('schedule_id', $teacherScheduleIds);
+        }
+
+        $deleted = [
+            'student_attendance_sessions' => AttendanceSession::where('class_id', $classId)->count(),
+            'teacher_attendance_sessions' => (clone $teacherAttendanceQuery)->count(),
+            'teacher_schedules' => $teacherScheduleIds->count(),
+        ];
+
+        (clone $teacherAttendanceQuery)->delete();
+        TeacherSchedule::whereIn('id', $teacherScheduleIds)->delete();
+        AttendanceSession::where('class_id', $classId)->delete();
+
+        return $deleted;
     }
 
     public function updateSemesterScore(Request $request, $assignmentId)
@@ -1315,6 +1381,40 @@ class AdminController extends Controller
         }
     }
 
+    public function bulkDeleteStudents(Request $request)
+    {
+        $request->validate([
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'integer|exists:students,id',
+        ]);
+
+        $students = Student::with('user')
+            ->whereIn('id', $request->student_ids)
+            ->get();
+
+        DB::beginTransaction();
+        try {
+            foreach ($students as $student) {
+                $user = $student->user;
+                $student->delete();
+                if ($user) {
+                    $user->delete();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'deleted_count' => $students->count(),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function listStudentAttendance($studentId)
     {
         $student = Student::with(['user', 'major.department', 'group.major.department'])->findOrFail($studentId);
@@ -1564,18 +1664,80 @@ class AdminController extends Controller
 
     public function deleteInstructor($teacherId)
     {
-        $teacher = Teacher::with('user')->findOrFail($teacherId);
+        $teacher = Teacher::with('user')->withCount('classes')->findOrFail($teacherId);
+
+        if ($teacher->classes_count > 0) {
+            return response()->json([
+                'success' => false,
+                'error' => 'This instructor cannot be deleted while assigned classes exist.',
+            ], 422);
+        }
+
         $user = $teacher->user;
 
         DB::beginTransaction();
         try {
             $teacher->delete();
-            $user->delete();
+            if ($user) {
+                $user->delete();
+            }
             DB::commit();
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bulkDeleteInstructors(Request $request)
+    {
+        $request->validate([
+            'teacher_ids' => 'required|array|min:1',
+            'teacher_ids.*' => 'integer|exists:teachers,id',
+        ]);
+
+        $teachers = Teacher::with('user')
+            ->withCount('classes')
+            ->whereIn('id', $request->teacher_ids)
+            ->get();
+
+        $blocked = $teachers
+            ->filter(fn ($teacher) => $teacher->classes_count > 0)
+            ->map(fn ($teacher) => [
+                'id' => $teacher->id,
+                'name' => $teacher->user->name ?? 'Instructor #' . $teacher->id,
+                'classes_count' => $teacher->classes_count,
+            ])
+            ->values();
+
+        if ($blocked->isNotEmpty()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Some instructors cannot be deleted because they have assigned classes.',
+                'blocked' => $blocked,
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($teachers as $teacher) {
+                $user = $teacher->user;
+                $teacher->delete();
+                if ($user) {
+                    $user->delete();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'deleted_count' => $teachers->count(),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
     public function updateUserAccount(Request $request, $userId)

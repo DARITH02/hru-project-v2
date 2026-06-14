@@ -133,9 +133,6 @@
         if (Object.keys(legacyTranslations).length) {
             document.title = window.__t(document.title);
 
-            const nativeConfirm = window.confirm.bind(window);
-            window.confirm = (message) => nativeConfirm(window.__t(message));
-
             const bootLegacyTranslator = () => {
                 translateLegacyNode();
 

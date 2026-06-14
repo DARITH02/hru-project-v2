@@ -237,7 +237,7 @@
                             <td style="text-align:right;">
                                 <form action="{{ route('admin.permissions.destroy', $p->id) }}" method="POST"
                                     style="display:inline;"
-                                    onsubmit="return confirm('Revoke this permission? The student\'s absence will become unexcused.')">
+                                    onsubmit="return confirmSubmit(event, @js('Revoke this permission? The student\'s absence will become unexcused.'))">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="action-btn btn-del" title="Revoke Permission">

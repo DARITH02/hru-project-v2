@@ -3187,7 +3187,7 @@
         }
 
         async function csmDelete(id) {
-            if (!confirm(courseText('remove_semester_question', 'Remove this semester assignment?'))) return;
+            if (!await confirmAction(courseText('remove_semester_question', 'Remove this semester assignment?'))) return;
             try {
                 const res = await fetch('/api/admin/semesters/' + id, {
                     method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csmCsrf }
@@ -3942,7 +3942,7 @@
                     ? 'Are you absolutely sure? This will MOVE multiple sessions to the end of the semester across all subjects.'
                     : 'Are you absolutely sure? This will SKIP multiple sessions across the entire system.';
 
-                if (!confirm(confirmMsg)) return;
+                if (!await confirmAction(confirmMsg)) return;
 
                 btn.innerHTML = 'PROCESSING...';
                 btn.disabled = true;
