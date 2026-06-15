@@ -84,24 +84,28 @@
             'name' => __('admin.backup_restore.schedule_postgresql_full'),
             'frequency' => __('admin.backup_restore.schedule_postgresql_full_frequency'),
             'next' => $formatNextRun($nextDailyAt('02:00')),
+            'schedule' => ['type' => 'daily', 'times' => ['02:00']],
             'tone' => 'blue',
         ],
         [
             'name' => __('admin.backup_restore.schedule_user_files_incremental'),
             'frequency' => __('admin.backup_restore.schedule_user_files_incremental_frequency'),
             'next' => $formatNextRun($nextFromDailyTimes(['08:00', '12:00', '16:00', '20:00'])),
+            'schedule' => ['type' => 'daily', 'times' => ['08:00', '12:00', '16:00', '20:00']],
             'tone' => 'green',
         ],
         [
             'name' => __('admin.backup_restore.schedule_media_cdn_sync'),
             'frequency' => __('admin.backup_restore.schedule_media_cdn_sync_frequency'),
             'next' => $formatNextRun($nextWeeklyAt(\Carbon\CarbonInterface::SUNDAY, '03:00')),
+            'schedule' => ['type' => 'weekly', 'dayOfWeek' => \Carbon\CarbonInterface::SUNDAY, 'times' => ['03:00']],
             'tone' => 'amber',
         ],
         [
             'name' => __('admin.backup_restore.schedule_config_snapshot'),
             'frequency' => __('admin.backup_restore.schedule_config_snapshot_frequency'),
             'next' => $formatNextRun($nextMonthlyAt(1, '04:00')),
+            'schedule' => ['type' => 'monthly', 'dayOfMonth' => 1, 'times' => ['04:00']],
             'tone' => 'violet',
         ],
     ];
@@ -919,7 +923,7 @@
                         <span class="backup-schedule-job__dot"></span>
                     </div>
                     <div class="backup-schedule-job__frequency">{{ $job['frequency'] }}</div>
-                    <div class="backup-schedule-job__next">{{ __('admin.backup_restore.next_run', ['time' => $job['next']]) }}</div>
+                    <div class="backup-schedule-job__next js-schedule-next" data-schedule-index="{{ $loop->index }}">{{ __('admin.backup_restore.next_run', ['time' => $job['next']]) }}</div>
                 </div>
             @endforeach
         </div>
@@ -1133,6 +1137,12 @@
     const sourceLocalBackupLabel = @json(__('admin.backup_restore.source_local_backup'));
     const manualBackupForm = document.getElementById('manualBackupForm');
     const manualBackupButton = document.getElementById('manualBackupButton');
+    const backupScheduleConfigs = @json(array_map(fn ($job) => $job['schedule'], $scheduledJobs));
+    const backupNextRunTemplate = @json(__('admin.backup_restore.next_run', ['time' => '__TIME__']));
+    const backupScheduleTimezone = @json($timezone);
+    const backupScheduleLocale = @json(str_replace('_', '-', $locale));
+    const backupTodayLabel = @json(__('admin.backup_restore.today'));
+    const backupTomorrowLabel = @json(__('admin.backup_restore.tomorrow'));
 
     if (manualBackupForm && manualBackupButton) {
         manualBackupForm.addEventListener('submit', () => {
@@ -1145,6 +1155,183 @@
             }
         });
     }
+
+    function getScheduleParts(date) {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: backupScheduleTimezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            weekday: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).formatToParts(date).reduce((carry, part) => {
+            carry[part.type] = part.value;
+            return carry;
+        }, {});
+
+        const dayMap = {Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6};
+
+        return {
+            year: Number(parts.year),
+            month: Number(parts.month),
+            day: Number(parts.day),
+            hour: Number(parts.hour === '24' ? '0' : parts.hour),
+            minute: Number(parts.minute),
+            dayOfWeek: dayMap[parts.weekday] ?? 0,
+        };
+    }
+
+    function daysInMonth(year, month) {
+        return new Date(Date.UTC(year, month, 0)).getUTCDate();
+    }
+
+    function zonedDateToInstant(year, month, day, hour, minute) {
+        const guess = new Date(Date.UTC(year, month - 1, day, hour, minute));
+        const actual = getScheduleParts(guess);
+        const offsetMinutes = ((actual.year - year) * 525600)
+            + ((actual.month - month) * 43200)
+            + ((actual.day - day) * 1440)
+            + ((actual.hour - hour) * 60)
+            + (actual.minute - minute);
+
+        return new Date(guess.getTime() - offsetMinutes * 60000);
+    }
+
+    function addDays(parts, days) {
+        const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days, 12, 0));
+        return getScheduleParts(next);
+    }
+
+    function candidateFor(parts, time) {
+        const [hour, minute] = time.split(':').map(Number);
+        return zonedDateToInstant(parts.year, parts.month, parts.day, hour, minute);
+    }
+
+    function nextDailyRun(config, now) {
+        const today = getScheduleParts(now);
+        const candidates = config.times.map((time) => candidateFor(today, time));
+        const upcomingToday = candidates.find((candidate) => candidate.getTime() > now.getTime());
+
+        if (upcomingToday) {
+            return upcomingToday;
+        }
+
+        return candidateFor(addDays(today, 1), config.times[0]);
+    }
+
+    function nextWeeklyRun(config, now) {
+        const today = getScheduleParts(now);
+        const daysUntil = (config.dayOfWeek - today.dayOfWeek + 7) % 7;
+        const target = addDays(today, daysUntil);
+        const candidate = candidateFor(target, config.times[0]);
+
+        return candidate.getTime() > now.getTime()
+            ? candidate
+            : candidateFor(addDays(target, 7), config.times[0]);
+    }
+
+    function nextMonthlyRun(config, now) {
+        const current = getScheduleParts(now);
+        const build = (year, month) => {
+            const day = Math.min(config.dayOfMonth, daysInMonth(year, month));
+            const [hour, minute] = config.times[0].split(':').map(Number);
+            return zonedDateToInstant(year, month, day, hour, minute);
+        };
+        const thisMonth = build(current.year, current.month);
+
+        if (thisMonth.getTime() > now.getTime()) {
+            return thisMonth;
+        }
+
+        const nextMonth = current.month === 12 ? 1 : current.month + 1;
+        const nextYear = current.month === 12 ? current.year + 1 : current.year;
+        return build(nextYear, nextMonth);
+    }
+
+    function getNextScheduleRun(config, now) {
+        if (config.type === 'weekly') {
+            return nextWeeklyRun(config, now);
+        }
+
+        if (config.type === 'monthly') {
+            return nextMonthlyRun(config, now);
+        }
+
+        return nextDailyRun(config, now);
+    }
+
+    function formatRemainingTime(next, now) {
+        let remainingMinutes = Math.max(0, Math.ceil((next.getTime() - now.getTime()) / 60000));
+        const days = Math.floor(remainingMinutes / 1440);
+        remainingMinutes -= days * 1440;
+        const hours = Math.floor(remainingMinutes / 60);
+        const minutes = remainingMinutes - hours * 60;
+        const pieces = [];
+
+        if (days > 0) {
+            pieces.push(days === 1 ? '1 day' : `${days} days`);
+        }
+
+        if (hours > 0) {
+            pieces.push(hours === 1 ? '1 hour' : `${hours} hours`);
+        }
+
+        if (minutes > 0 || pieces.length === 0) {
+            pieces.push(minutes === 1 ? '1 minute' : `${minutes} minutes`);
+        }
+
+        return pieces.slice(0, 2).join(' and ') + ' from now';
+    }
+
+    function formatScheduleTime(next, now) {
+        const nextParts = getScheduleParts(next);
+        const todayParts = getScheduleParts(now);
+        const tomorrowParts = addDays(todayParts, 1);
+        const dateKey = `${nextParts.year}-${nextParts.month}-${nextParts.day}`;
+        const todayKey = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
+        const tomorrowKey = `${tomorrowParts.year}-${tomorrowParts.month}-${tomorrowParts.day}`;
+        const time = new Intl.DateTimeFormat('en-GB', {
+            timeZone: backupScheduleTimezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).format(next);
+        let dayLabel;
+
+        if (dateKey === todayKey) {
+            dayLabel = backupTodayLabel;
+        } else if (dateKey === tomorrowKey) {
+            dayLabel = backupTomorrowLabel;
+        } else {
+            dayLabel = new Intl.DateTimeFormat(backupScheduleLocale, {
+                timeZone: backupScheduleTimezone,
+                month: 'short',
+                day: '2-digit',
+            }).format(next);
+        }
+
+        return `${dayLabel} ${time} (${formatRemainingTime(next, now)})`;
+    }
+
+    function refreshScheduleNextRuns() {
+        const now = new Date();
+
+        document.querySelectorAll('.js-schedule-next').forEach((element) => {
+            const config = backupScheduleConfigs[Number(element.dataset.scheduleIndex)];
+
+            if (!config) {
+                return;
+            }
+
+            const next = getNextScheduleRun(config, now);
+            element.textContent = backupNextRunTemplate.replace('__TIME__', formatScheduleTime(next, now));
+        });
+    }
+
+    refreshScheduleNextRuns();
+    window.setInterval(refreshScheduleNextRuns, 1000);
 
     function openRestoreModal(fileName, source = 'local', fileId = '') {
         document.getElementById('restoreForm').action = source === 'cloud' ? cloudRestoreAction : localRestoreAction;
