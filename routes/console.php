@@ -11,6 +11,11 @@ Artisan::command('inspire', function () {
 Schedule::command('notify:teachers')->dailyAt('07:15');
 Schedule::command('teacher-attendance:process --sync')->everyFifteenMinutes();
 
+Schedule::command('chat:cleanup-old-history --days=7')
+    ->dailyAt('01:30')
+    ->name('chat.cleanup-old-history')
+    ->withoutOverlapping();
+
 Schedule::command('backup:run full')
     ->dailyAt('02:00')
     ->name('backup-restore.daily-full')

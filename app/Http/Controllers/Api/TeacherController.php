@@ -221,6 +221,19 @@ class TeacherController extends Controller
         ]);
     }
 
+    public function exportAttendance(Request $request, $sessionId)
+    {
+        $session = $this->teacherSession($request, $sessionId, ['classRoom.subject']);
+        $subjectName = $session->classRoom?->subject?->name ?? 'attendance';
+        $date = Carbon::parse($session->start_time)->format('Ymd');
+        $safeSubjectName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $subjectName);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\AttendanceExport($session->id),
+            "attendance_{$safeSubjectName}_{$date}.xlsx"
+        );
+    }
+
     public function generateQr(Request $request, $sessionId)
     {
         $session = $this->teacherSession($request, $sessionId);

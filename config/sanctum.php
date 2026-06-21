@@ -15,12 +15,29 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+    'stateful' => array_filter(explode(',', env('SANCTUM_STATEFUL_DOMAINS', implode(',', array_filter([
+        'localhost',
+        'localhost:80',
+        'localhost:3000',
+        'localhost:5173',
+        'localhost:8080',
+        '127.0.0.1',
+        '127.0.0.1:80',
+        '127.0.0.1:3000',
+        '127.0.0.1:3001',
+        '127.0.0.1:5173',
+        '127.0.0.1:8000',
+        '127.0.0.1:8080',
+        '192.168.18.2:3000',
+        '192.168.18.2:3001',
+        '192.168.18.2:5173',
+        '192.168.18.2:8080',
+        '::1',
+        parse_url((string) env('APP_URL'), PHP_URL_HOST)
+            ? parse_url((string) env('APP_URL'), PHP_URL_HOST).(parse_url((string) env('APP_URL'), PHP_URL_PORT) ? ':'.parse_url((string) env('APP_URL'), PHP_URL_PORT) : '')
+            : null,
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    ]))))),
 
     /*
     |--------------------------------------------------------------------------

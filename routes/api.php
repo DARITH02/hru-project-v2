@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\UserLocationController;
+use App\Http\Controllers\Api\Chat\ChatController;
 use Illuminate\Support\Facades\Route;
 
 //  PUBLIC / AUTH API
@@ -28,6 +29,24 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::middleware('role:teacher,admin,super_admin')->prefix('chat')->group(function () {
+        Route::get('/users', [ChatController::class, 'users']);
+        Route::get('/search', [ChatController::class, 'search']);
+        Route::get('/conversations', [ChatController::class, 'conversations']);
+        Route::post('/conversations', [ChatController::class, 'storeConversation']);
+        Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
+        Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send'])->middleware('throttle:60,1');
+        Route::post('/conversations/{conversation}/delivered', [ChatController::class, 'delivered']);
+        Route::post('/conversations/{conversation}/read', [ChatController::class, 'read']);
+        Route::post('/conversations/{conversation}/typing', [ChatController::class, 'typing'])->middleware('throttle:120,1');
+        Route::patch('/messages/{message}', [ChatController::class, 'update']);
+        Route::delete('/messages/{message}', [ChatController::class, 'destroy']);
+        Route::post('/messages/{message}/reactions', [ChatController::class, 'react']);
+        Route::post('/presence', [ChatController::class, 'presence'])->middleware('throttle:120,1');
+        Route::get('/notifications', [ChatController::class, 'notifications']);
+        Route::post('/notifications/read', [ChatController::class, 'readNotifications']);
+    });
+
     // TEACHER ONLY
     Route::middleware('role:teacher')->group(function () {
         Route::get('/teacher/summary', [TeacherController::class, 'getSummary']);
@@ -40,6 +59,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::get('/teacher/session/{sessionId}/qr', [TeacherController::class, 'generateQr']);
         Route::post('/teacher/session/{sessionId}/regenerate-qr', [TeacherController::class, 'regenerateQr']);
         Route::get('/teacher/session/{sessionId}/monitor', [TeacherController::class, 'monitor']);
+        Route::get('/teacher/session/{sessionId}/export', [TeacherController::class, 'exportAttendance']);
         Route::post('/teacher/session/{sessionId}/checkin', [TeacherController::class, 'manualCheckin']);
         Route::post('/teacher/session/{sessionId}/status-update', [TeacherController::class, 'updateStatus']);
         Route::get('/teacher/session/{sessionId}/live-feed', [TeacherController::class, 'liveFeed'])->middleware('throttle:activity');
@@ -69,6 +89,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     //  ADMIN & SUPER ADMIN Shared Management
     Route::middleware('role:admin,super_admin')->group(function () {
         Route::get('/admin/check-status', [AdminController::class, 'checkStatus']);
+        Route::post('/admin/attendance-assistant/analyze', [AdminController::class, 'attendanceAssistant']);
         Route::get('/admin/stats', [AdminController::class, 'getStats']);
         Route::get('/admin/users', [AdminController::class, 'listUsers']);
         Route::post('/admin/users', [AdminController::class, 'storeUser']);

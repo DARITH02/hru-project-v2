@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use App\Models\Chat\Conversation;
+use App\Models\Chat\Message;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -62,6 +64,28 @@ class User extends Authenticatable
         return $this->role === 'super_admin';
     }
 
+    public function canUseChat(): bool
+    {
+        return $this->is_approved && in_array($this->role, ['teacher', 'admin', 'super_admin'], true);
+    }
+
+    public function canChatWith(User $user): bool
+    {
+        if (!$this->canUseChat() || !$user->canUseChat() || $this->id === $user->id) {
+            return false;
+        }
+
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->role === 'admin') {
+            return in_array($user->role, ['teacher', 'super_admin'], true);
+        }
+
+        return in_array($user->role, ['admin', 'super_admin'], true);
+    }
+
     public function teacher()
     {
         return $this->hasOne(Teacher::class);
@@ -70,5 +94,17 @@ class User extends Authenticatable
     public function student()
     {
         return $this->hasOne(Student::class);
+    }
+
+    public function chatConversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+            ->withPivot(['last_read_at', 'last_read_message_id', 'muted_until'])
+            ->withTimestamps();
+    }
+
+    public function chatMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
     }
 }

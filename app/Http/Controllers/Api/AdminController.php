@@ -18,13 +18,41 @@ use App\Models\Major;
 use App\Models\ClassGroup;
 use App\Models\TeacherAttendanceSession;
 use App\Models\TeacherSchedule;
+use App\Services\HruAttendanceAiAgentService;
+use App\Services\HruAttendanceAiAssistantService;
 use App\Services\SemesterAttendanceScoreService;
+use App\Services\Chat\ChatService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use DB;
 
 class AdminController extends Controller
 {
+    public function attendanceAssistant(
+        Request $request,
+        HruAttendanceAiAssistantService $assistant,
+        HruAttendanceAiAgentService $agent
+    )
+    {
+        $filters = $request->validate([
+            'question' => 'nullable|string|max:1000',
+            'academic_year' => 'nullable|string|max:20',
+            'semester' => 'nullable|integer|min:1|max:3',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'class_id' => 'nullable|integer|exists:classes,id',
+            'group_id' => 'nullable|integer|exists:class_groups,id',
+            'major_id' => 'nullable|integer|exists:majors,id',
+            'department_id' => 'nullable|integer|exists:departments,id',
+            'teacher_id' => 'nullable|integer|exists:teachers,id',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $agent->enhance($assistant->analyze($filters), $filters['question'] ?? null),
+        ]);
+    }
+
     public function checkStatus(Request $request)
     {
         $data = [
@@ -157,10 +185,16 @@ class AdminController extends Controller
         }
     }
 
-    public function deleteUser($userId)
+    public function deleteUser($userId, ChatService $chat)
     {
         $user = User::findOrFail($userId);
+        if ($user->id === request()->user()?->id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 422);
+        }
+
+        $chat->deleteUserChatHistory($user);
         $user->delete();
+
         return response()->json(['success' => true]);
     }
 

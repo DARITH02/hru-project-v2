@@ -39,6 +39,17 @@ return [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
     ],
 
+    'ai_assistant' => [
+        'provider' => env('AI_PROVIDER', 'groq'),
+        'enabled' => env('AI_ASSISTANT_ENABLED', true),
+    ],
+
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+        'model' => env('GROQ_MODEL', 'qwen/qwen3.6-27b'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+    ],
+
     'google_drive' => [
         'credentials' => env('GOOGLE_DRIVE_CREDENTIALS'),
         'credentials_base64' => env('GOOGLE_DRIVE_CREDENTIALS_BASE64'),

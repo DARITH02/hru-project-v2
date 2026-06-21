@@ -21,13 +21,41 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\HruAttendanceAiAgentService;
+use App\Services\HruAttendanceAiAssistantService;
 use App\Services\SemesterAttendanceScoreService;
+use App\Services\Chat\ChatService;
 use App\Services\TelegramService;
 use App\Services\MaintenanceModeService;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    public function attendanceAssistant(
+        Request $request,
+        HruAttendanceAiAssistantService $assistant,
+        HruAttendanceAiAgentService $agent
+    )
+    {
+        $filters = $request->validate([
+            'question' => 'nullable|string|max:1000',
+            'academic_year' => 'nullable|string|max:20',
+            'semester' => 'nullable|integer|min:1|max:3',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'class_id' => 'nullable|integer|exists:classes,id',
+            'group_id' => 'nullable|integer|exists:class_groups,id',
+            'major_id' => 'nullable|integer|exists:majors,id',
+            'department_id' => 'nullable|integer|exists:departments,id',
+            'teacher_id' => 'nullable|integer|exists:teachers,id',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $agent->enhance($assistant->analyze($filters), $filters['question'] ?? null),
+        ]);
+    }
+
     private function isPostgres(): bool
     {
         return DB::getDriverName() === 'pgsql';
@@ -869,7 +897,7 @@ class AdminController extends Controller
         return redirect()->back()->with('success', "Account for {$user->name} has been approved.");
     }
 
-    public function destroyUser($id)
+    public function destroyUser($id, ChatService $chat)
     {
         if (!auth()->user()->isSuperAdmin()) {
             return redirect()->back()->with('error', 'Only Superadmins can delete accounts.');
@@ -883,6 +911,7 @@ class AdminController extends Controller
         }
 
         $name = $user->name;
+        $chat->deleteUserChatHistory($user);
         $user->delete();
 
         return redirect()->back()->with('success', "Account for {$name} has been deleted.");

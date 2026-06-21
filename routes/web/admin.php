@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(function () {
     Route::get('/admin', [AdminUIController::class, 'mainDashboard'])->name('admin.dashboard');
+    Route::post('/admin/attendance-assistant/analyze', [AdminUIController::class, 'attendanceAssistant'])->name('admin.attendance-assistant.analyze');
     Route::get('/admin/instructors', [AdminUIController::class, 'instructors'])->name('admin.instructors');
     Route::get('/admin/results', [AdminUIController::class, 'analytics'])->name('admin.results');
     Route::get('/admin/attendance-issues', [AdminUIController::class, 'attendanceIssues'])->name('admin.attendance-issues');

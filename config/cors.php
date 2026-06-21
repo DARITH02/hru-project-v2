@@ -19,11 +19,26 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:3000'),
+    'allowed_origins' => array_values(array_unique(array_filter([
+        env('FRONTEND_URL'),
+        env('APP_URL'),
+        'http://localhost',
+        'http://localhost:80',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:8080',
+        'http://127.0.0.1',
+        'http://127.0.0.1:80',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:8080',
         'https://hru-ats.vercel.app',
-        'http://192.168.18.2:3000' // (Optional) Add your local IP if you test on your phone locally
-    ],
+        'http://192.168.18.2:3000',
+        'http://192.168.18.2:3001',
+        'http://192.168.18.2:5173',
+        'http://192.168.18.2:8080',
+    ]))),
 
     'allowed_origins_patterns' => [],
 

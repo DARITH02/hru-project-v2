@@ -3,7 +3,15 @@
 namespace App\Providers;
 
 use App\Filesystem\GoogleDriveAdapter;
+use App\Models\Chat\Conversation;
+use App\Models\Chat\Message;
+use App\Events\Chat\MessageSent;
+use App\Listeners\Chat\NotifyConversationParticipants;
+use App\Policies\ConversationPolicy;
+use App\Policies\MessagePolicy;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
@@ -23,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Conversation::class, ConversationPolicy::class);
+        Gate::policy(Message::class, MessagePolicy::class);
+        Event::listen(MessageSent::class, NotifyConversationParticipants::class);
+
         Storage::extend('google', function ($app, array $config) {
             $adapter = new GoogleDriveAdapter($app->make(\App\Services\GoogleDriveService::class));
 

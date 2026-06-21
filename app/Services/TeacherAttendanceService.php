@@ -32,7 +32,7 @@ class TeacherAttendanceService
         AttendanceSession::with(['classRoom.subject', 'classRoom.groups'])
             ->whereHas('classRoom', fn($q) => $q->whereNotNull('teacher_id'))
             ->orderBy('start_time')
-            ->chunkById(100, function ($sessions) use (&$created, $actorId) {
+            ->chunk(100, function ($sessions) use (&$created, $actorId) {
                 foreach ($sessions as $session) {
                     $class = $session->classRoom;
                     if (!$class || !$class->teacher_id) {
