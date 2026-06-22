@@ -2242,6 +2242,26 @@
                 `;
             }
 
+            async function parseAiResponse(response) {
+                const contentType = response.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json')) {
+                    return response.json();
+                }
+
+                const text = await response.text();
+                const fallbackMessage = response.status === 419
+                    ? 'Session expired. Please refresh the page and try again.'
+                    : response.status === 401 || response.status === 403
+                        ? 'You are not authorized to use the AI assistant. Please sign in again.'
+                        : text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+
+                return {
+                    success: false,
+                    message: fallbackMessage || `AI assistant request failed with status ${response.status}.`,
+                };
+            }
+
             async function askAiAssistant(question) {
                 const cleanQuestion = String(question || '').trim();
                 if (!cleanQuestion) return;
@@ -2263,7 +2283,7 @@
                             question: cleanQuestion,
                         }),
                     });
-                    const payload = await response.json();
+                    const payload = await parseAiResponse(response);
 
                     if (!response.ok || !payload.success) {
                         throw new Error(payload.message || 'AI assistant request failed.');
