@@ -219,6 +219,12 @@
                             <path d="M5 13h6M8 11v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                             <path d="M5 7.5l1.5 1.5L11 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
                         </svg></span><span class="nav-text">{{ __('admin.nav.scan_monitor') }}</span></a>
+                <a href="{{ route('admin.documents.index') }}" data-tooltip="{{ __('admin.nav.documents') }}"
+                    class="nav-link {{ request()->routeIs('admin.documents.*') ? 'active' : '' }}"><span
+                        class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 1.5h5.5L13 5v9.5H4v-13Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                            <path d="M9.5 1.5V5H13M6 8h4M6 10.5h4M6 13h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg></span><span class="nav-text">{{ __('admin.nav.documents') }}</span></a>
 
                 <div class="nav-section-label">{{ __('admin.sections.students') }}</div>
                 <a href="{{ route('admin.students.overview') }}" class="nav-link {{ request()->routeIs('admin.students.overview') ? 'active' : '' }}">
@@ -370,6 +376,24 @@
                             <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                         </svg></span>
                     <span class="nav-text">{{ __('admin.nav.reports') }}</span>
+                </a>
+                <a href="{{ route('teacher.documents.index') }}" class="nav-link {{ request()->routeIs('teacher.documents.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 1.5h5.5L13 5v9.5H4v-13Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                            <path d="M9.5 1.5V5H13M6 8h4M6 10.5h4M6 13h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg></span>
+                    <span class="nav-text">{{ __('admin.nav.documents') }}</span>
+                </a>
+            @endif
+
+            @if (Auth::user()->role === 'student')
+                <div class="nav-section-label">{{ __('admin.sections.academic') }}</div>
+                <a href="{{ route('student.documents.index') }}" class="nav-link {{ request()->routeIs('student.documents.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 1.5h5.5L13 5v9.5H4v-13Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                            <path d="M9.5 1.5V5H13M6 8h4M6 10.5h4M6 13h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg></span>
+                    <span class="nav-text">{{ __('admin.nav.documents') }}</span>
                 </a>
             @endif
         </nav>

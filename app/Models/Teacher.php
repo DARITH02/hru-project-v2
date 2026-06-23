@@ -69,4 +69,9 @@ class Teacher extends Model
     {
         return $this->hasMany(TeacherClassChangeRequest::class);
     }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class);
+    }
 }

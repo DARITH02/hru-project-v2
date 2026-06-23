@@ -337,6 +337,7 @@ class TeacherAttendanceService
         }
 
         if (in_array($method, ['qr', 'location'], true)) {
+            $this->validateCheckInWindow($session, $time);
             $this->validateAttendanceLocation($request, 'check-in');
         }
 
@@ -368,6 +369,26 @@ class TeacherAttendanceService
         event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'checked_in'));
 
         return $session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']);
+    }
+
+    private function validateCheckInWindow(TeacherAttendanceSession $session, Carbon $time): void
+    {
+        $attendanceDate = Carbon::parse($session->attendance_date);
+
+        if (!$time->isSameDay($attendanceDate)) {
+            throw ValidationException::withMessages([
+                'session' => 'Teacher attendance can only be checked in on the scheduled date.',
+            ]);
+        }
+
+        $opensAt = Carbon::parse($session->scheduled_start_time);
+        $closesAt = Carbon::parse($session->scheduled_end_time);
+
+        if ($time->lt($opensAt) || $time->gt($closesAt)) {
+            throw ValidationException::withMessages([
+                'session' => 'Teacher attendance check-in is only allowed during the scheduled class time.',
+            ]);
+        }
     }
 
     public function checkOut(TeacherAttendanceSession $session, ?Request $request = null, string $method = 'manual', ?Carbon $time = null): TeacherAttendanceSession

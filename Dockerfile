@@ -34,6 +34,7 @@ RUN rm -rf /etc/nginx/sites-enabled/default
 
 # Copy custom Nginx configuration
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY config/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 # Copy existing application directory contents
 COPY . /var/www

@@ -1,0 +1,14 @@
+.git
+.agents
+.codex
+.env
+node_modules
+vendor
+storage/app
+storage/framework/cache/data
+storage/framework/sessions
+storage/framework/testing
+storage/framework/views
+storage/logs
+bootstrap/cache/*.php
+npm-debug.log

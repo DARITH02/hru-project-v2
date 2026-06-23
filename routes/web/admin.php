@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController as AdminUIController;
+use App\Http\Controllers\Admin\AdminDocumentController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\RestoreController;
 use App\Http\Controllers\Admin\TeacherAttendanceController as AdminTeacherAttendanceController;
@@ -17,6 +18,12 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::get('/admin/attendance-issues/export/pdf', [AdminUIController::class, 'exportAttendanceIssuesPdf'])->name('admin.attendance-issues.export.pdf');
     Route::post('/admin/attendance-issues/send-telegram', [AdminUIController::class, 'sendAttendanceIssuesToTelegram'])->name('admin.attendance-issues.send-telegram');
     Route::get('/admin/teacher-accounts', [AdminUIController::class, 'teacherAccounts'])->name('admin.teacher-accounts');
+
+    Route::get('/admin/documents', [AdminDocumentController::class, 'index'])->name('admin.documents.index');
+    Route::get('/admin/documents/{document}/preview', [AdminDocumentController::class, 'preview'])->name('admin.documents.preview');
+    Route::get('/admin/documents/{document}/download', [AdminDocumentController::class, 'download'])->name('admin.documents.download');
+    Route::post('/admin/documents/{document}/approve', [AdminDocumentController::class, 'approve'])->name('admin.documents.approve');
+    Route::post('/admin/documents/{document}/reject', [AdminDocumentController::class, 'reject'])->name('admin.documents.reject');
 
     Route::get('/admin/teacher-attendance', [AdminTeacherAttendanceController::class, 'dashboard'])->name('admin.teacher-attendance');
     Route::post('/admin/teacher-attendance/sync', [AdminTeacherAttendanceController::class, 'sync'])->name('admin.teacher-attendance.sync');
@@ -40,6 +47,7 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::middleware(['auth', 'role:super_admin'])->group(function () {
         Route::post('/admin/users/{id}/approve', [AdminUIController::class, 'approveUser'])->name('admin.users.approve');
         Route::delete('/admin/users/{id}', [AdminUIController::class, 'destroyUser'])->name('admin.users.destroy');
+        Route::delete('/admin/documents/rejected', [AdminDocumentController::class, 'destroyRejected'])->name('admin.documents.rejected.destroy');
         Route::delete('/admin/attendance-issues/history/drop-all', [AdminUIController::class, 'dropAllHistory'])->name('admin.attendance-issues.history.drop-all');
         Route::delete('/admin/attendance-issues/history/bulk-drop', [AdminUIController::class, 'bulkDropHistory'])->name('admin.attendance-issues.history.bulk-drop');
 

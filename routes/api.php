@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\TeacherController;
+use App\Http\Controllers\Api\TeacherDocumentController;
+use App\Http\Controllers\Api\StudentDocumentController;
 use App\Http\Controllers\Api\TeacherAttendanceController;
 use App\Http\Controllers\Api\AdminTeacherAttendanceController;
 use App\Http\Controllers\Api\AdminController;
@@ -51,6 +53,8 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     Route::middleware('role:teacher')->group(function () {
         Route::get('/teacher/summary', [TeacherController::class, 'getSummary']);
         Route::get('/teacher/classes', [TeacherController::class, 'getClasses']);
+        Route::get('/teacher/documents', [TeacherDocumentController::class, 'index']);
+        Route::post('/teacher/documents', [TeacherDocumentController::class, 'store']);
         Route::get('/teacher/classes/{classId}/sessions', [TeacherController::class, 'getSessionsByClass']);
         Route::get('/teacher/classes/{classId}/students', [TeacherController::class, 'getStudentsByClass']);
         Route::get('/teacher/students', [TeacherController::class, 'getStudents']);
@@ -182,6 +186,9 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
 Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     Route::get('/student/portal', [AttendanceController::class, 'getPortalData']);
     Route::get('/student/active-session', [AttendanceController::class, 'getActiveSession']);
+    Route::get('/student/documents', [StudentDocumentController::class, 'index']);
+    Route::get('/student/documents/{document}/preview', [StudentDocumentController::class, 'preview']);
+    Route::get('/student/documents/{document}/download', [StudentDocumentController::class, 'download']);
     Route::get('/student/classes', [AttendanceController::class, 'getStudentClasses']);
     Route::get('/student/classes/{classId}/history', [AttendanceController::class, 'getStudentClassHistory']);
 });

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TeacherAttendanceController;
+use App\Http\Controllers\TeacherDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/teacher/attendance/qr-scan', [TeacherAttendanceController::class, 'publicScan'])->name('teacher.attendance.public-scan');
@@ -22,4 +23,9 @@ Route::middleware(['auth', 'demo.readonly', 'role:teacher'])->group(function () 
     Route::post('/teacher/attendance/{session}/check-out', [TeacherAttendanceController::class, 'checkOut'])->name('teacher.attendance.check-out');
     Route::post('/teacher/attendance/corrections', [TeacherAttendanceController::class, 'storeCorrection'])->name('teacher.attendance.corrections.store');
     Route::post('/teacher/attendance/class-change-requests', [TeacherAttendanceController::class, 'storeClassChange'])->name('teacher.attendance.class-change.store');
+
+    Route::get('/teacher/documents', [TeacherDocumentController::class, 'index'])->name('teacher.documents.index');
+    Route::get('/teacher/documents/create', [TeacherDocumentController::class, 'create'])->name('teacher.documents.create');
+    Route::post('/teacher/documents', [TeacherDocumentController::class, 'store'])->name('teacher.documents.store');
+    Route::get('/teacher/documents/{document}/download', [TeacherDocumentController::class, 'download'])->name('teacher.documents.download');
 });

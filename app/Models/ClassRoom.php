@@ -67,4 +67,9 @@ class ClassRoom extends Model
     {
         return $this->hasMany(SemesterAssignment::class, 'class_id');
     }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class, 'class_id');
+    }
 }
