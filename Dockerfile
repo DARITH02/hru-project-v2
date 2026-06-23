@@ -46,6 +46,15 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-d
 RUN npm install
 RUN npm run build
 
+# Recreate Laravel runtime directories excluded from the Docker build context.
+RUN mkdir -p \
+    /var/www/storage/framework/cache/data \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/testing \
+    /var/www/storage/framework/views \
+    /var/www/storage/logs \
+    /var/www/bootstrap/cache
+
 # Change ownership of our applications
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
