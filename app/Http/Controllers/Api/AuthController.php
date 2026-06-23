@@ -17,7 +17,12 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $user = $this->auth->attempt($request->loginIdentifier(), (string) $request->password);
+        $studentCode = $request->student_code;
+        $user = $this->auth->attempt($request->loginIdentifier(), (string) $request->password, $studentCode);
+
+        if (!$user && $studentCode && $request->role !== 'teacher') {
+            $user = $this->auth->attempt($studentCode, (string) $request->password, $studentCode);
+        }
 
         if (!$user) {
             return $this->invalidCredentialsResponse();

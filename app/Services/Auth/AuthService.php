@@ -14,7 +14,7 @@ class AuthService
     {
     }
 
-    public function attempt(string $identifier, string $password): ?User
+    public function attempt(string $identifier, string $password, ?string $studentCode = null): ?User
     {
         $user = $this->users->findByLoginIdentifier($identifier);
 
@@ -22,7 +22,7 @@ class AuthService
             return null;
         }
 
-        if ($this->credentialsAreValid($user, $password)) {
+        if ($this->credentialsAreValid($user, $password, $studentCode)) {
             return $user;
         }
 
@@ -70,17 +70,20 @@ class AuthService
         ];
     }
 
-    private function credentialsAreValid(User $user, string $password): bool
+    private function credentialsAreValid(User $user, string $password, ?string $studentCode = null): bool
     {
         if ($user->role !== 'student') {
             return Hash::check($password, $user->password);
         }
 
         $student = Student::where('user_id', $user->id)->first();
+        $providedStudentCodeMatches = $student
+            && $studentCode
+            && strcasecmp($student->student_code, trim($studentCode)) === 0;
         $allowsCodeLogin = config('auth.allow_student_code_login')
             && $student
             && strcasecmp($student->student_code, $password) === 0;
 
-        return $student && ($allowsCodeLogin || Hash::check($password, $user->password));
+        return $student && ($providedStudentCodeMatches || $allowsCodeLogin || Hash::check($password, $user->password));
     }
 }

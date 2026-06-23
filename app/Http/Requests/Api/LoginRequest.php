@@ -14,10 +14,12 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required_without_all:login,phone',
-            'login' => 'required_without_all:email,phone',
-            'phone' => 'required_without_all:email,login',
+            'email' => 'required_without_all:login,phone,student_code',
+            'login' => 'required_without_all:email,phone,student_code',
+            'phone' => 'required_without_all:email,login,student_code',
             'password' => 'required',
+            'role' => 'nullable|string|in:teacher,student',
+            'student_code' => 'nullable|string',
             'device_name' => 'nullable|string|max:255',
         ];
     }
