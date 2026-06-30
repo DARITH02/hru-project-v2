@@ -41,6 +41,14 @@ class TeacherAttendanceService
                     }
 
                     if (in_array($session->status, ['skipped', 'cancelled'], true)) {
+                        $linkedSchedule = TeacherSchedule::with('attendanceSession')
+                            ->where('source_attendance_session_id', $session->id)
+                            ->first();
+
+                        if ($linkedSchedule?->attendanceSession?->attendance_status === 'permission') {
+                            continue;
+                        }
+
                         $this->deleteScheduleForCourseSession((int) $session->id);
                         continue;
                     }
@@ -732,7 +740,7 @@ class TeacherAttendanceService
                     'approved_by' => $request->user()?->id,
                 ]);
                 if ($session->attendance_status === 'permission') {
-                    $this->moveLinkedCourseSessionToEnd($session);
+                    $this->ensurePermissionReplacementCourseSession($session, true);
                 }
                 $this->log($session, 'correction_approved', $old, $session->fresh()->toArray(), $request, $correction->reason);
                 event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'correction_approved'));
@@ -784,6 +792,48 @@ class TeacherAttendanceService
         $session->attendance_date = $start->toDateString();
         $session->scheduled_start_time = $start;
         $session->scheduled_end_time = $end;
+    }
+
+    public function ensurePermissionReplacementCourseSession(TeacherAttendanceSession $teacherSession, bool $throwOnFailure = false): bool
+    {
+        if ($teacherSession->attendance_status !== 'permission') {
+            return false;
+        }
+
+        $teacherSession->loadMissing('schedule.sourceAttendanceSession');
+
+        if (!$teacherSession->schedule?->sourceAttendanceSession) {
+            return false;
+        }
+
+        if ($this->hasPermissionReplacementCourseSession($teacherSession)) {
+            return false;
+        }
+
+        try {
+            $this->moveLinkedCourseSessionToEnd($teacherSession);
+        } catch (ValidationException $exception) {
+            if ($throwOnFailure) {
+                throw $exception;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function hasPermissionReplacementCourseSession(TeacherAttendanceSession $teacherSession): bool
+    {
+        return TeacherSchedule::query()
+            ->where('remarks', $this->permissionReplacementRemark($teacherSession))
+            ->whereNotNull('source_attendance_session_id')
+            ->exists();
+    }
+
+    private function permissionReplacementRemark(TeacherAttendanceSession $teacherSession): string
+    {
+        return 'Replacement for teacher permission session #' . $teacherSession->id;
     }
 
     private function moveLinkedCourseSessionToEnd(TeacherAttendanceSession $teacherSession): void
@@ -868,7 +918,7 @@ class TeacherAttendanceService
                 'source' => 'generated',
                 'created_by' => $sourceTeacherSession->approved_by,
                 'approved_by' => $sourceTeacherSession->approved_by,
-                'remarks' => 'Replacement for teacher permission session #' . $sourceTeacherSession->id,
+                'remarks' => $this->permissionReplacementRemark($sourceTeacherSession),
             ]
         );
 
@@ -891,6 +941,7 @@ class TeacherAttendanceService
                 'academic_year' => $replacementSession->academic_year ?? $sourceSchedule->academic_year,
                 'status' => 'scheduled',
                 'approved_by' => $sourceTeacherSession->approved_by,
+                'remarks' => $this->permissionReplacementRemark($sourceTeacherSession),
             ])->save();
         }
 

@@ -163,7 +163,7 @@
                                 @foreach($sessions as $session)
                                 <td style="padding:10px 8px; text-align:center; border-left:1px solid var(--border); vertical-align:top;">
                                     @php
-                                        $cell = $attendanceGrid[$s['id']][$session->id] ?? ['status' => 'absent'];
+                                        $cell = $attendanceGrid[$s['id']][$session->id] ?? ['status' => (($session->status ?? null) === 'scheduled' ? 'scheduled' : 'absent')];
                                         $status = is_array($cell) ? ($cell['status'] ?? 'absent') : $cell;
                                         $permissionStatus = is_array($cell) ? ($cell['permission_status'] ?? null) : null;
                                         $permissionReason = is_array($cell) ? ($cell['permission_reason'] ?? null) : null;

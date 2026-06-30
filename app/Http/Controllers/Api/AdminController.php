@@ -1025,6 +1025,7 @@ class AdminController extends Controller
         $sessions = \App\Models\AttendanceSession::where('class_id', $class->id)
             ->where('academic_year', $assignment->academic_year)
             ->where('semester', (int) $assignment->semester)
+            ->where('status', '!=', 'skipped')
             ->get();
         $totalSessions = $sessions->count();
         $attendanceScores = app(SemesterAttendanceScoreService::class);
@@ -1078,6 +1079,7 @@ class AdminController extends Controller
         $sessions = AttendanceSession::where('class_id', $assignment->class_id)
             ->where('academic_year', $assignment->academic_year)
             ->where('semester', (int) $assignment->semester)
+            ->where('status', '!=', 'skipped')
             ->get();
         $attendanceScores = app(SemesterAttendanceScoreService::class);
 
@@ -1120,6 +1122,7 @@ class AdminController extends Controller
         $sessions = AttendanceSession::where('class_id', $class->id)
             ->where('academic_year', $assignment->academic_year)
             ->where('semester', (int) $assignment->semester)
+            ->where('status', '!=', 'skipped')
             ->get();
         $totalSessions = $sessions->count();
         $attendanceScores = app(SemesterAttendanceScoreService::class);
@@ -1186,6 +1189,7 @@ class AdminController extends Controller
         $sessions = \App\Models\AttendanceSession::where('class_id', $class->id)
             ->where('academic_year', $assignment->academic_year)
             ->where('semester', (int) $assignment->semester)
+            ->where('status', '!=', 'skipped')
             ->get();
 
         $columns = ['Student ID', 'Name', 'Group', 'Attended', 'Permission', 'Total Sessions', 'Rate %', 'Score'];
@@ -1217,6 +1221,15 @@ class AdminController extends Controller
 
     public function listSessions($classId)
     {
+        $teacherAttendanceService = app(\App\Services\TeacherAttendanceService::class);
+        $teacherAttendanceService->markAutomatedStatuses();
+
+        TeacherAttendanceSession::with('schedule.sourceAttendanceSession')
+            ->where('class_id', $classId)
+            ->where('attendance_status', 'permission')
+            ->get()
+            ->each(fn (TeacherAttendanceSession $session) => $teacherAttendanceService->ensurePermissionReplacementCourseSession($session));
+
         $sessions = AttendanceSession::with(['classRoom.subject', 'classRoom.groups'])
             ->where('class_id', $classId)
             ->orderBy('start_time', 'asc')
@@ -1255,6 +1268,25 @@ class AdminController extends Controller
         $session = AttendanceSession::findOrFail($sessionId);
 
         if ($request->status === 'skipped' && $request->reschedule) {
+            $permissionTeacherSession = TeacherAttendanceSession::whereHas('schedule', function ($query) use ($session) {
+                $query->where('source_attendance_session_id', $session->id);
+            })
+                ->where('attendance_status', 'permission')
+                ->first();
+
+            if ($permissionTeacherSession) {
+                $created = app(\App\Services\TeacherAttendanceService::class)
+                    ->ensurePermissionReplacementCourseSession($permissionTeacherSession);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $created
+                        ? 'Permission session kept and replacement generated at the end of the course.'
+                        : 'Permission session already has an end-of-course replacement.',
+                    'session' => $session->fresh(),
+                ]);
+            }
+
             $nextSlot = $this->calculateNextSlotData($session);
             if ($nextSlot) {
                 $this->deleteTeacherAttendanceForCourseSession($session);
@@ -1388,6 +1420,33 @@ class AdminController extends Controller
     public function listSessionAttendance($sessionId)
     {
         $session = AttendanceSession::with('classRoom.subject')->findOrFail($sessionId);
+
+        if ($session->status === 'skipped') {
+            return response()->json([
+                'success' => true,
+                'session_name' => $session->classRoom->subject->name ?? 'N/A',
+                'present_count' => 0,
+                'excused_count' => 0,
+                'total_count' => 0,
+                'is_skipped' => true,
+                'message' => 'This session is skipped, so student attendance is not tracked.',
+                'data' => [],
+            ]);
+        }
+
+        if ($session->status === 'scheduled') {
+            return response()->json([
+                'success' => true,
+                'session_name' => $session->classRoom->subject->name ?? 'N/A',
+                'present_count' => 0,
+                'excused_count' => 0,
+                'total_count' => 0,
+                'is_scheduled' => true,
+                'message' => 'This session is scheduled, so student attendance is not tracked yet.',
+                'data' => [],
+            ]);
+        }
+
         $attendances = Attendance::where('session_id', $sessionId)->get()->keyBy('student_id');
 
         $allStudents = collect();
@@ -1753,6 +1812,7 @@ class AdminController extends Controller
             $q->where('class_groups.id', $student->group_id);
         })
             ->where('start_time', '<=', now())
+            ->whereNotIn('status', ['scheduled', 'skipped'])
             ->latest('start_time')
             ->limit(10)
             ->get();

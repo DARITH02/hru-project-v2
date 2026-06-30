@@ -3281,7 +3281,9 @@
 
                     const hasStudents = s.total_students_count > 0;
                     const pct = hasStudents ? Math.round((s.presence_count / s.total_students_count) * 100) : 0;
-                    const attendanceLabel = hasStudents
+                    const attendanceLabel = (isSkipped || s.status === 'scheduled')
+                        ? `<span style="font-weight:400; font-size:9px; color:var(--muted)">NOT TRACKED</span>`
+                        : hasStudents
                         ? `${s.presence_count} / ${s.total_students_count} <span style="font-weight:400; font-size:9px; color:var(--muted)">ARRIVED</span>`
                         : `<span style="font-weight:400; font-size:9px; color:var(--muted)">NO STUDENTS</span>`;
 
@@ -3715,6 +3717,28 @@
                 const data = await res.json();
 
                 document.getElementById('sdmTitle').textContent = data.session_name;
+
+                if (data.is_skipped) {
+                    stats.innerHTML = `
+                                    <div>
+                                        <div style="font-family:var(--font-mono); font-size:8px; color:var(--muted); text-transform:uppercase; margin-bottom:2px">SESSION STATUS</div>
+                                        <div style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--red)">SKIPPED</div>
+                                    </div>
+                                `;
+                    list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); font-family:var(--font-mono); font-size:11px">${data.message || 'This session is skipped, so student attendance is not tracked.'}</div>`;
+                    return;
+                }
+
+                if (data.is_scheduled) {
+                    stats.innerHTML = `
+                                    <div>
+                                        <div style="font-family:var(--font-mono); font-size:8px; color:var(--muted); text-transform:uppercase; margin-bottom:2px">SESSION STATUS</div>
+                                        <div style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--amber)">SCHEDULED</div>
+                                    </div>
+                                `;
+                    list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted); font-family:var(--font-mono); font-size:11px">${data.message || 'This session is scheduled, so student attendance is not tracked yet.'}</div>`;
+                    return;
+                }
 
                 stats.innerHTML = `
                                     <div>

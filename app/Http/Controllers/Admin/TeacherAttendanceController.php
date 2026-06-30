@@ -433,6 +433,15 @@ class TeacherAttendanceController extends Controller
         }
 
         $sessions = $sessionQuery->get();
+        $generatedPermissionReplacements = 0;
+
+        if ($periodType === 'semester') {
+            $generatedPermissionReplacements = $this->syncPermissionReplacementSessions($sessions);
+            if ($generatedPermissionReplacements > 0) {
+                $sessions = $sessionQuery->get();
+            }
+        }
+
         $sessions->each(function (TeacherAttendanceSession $session) {
             $session->setAttribute('report_teaching_hours', $this->reportTeachingHours($session));
         });
@@ -483,6 +492,21 @@ class TeacherAttendanceController extends Controller
             'to',
             'teacherName'
         );
+    }
+
+    private function syncPermissionReplacementSessions($sessions): int
+    {
+        $generated = 0;
+
+        $sessions
+            ->where('attendance_status', 'permission')
+            ->each(function (TeacherAttendanceSession $session) use (&$generated) {
+                if ($this->attendanceService->ensurePermissionReplacementCourseSession($session)) {
+                    $generated++;
+                }
+            });
+
+        return $generated;
     }
 
     private function groupReportSessions($sessions, string $groupBy)

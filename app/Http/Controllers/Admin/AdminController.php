@@ -1027,7 +1027,8 @@ class AdminController extends Controller
         $students = $class->all_students;
 
         // Define filters for sessions based on assignment
-        $sessionsQuery = \App\Models\AttendanceSession::where('class_id', $class->id);
+        $sessionsQuery = \App\Models\AttendanceSession::where('class_id', $class->id)
+            ->where('status', '!=', 'skipped');
         if ($assignment) {
             $sessionsQuery->where('academic_year', $assignment->academic_year)
                 ->where('semester', (int) $assignment->semester);
@@ -1130,7 +1131,7 @@ class AdminController extends Controller
                     'approved' => 'excused',
                     'pending' => 'permission_pending',
                     'rejected' => 'permission_rejected',
-                    default => 'absent',
+                    default => $session->status === 'scheduled' ? 'scheduled' : 'absent',
                 };
 
                 $studentAttendance[$session->id] = [

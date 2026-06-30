@@ -15,6 +15,7 @@ class SemesterAttendanceScoreService
 
     public function calculate(int $studentId, Collection $sessions): array
     {
+        $sessions = $sessions->reject(fn($session) => ($session->status ?? null) === 'skipped')->values();
         $sessionIds = $sessions->pluck('id')->filter()->values();
 
         if ($sessionIds->isEmpty()) {
@@ -56,8 +57,8 @@ class SemesterAttendanceScoreService
             ->pluck('id')
             ->unique();
 
-        $permissionAbsenceUnits = intdiv($permissionSessionIds->count(), 2);
-        $permissionCreditSessions = $permissionSessionIds->count() - $permissionAbsenceUnits;
+        $permissionCreditSessions = $permissionSessionIds->count() / 2;
+        $permissionAbsenceUnits = $permissionSessionIds->count() / 2;
 
         $creditedSessions = min(
             self::SEMESTER_SESSIONS,
