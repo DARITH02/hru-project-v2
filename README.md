@@ -180,6 +180,10 @@ This README is the short project presentation. For the full thesis-style descrip
 
 **[Read Full Project Documentation](docs/README.md)**
 
+For teammate presentations and technical speaking notes, use:
+
+**[Technical Presentation Guide](docs/TECHNICAL_PRESENTATION_GUIDE.md)**
+
 ## ឯកសារពេញលេញ
 
 README នេះជាការបង្ហាញគម្រោងខ្លី។ សម្រាប់អានការពិពណ៌នាគម្រោងពេញលេញបែបសារណា រួមមានគោលបំណង បញ្ហាដែលត្រូវដោះស្រាយ ដែនកំណត់ វិធីសាស្ត្រ ស្ថាបត្យកម្មប្រព័ន្ធ លំហូរការងារលម្អិតជាជំហានៗ បច្ចេកវិទ្យា ការដំឡើង កំណត់ចំណាំសុវត្ថិភាព និងឯកសារជាភាសាអង់គ្លេស/ខ្មែរ សូមចុច:

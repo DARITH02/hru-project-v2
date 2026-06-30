@@ -83,6 +83,44 @@
     {{-- ════════════════════════════════════════════
      CREATE / EDIT MODAL
 ════════════════════════════════════════════ --}}
+    <div id="teacherRegisterModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:520px">
+            <div class="modal-head">
+                <span class="modal-title">Teacher Self Registration</span>
+                <button onclick="closeModal('teacherRegisterModal')" class="modal-close">
+                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="display:grid;gap:18px">
+                <div style="display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:center">
+                    <div style="border:1px solid var(--border);border-radius:14px;background:#fff;padding:10px;display:grid;place-items:center">
+                        <img alt="Teacher registration QR" style="width:148px;height:148px"
+                            src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode($teacherRegisterUrl) }}">
+                    </div>
+                    <div>
+                        <div style="font-family:var(--font-display);font-weight:800;color:var(--text);font-size:17px;margin-bottom:6px">Scan from teacher phone</div>
+                        <div style="font-size:12px;line-height:1.6;color:var(--muted)">This signed link opens a teacher registration form. Submitted teachers stay pending and are added to the instructor system only after approval.</div>
+                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                            <a href="{{ route('admin.teacher-accounts') }}" class="btn-secondary" style="text-decoration:none;height:36px;display:inline-flex;align-items:center">Review Pending ({{ $pendingTeacherApprovals }})</a>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Registration Link</label>
+                    <textarea id="teacherRegisterLink" class="form-input" readonly
+                        style="height:86px;resize:none;font-family:var(--font-mono);font-size:11px;line-height:1.5">{{ $teacherRegisterUrl }}</textarea>
+                    <div style="font-size:10px;color:var(--muted);margin-top:7px">The link expires in 7 days. Refresh this page to generate a new signed link.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="copyTeacherRegisterLink()" class="btn-secondary">COPY LINK</button>
+                <button type="button" onclick="window.open(document.getElementById('teacherRegisterLink').value, '_blank')" class="btn-primary">OPEN FORM</button>
+            </div>
+        </div>
+    </div>
+
     <div id="instructorModal" class="modal-overlay">
         <div class="modal-box" style="max-width:520px">
             <div class="modal-head">
@@ -965,6 +1003,13 @@
                                 </svg>
                                 {{ __('admin_instructors.add_teacher') }}
                             </button>
+                            <button onclick="openModal('teacherRegisterModal')" class="teacher-add-button" style="background:linear-gradient(135deg,#0f766e,#14b8a6)">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h6v6H3zM15 5h6v6h-6zM3 17h6v2H5v2H3zM15 15h2v2h-2zM19 15h2v6h-6v-2h4zM11 5h2v16h-2z" />
+                                </svg>
+                                SELF REGISTER
+                            </button>
                         </div>
                     </div>
 
@@ -1644,6 +1689,20 @@
         });
 
         // ── Toast ──────────────────────────────────────
+        async function copyTeacherRegisterLink() {
+            const input = document.getElementById('teacherRegisterLink');
+            const link = input.value;
+            try {
+                await navigator.clipboard.writeText(link);
+                showToast('Teacher registration link copied.', 'success');
+            } catch (e) {
+                input.focus();
+                input.select();
+                document.execCommand('copy');
+                showToast('Teacher registration link copied.', 'success');
+            }
+        }
+
         function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
             const ic = document.getElementById('toastIcon');

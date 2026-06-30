@@ -67,29 +67,86 @@ class TeacherAttendanceController extends Controller
         $this->attendanceService->markAutomatedStatuses();
 
         $date = Carbon::parse($request->input('date', today()->toDateString()));
-        $sessions = TeacherAttendanceSession::with(['teacher.user', 'teacher.department', 'subject', 'classRoom', 'classGroup', 'schedule'])
+        $selectedTeacherId = $request->filled('teacher_id') ? (int) $request->teacher_id : null;
+        $eligibleTeacherIds = TeacherAttendanceSession::query()
             ->whereDate('attendance_date', $date)
-            ->where('session_number', 1)
             ->whereNotIn('attendance_status', ['cancelled', 'rescheduled', 'permission'])
-            ->orderBy('scheduled_start_time')
+            ->distinct()
+            ->pluck('teacher_id')
+            ->filter()
+            ->values();
+
+        if ($selectedTeacherId && !$eligibleTeacherIds->contains(fn($teacherId) => (int) $teacherId === $selectedTeacherId)) {
+            $selectedTeacherId = null;
+        }
+
+        $teachers = Teacher::with(['user', 'department'])
+            ->whereIn('id', $eligibleTeacherIds)
+            ->orderBy(
+                \App\Models\User::select('name')
+                    ->whereColumn('users.id', 'teachers.user_id')
+                    ->take(1)
+            )
             ->get();
 
+        $sessions = TeacherAttendanceSession::with(['teacher.user', 'teacher.department', 'subject', 'classRoom', 'classGroup', 'schedule'])
+            ->whereDate('attendance_date', $date)
+            ->when($selectedTeacherId, fn($query) => $query->where('teacher_id', $selectedTeacherId))
+            ->whereNotIn('attendance_status', ['cancelled', 'rescheduled', 'permission'])
+            ->orderBy('scheduled_start_time')
+            ->orderBy('session_number')
+            ->get();
+
+        $now = now();
+        $qrAvailableSessions = $sessions
+            ->filter(function (TeacherAttendanceSession $session) use ($now) {
+                if (!$session->schedule?->check_in_opens_at) {
+                    return false;
+                }
+
+                $closesAt = $session->schedule->check_out_closes_at
+                    ? Carbon::parse($session->schedule->check_out_closes_at)
+                    : Carbon::parse($session->scheduled_end_time)->addMinutes(60);
+
+                return $now->betweenIncluded(
+                    Carbon::parse($session->schedule->check_in_opens_at),
+                    $closesAt
+                );
+            })
+            ->values();
+
         $selectedSession = null;
+        $selectedUnavailableReason = null;
         if ($request->filled('session_id')) {
-            $selectedSession = $sessions->firstWhere('id', (int) $request->session_id);
+            $requestedSessionId = (int) $request->session_id;
+            $requestedSession = $sessions->firstWhere('id', $requestedSessionId);
+            $selectedSession = $qrAvailableSessions->firstWhere('id', $requestedSessionId) ?: $requestedSession;
+
+            if (!$requestedSession) {
+                $selectedSession = $qrAvailableSessions->first();
+            } elseif (!$qrAvailableSessions->contains('id', $requestedSessionId)) {
+                $selectedUnavailableReason = 'Selected session is outside the QR availability window.';
+            }
         }
-        $selectedSession ??= $sessions->first();
+        $selectedSession ??= $qrAvailableSessions->first();
+
+        $nextQrOpenAt = $sessions
+            ->filter(fn(TeacherAttendanceSession $session) => $session->schedule?->check_in_opens_at && Carbon::parse($session->schedule->check_in_opens_at)->gt($now))
+            ->sortBy(fn(TeacherAttendanceSession $session) => Carbon::parse($session->schedule->check_in_opens_at)->timestamp)
+            ->first()
+            ?->schedule
+            ?->check_in_opens_at;
 
         $qr = null;
         $teacherScanUrl = null;
-        if ($selectedSession) {
-            $qr = $this->attendanceService->generateQrToken($selectedSession, 60);
+        if ($selectedSession && !$selectedUnavailableReason) {
+            $qr = $this->attendanceService->generateQrToken($selectedSession, $this->attendanceService->qrWindowTtlSeconds($selectedSession));
             $teacherScanUrl = $this->teacherScanUrl($request, $qr['token']);
         }
 
         $scanUrlNeedsPublicHost = $teacherScanUrl && $this->usesLocalhost($teacherScanUrl);
 
-        return view('admin.teacher_attendance_scan_qr', compact('date', 'sessions', 'selectedSession', 'qr', 'teacherScanUrl', 'scanUrlNeedsPublicHost'));
+        return view('admin.teacher_attendance_scan_qr', compact('date', 'teachers', 'selectedTeacherId', 'sessions', 'selectedSession', 'qr', 'teacherScanUrl', 'scanUrlNeedsPublicHost', 'nextQrOpenAt', 'selectedUnavailableReason'));
     }
 
     public function scanMonitor(Request $request)
@@ -130,7 +187,7 @@ class TeacherAttendanceController extends Controller
 
     public function qrToken(Request $request, TeacherAttendanceSession $session)
     {
-        $qr = $this->attendanceService->generateQrToken($session, 60);
+        $qr = $this->attendanceService->generateQrToken($session, $this->attendanceService->qrWindowTtlSeconds($session));
         $teacherScanUrl = $this->teacherScanUrl($request, $qr['token']);
 
         if ($request->expectsJson()) {
@@ -347,7 +404,8 @@ class TeacherAttendanceController extends Controller
         $from = $reportDate->copy();
         $to = $reportDate->copy();
         $periodLabel = $reportDate->format('M d, Y');
-        $groupBy = in_array($request->input('group_by'), ['department', 'major'], true)
+        $allowedGroupBy = ['department', 'teacher', 'subject', 'major'];
+        $groupBy = in_array($request->input('group_by'), $allowedGroupBy, true)
             ? $request->input('group_by')
             : 'department';
 
@@ -375,6 +433,9 @@ class TeacherAttendanceController extends Controller
         }
 
         $sessions = $sessionQuery->get();
+        $sessions->each(function (TeacherAttendanceSession $session) {
+            $session->setAttribute('report_teaching_hours', $this->reportTeachingHours($session));
+        });
 
         if ($periodType === 'semester' && $sessions->isNotEmpty()) {
             $from = Carbon::parse($sessions->min('attendance_date'));
@@ -386,7 +447,7 @@ class TeacherAttendanceController extends Controller
             'completed' => $sessions->where('attendance_status', 'completed')->count(),
             'late' => $sessions->whereIn('attendance_status', ['late', 'very_late'])->count(),
             'absent' => $sessions->where('attendance_status', 'absent')->count(),
-            'teaching_hours' => round($sessions->sum('actual_teaching_hours'), 2),
+            'teaching_hours' => round($sessions->sum('report_teaching_hours'), 2),
             'attendance_percentage' => $sessions->whereNotIn('attendance_status', ['cancelled', 'rescheduled'])->count()
                 ? round(($sessions->whereIn('attendance_status', TeacherAttendanceService::VALID_PRESENT_STATUSES)->count() / $sessions->whereNotIn('attendance_status', ['cancelled', 'rescheduled'])->count()) * 100, 2)
                 : 0,
@@ -436,7 +497,7 @@ class TeacherAttendanceController extends Controller
                     'count' => $items->count(),
                     'late' => $items->whereIn('attendance_status', ['late', 'very_late'])->count(),
                     'absent' => $items->where('attendance_status', 'absent')->count(),
-                    'hours' => round($items->sum('actual_teaching_hours'), 2),
+                    'hours' => round($items->sum('report_teaching_hours'), 2),
                 ];
             })
             ->values();
@@ -450,7 +511,50 @@ class TeacherAttendanceController extends Controller
                 ?? 'No Major';
         }
 
-        return $session->teacher?->department?->name ?? 'No Department';
+        return match ($groupBy) {
+            'teacher' => $session->teacher?->user?->name ?? 'Unknown Teacher',
+            'subject' => $session->subject?->name ?? 'No Subject',
+            default => $session->teacher?->department?->name ?? 'No Department',
+        };
+    }
+
+    private function reportTeachingHours(TeacherAttendanceSession $session): float
+    {
+        if (in_array($session->attendance_status, ['absent', 'permission', 'cancelled', 'rescheduled'], true)) {
+            return 0.0;
+        }
+
+        if ((float) $session->actual_teaching_hours > 0) {
+            return round((float) $session->actual_teaching_hours, 2);
+        }
+
+        if ($session->attendance_status === 'scheduled') {
+            return $this->scheduledTeachingHours($session);
+        }
+
+        if (!$session->check_in_time || !$session->scheduled_end_time) {
+            return 0.0;
+        }
+
+        $start = Carbon::parse($session->check_in_time);
+        $end = Carbon::parse($session->scheduled_end_time);
+        $effectiveEnd = $session->check_out_time
+            ? Carbon::parse($session->check_out_time)
+            : Carbon::createFromTimestamp(min(now()->timestamp, $end->timestamp));
+
+        return round(max(0, $start->diffInMinutes($effectiveEnd)) / 60, 2);
+    }
+
+    private function scheduledTeachingHours(TeacherAttendanceSession $session): float
+    {
+        if (!$session->scheduled_start_time || !$session->scheduled_end_time) {
+            return 0.0;
+        }
+
+        $start = Carbon::parse($session->scheduled_start_time);
+        $end = Carbon::parse($session->scheduled_end_time);
+
+        return round(max(0, $start->diffInMinutes($end)) / 60, 2);
     }
 
     private function statuses(): array

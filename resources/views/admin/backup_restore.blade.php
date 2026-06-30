@@ -11,6 +11,7 @@
     $latestCloud = collect($cloudBackups)->first();
     $lastSuccess = $logs->getCollection()->firstWhere('status', 'success');
     $runningLogs = $logs->getCollection()->whereIn('status', ['pending', 'running', 'processing', 'started'])->count();
+    $googleDriveStatus = $googleDriveStatus ?? ['configured' => $googleDriveConfigured, 'missing' => [], 'message' => null, 'mode' => 'none'];
 
     $formatBytes = static function (int $bytes): string {
         if ($bytes >= 1024 * 1024 * 1024) {
@@ -597,6 +598,11 @@
         color: var(--red);
     }
 
+    .backup-action:disabled {
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
     .backup-empty {
         padding: 44px 20px;
         text-align: center;
@@ -624,6 +630,47 @@
     .backup-empty span {
         color: var(--muted);
         font-size: 12px;
+    }
+
+    .backup-setup {
+        display: grid;
+        gap: 12px;
+        margin: 14px;
+        padding: 16px;
+        border: 1px solid rgba(245, 158, 11, .28);
+        border-radius: var(--radius-md);
+        background: rgba(245, 158, 11, .08);
+    }
+
+    .backup-setup strong {
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    .backup-setup p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+    .backup-setup code {
+        display: inline-flex;
+        max-width: 100%;
+        padding: 4px 7px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        overflow-wrap: anywhere;
+    }
+
+    .backup-setup-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
     }
 
     .backup-log-panel {
@@ -851,7 +898,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M5 21h14"/></svg>
                     {{ __('admin.backup_restore.run_manual_backup') }}
                 </div>
-                <p>{{ __('admin.backup_restore.run_manual_backup_desc') }}</p>
+                <p>{{ $googleDriveConfigured ? __('admin.backup_restore.run_manual_backup_desc') : __('admin.backup_restore.run_manual_backup_local_desc') }}</p>
             </div>
             <button class="btn-primary" type="submit" id="manualBackupButton" data-loading-text="{{ __('admin.backup_restore.backup_running') }}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
@@ -940,7 +987,12 @@
                         </div>
                         <div class="backup-panel-subtitle">{{ __('admin.backup_restore.local_backups_desc') }}</div>
                     </div>
-                    <span class="backup-chip">{{ __('admin.backup_restore.files_count', ['count' => count($localBackups)]) }}</span>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                        <button type="button" class="btn-secondary backup-action" onclick="openUploadRestoreModal()">
+                            Choose ZIP & Restore
+                        </button>
+                        <span class="backup-chip">{{ __('admin.backup_restore.files_count', ['count' => count($localBackups)]) }}</span>
+                    </div>
                 </div>
                 <div class="backup-table-wrap">
                     <table class="backup-table">
@@ -960,7 +1012,15 @@
                                             <span class="backup-file__icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></span>
                                             <span>
                                                 <span class="backup-file__name" title="{{ $backup['name'] }}">{{ $backup['name'] }}</span>
-                                                <span class="backup-file__meta">{{ __('admin.backup_restore.local_archive') }}</span>
+                                                <span class="backup-file__meta">
+                                                    {{ __('admin.backup_restore.local_archive') }}
+                                                    @if(!empty($backup['database_driver']))
+                                                        · DB: {{ strtoupper($backup['database_driver']) }}
+                                                        @unless($backup['is_compatible'])
+                                                            · Not restorable on {{ strtoupper(config('database.default')) }}
+                                                        @endunless
+                                                    @endif
+                                                </span>
                                             </span>
                                         </div>
                                     </td>
@@ -969,7 +1029,9 @@
                                     <td>
                                         <div class="backup-actions">
                                             <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.download', $backup['name']) }}">{{ __('admin.backup_restore.download') }}</a>
-                                            <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] }}" data-source="local">{{ __('admin.backup_restore.restore') }}</button>
+                                            <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] }}" data-source="local" @disabled(!$backup['is_compatible']) title="{{ $backup['is_compatible'] ? '' : 'This backup is for ' . strtoupper($backup['database_driver'] ?? 'another database') . ', but this app is using ' . strtoupper(config('database.default')) }}">
+                                                {{ $backup['is_compatible'] ? __('admin.backup_restore.restore') : 'Incompatible' }}
+                                            </button>
                                             <form method="POST" action="{{ route('admin.backup-restore.local.destroy', $backup['name']) }}" onsubmit="return confirmSubmit(event, @js(__('admin.backup_restore.delete_local_confirm')))">
                                                 @csrf
                                                 @method('DELETE')
@@ -1003,58 +1065,69 @@
                         </div>
                         <div class="backup-panel-subtitle">{{ __('admin.backup_restore.google_drive_backups_desc') }}</div>
                     </div>
-                    <span class="backup-chip {{ $googleDriveConfigured ? 'is-success' : 'is-danger' }}">{{ $googleDriveConfigured ? __('admin.backup_restore.connected') : __('admin.backup_restore.not_configured') }}</span>
+                    <span class="backup-chip {{ $googleDriveConfigured ? 'is-success' : 'is-warning' }}">{{ $googleDriveConfigured ? __('admin.backup_restore.connected') : __('admin.backup_restore.not_configured') }}</span>
                 </div>
-                <div class="backup-table-wrap">
-                    <table class="backup-table">
-                        <thead>
-                            <tr>
-                                <th>{{ __('admin.backup_restore.file') }}</th>
-                                <th>{{ __('admin.backup_restore.size') }}</th>
-                                <th>{{ __('admin.backup_restore.created') }}</th>
-                                <th style="text-align:right;">{{ __('admin.backup_restore.actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($cloudBackups as $backup)
+                @if(!$googleDriveConfigured)
+                    <div class="backup-setup">
+                        <strong>{{ __('admin.backup_restore.google_drive_setup_required') }}</strong>
+                        <p>{{ __('admin.backup_restore.google_drive_setup_desc') }}</p>
+                        @if(!empty($googleDriveStatus['message']))
+                            <p>{{ $googleDriveStatus['message'] }}</p>
+                        @endif
+                        <p>{{ __('admin.backup_restore.configure_google_drive') }} {{ __('admin.backup_restore.google_drive_after_env') }} <code>docker compose exec -T app php artisan config:clear</code></p>
+                    </div>
+                @else
+                    <div class="backup-table-wrap">
+                        <table class="backup-table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <div class="backup-file">
-                                            <span class="backup-file__icon" style="background:rgba(34,197,94,.1);color:var(--green);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H8a6 6 0 1 1 1.1-11.9A7 7 0 0 1 22 11.5"/><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/></svg></span>
-                                            <span>
-                                                <span class="backup-file__name" title="{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}">{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}</span>
-                                                <span class="backup-file__meta">{{ __('admin.backup_restore.google_drive') }}</span>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>{{ isset($backup['size']) ? number_format(((int) $backup['size']) / 1024 / 1024, 2) . ' MB' : __('admin.backup_restore.not_available') }}</td>
-                                    <td>{{ isset($backup['createdTime']) ? $formatDateTime($backup['createdTime']) : __('admin.backup_restore.not_available') }}</td>
-                                    <td>
-                                        <div class="backup-actions">
-                                            <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.cloud.download', ['fileId' => $backup['id'], 'fileName' => $backup['name'] ?? __('admin.backup_restore.unknown')]) }}">{{ __('admin.backup_restore.download') }}</a>
-                                            <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}" data-source="cloud" data-file-id="{{ $backup['id'] }}">{{ __('admin.backup_restore.restore') }}</button>
-                                            <form method="POST" action="{{ route('admin.backup-restore.cloud.destroy', $backup['id']) }}" onsubmit="return confirmSubmit(event, @js(__('admin.backup_restore.delete_google_drive_confirm')))">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn-secondary backup-action is-delete" type="submit">{{ __('admin.backup_restore.delete') }}</button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                    <th>{{ __('admin.backup_restore.file') }}</th>
+                                    <th>{{ __('admin.backup_restore.size') }}</th>
+                                    <th>{{ __('admin.backup_restore.created') }}</th>
+                                    <th style="text-align:right;">{{ __('admin.backup_restore.actions') }}</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="backup-empty">
-                                            <span class="backup-empty__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H8a6 6 0 1 1 1.1-11.9A7 7 0 0 1 22 11.5"/><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/></svg></span>
-                                            <strong>{{ __('admin.backup_restore.no_google_drive_backups_found') }}</strong>
-                                            <span>{{ $googleDriveConfigured ? __('admin.backup_restore.cloud_backups_after_upload') : __('admin.backup_restore.configure_google_drive') }}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @forelse($cloudBackups as $backup)
+                                    <tr>
+                                        <td>
+                                            <div class="backup-file">
+                                                <span class="backup-file__icon" style="background:rgba(34,197,94,.1);color:var(--green);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H8a6 6 0 1 1 1.1-11.9A7 7 0 0 1 22 11.5"/><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/></svg></span>
+                                                <span>
+                                                    <span class="backup-file__name" title="{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}">{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}</span>
+                                                    <span class="backup-file__meta">{{ __('admin.backup_restore.google_drive') }}</span>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>{{ isset($backup['size']) ? number_format(((int) $backup['size']) / 1024 / 1024, 2) . ' MB' : __('admin.backup_restore.not_available') }}</td>
+                                        <td>{{ isset($backup['createdTime']) ? $formatDateTime($backup['createdTime']) : __('admin.backup_restore.not_available') }}</td>
+                                        <td>
+                                            <div class="backup-actions">
+                                                <a class="btn-secondary backup-action" href="{{ route('admin.backup-restore.cloud.download', ['fileId' => $backup['id'], 'fileName' => $backup['name'] ?? __('admin.backup_restore.unknown')]) }}">{{ __('admin.backup_restore.download') }}</a>
+                                                <button class="btn-secondary backup-action is-restore js-restore-backup" type="button" data-file-name="{{ $backup['name'] ?? __('admin.backup_restore.unknown') }}" data-source="cloud" data-file-id="{{ $backup['id'] }}">{{ __('admin.backup_restore.restore') }}</button>
+                                                <form method="POST" action="{{ route('admin.backup-restore.cloud.destroy', $backup['id']) }}" onsubmit="return confirmSubmit(event, @js(__('admin.backup_restore.delete_google_drive_confirm')))">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn-secondary backup-action is-delete" type="submit">{{ __('admin.backup_restore.delete') }}</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="backup-empty">
+                                                <span class="backup-empty__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H8a6 6 0 1 1 1.1-11.9A7 7 0 0 1 22 11.5"/><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/></svg></span>
+                                                <strong>{{ __('admin.backup_restore.no_google_drive_backups_found') }}</strong>
+                                                <span>{{ __('admin.backup_restore.cloud_backups_after_upload') }}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </section>
         </div>
 
@@ -1092,6 +1165,39 @@
             </div>
             <div style="padding:12px 16px;border-top:1px solid var(--border);">{{ $logs->links() }}</div>
         </aside>
+    </div>
+</div>
+
+<div id="uploadRestoreModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:520px;">
+        <div class="modal-head">
+            <span class="modal-title">Choose Backup File</span>
+            <button type="button" onclick="closeUploadRestoreModal()" class="modal-close">×</button>
+        </div>
+        <form method="POST" action="{{ route('admin.backup-restore.restore.upload') }}" enctype="multipart/form-data" id="uploadRestoreForm">
+            @csrf
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;">
+                <div class="backup-modal-warning">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:var(--radius-md);background:rgba(239,68,68,.12);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    </span>
+                    <div>{{ __('admin.backup_restore.restore_warning') }}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Backup ZIP file</label>
+                    <input class="form-input" type="file" name="backup_file" accept=".zip,application/zip" required>
+                    <p style="margin:7px 0 0;color:var(--muted);font-family:var(--font-mono);font-size:9px;">Select a valid HRU-ATMS backup ZIP. It will be copied into local backups before restore starts.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ __('admin.backup_restore.confirm_super_admin_password') }}</label>
+                    <input class="form-input" type="password" name="password" required autocomplete="current-password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeUploadRestoreModal()" class="btn-secondary">{{ __('admin.backup_restore.cancel') }}</button>
+                <button type="submit" class="btn-primary" style="background:var(--red);border:none;">Upload & Restore</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1143,6 +1249,18 @@
     const backupScheduleLocale = @json(str_replace('_', '-', $locale));
     const backupTodayLabel = @json(__('admin.backup_restore.today'));
     const backupTomorrowLabel = @json(__('admin.backup_restore.tomorrow'));
+
+    function openUploadRestoreModal() {
+        const modal = document.getElementById('uploadRestoreModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeUploadRestoreModal() {
+        const modal = document.getElementById('uploadRestoreModal');
+        const form = document.getElementById('uploadRestoreForm');
+        if (modal) modal.style.display = 'none';
+        if (form) form.reset();
+    }
 
     if (manualBackupForm && manualBackupButton) {
         manualBackupForm.addEventListener('submit', () => {

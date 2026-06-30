@@ -94,7 +94,7 @@
                 <span class="breadcrumb-current">PERMISSIONS</span>
             </div>
             <h1 class="page-title">Student Permissions</h1>
-            <p class="page-subtitle">EXCUSED ABSENCES &amp; OFFICIAL LEAVES</p>
+            <p class="page-subtitle">EXCUSED ABSENCES &amp; OFFICIAL LEAVES · 2 APPROVED PERMISSIONS = 1 ABSENCE</p>
         </div>
         <button onclick="openModal('permissionModal')" class="btn-primary" style="gap:7px;">
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,6 +111,11 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-md);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:var(--red);font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.08em;">
+            {{ session('error') }}
         </div>
     @endif
 
@@ -136,6 +141,18 @@
                 </form>
             </div>
 
+            <form action="" method="GET" style="display:flex;align-items:center;gap:8px;">
+                @if(request('search'))
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                @endif
+                <select name="status" class="form-input" onchange="this.form.submit()" style="height:36px;min-width:150px;font-size:11px;">
+                    <option value="">All Statuses</option>
+                    @foreach(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'expired' => 'Expired'] as $value => $label)
+                        <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </form>
+
             <div class="toolbar-count">
                 <span>{{ $permissions->total() ?? $permissions->count() }}</span> RECORDS
             </div>
@@ -149,6 +166,7 @@
                         <th>STUDENT</th>
                         <th>PERMISSION TYPE</th>
                         <th>DURATION</th>
+                        <th>STATUS</th>
                         <th>REASON</th>
                         <th>ISSUED BY</th>
                         <th style="text-align:right;">ACTIONS</th>
@@ -178,6 +196,16 @@
                             $end    = \Carbon\Carbon::parse($p->end_date);
                             $days   = $start->diffInDays($end) + 1;
                             $isActive = $end->isFuture() || $end->isToday();
+                            $status = $p->status ?? 'approved';
+                            $statusColors = [
+                                'pending' => ['bg'=>'rgba(245,158,11,.1)', 'color'=>'var(--amber)', 'border'=>'rgba(245,158,11,.25)'],
+                                'approved' => ['bg'=>'rgba(34,197,94,.1)', 'color'=>'var(--green)', 'border'=>'rgba(34,197,94,.25)'],
+                                'rejected' => ['bg'=>'rgba(239,68,68,.1)', 'color'=>'var(--red)', 'border'=>'rgba(239,68,68,.25)'],
+                                'expired' => ['bg'=>'rgba(100,116,139,.1)', 'color'=>'var(--muted)', 'border'=>'rgba(100,116,139,.25)'],
+                            ];
+                            $sc = $statusColors[$status] ?? $statusColors['approved'];
+                            $studentName = optional(optional($p->student)->user)->name ?? 'Unknown Student';
+                            $studentCode = optional($p->student)->student_code ?? 'NO CODE';
                         @endphp
                         <tr class="fade-up">
                             {{-- Student --}}
@@ -185,12 +213,12 @@
                                 <div class="subject-cell">
                                     <div class="subject-avatar"
                                         style="background:{{ $clr }}22;color:{{ $clr }};border:1px solid {{ $clr }}44;font-size:10px;width:36px;height:36px;border-radius:50%;">
-                                        {{ strtoupper(substr($p->student->user->name, 0, 2)) }}
+                                        {{ strtoupper(substr($studentName, 0, 2)) }}
                                     </div>
                                     <div>
-                                        <div class="subject-name">{{ $p->student->user->name }}</div>
+                                        <div class="subject-name">{{ $studentName }}</div>
                                         <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.05em;">
-                                            {{ $p->student->student_code }}
+                                            {{ $studentCode }}
                                         </div>
                                     </div>
                                 </div>
@@ -219,6 +247,15 @@
                                 </div>
                             </td>
 
+                            <td>
+                                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.08em;background:{{ $sc['bg'] }};color:{{ $sc['color'] }};border:1px solid {{ $sc['border'] }};">
+                                    {{ strtoupper($status) }}
+                                </span>
+                                @if($status === 'pending' && $p->expires_at)
+                                    <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:5px;">EXPIRES {{ $p->expires_at->format('M d, Y') }}</div>
+                                @endif
+                            </td>
+
                             {{-- Reason --}}
                             <td style="max-width:220px;">
                                 <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $p->reason }}">
@@ -229,12 +266,30 @@
                             {{-- Issued By --}}
                             <td>
                                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.05em;">
-                                    {{ $p->createdBy->name ?? 'SYSTEM' }}
+                                    {{ optional(optional($p->requestedByTeacher)->user)->name ?? optional($p->createdBy)->name ?? 'SYSTEM' }}
                                 </span>
                             </td>
 
                             {{-- Actions --}}
                             <td style="text-align:right;">
+                                @if(($p->status ?? 'approved') === 'pending')
+                                    <form action="{{ route('admin.permissions.approve', $p->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="action-btn" style="color:var(--green);background:rgba(34,197,94,.08)" title="Approve Permission">
+                                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('admin.permissions.reject', $p->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="action-btn btn-del" title="Reject Permission">
+                                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
                                 <form action="{{ route('admin.permissions.destroy', $p->id) }}" method="POST"
                                     style="display:inline;"
                                     onsubmit="return confirmSubmit(event, @js('Revoke this permission? The student\'s absence will become unexcused.'))">
@@ -250,7 +305,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state">
                                     <div class="empty-icon">
                                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">

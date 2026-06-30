@@ -55,6 +55,7 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     'teacher_qr_public_url' => env('TEACHER_QR_PUBLIC_URL'),
+    'student_qr_public_url' => env('STUDENT_QR_PUBLIC_URL'),
 
     /*
     |--------------------------------------------------------------------------

@@ -1,7 +1,7 @@
-FROM php:8.3-fpm
+FROM php:8.3-fpm-bookworm
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get -o Acquire::Check-Date=false update && apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -11,8 +11,6 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nginx \
-    nodejs \
-    npm \
     gettext-base \
     libpq-dev \
     postgresql-client
@@ -21,10 +19,19 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip opcache
+RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Use a current Node runtime for Vite/Tailwind builds.
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
 
 # Set working directory
 WORKDIR /var/www
@@ -59,8 +66,8 @@ RUN mkdir -p \
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Expose port
-EXPOSE 80
+# Expose the internal Nginx port configured by start.sh.
+EXPOSE 8080
 
 # Configure an entrypoint script
 COPY start.sh /start.sh

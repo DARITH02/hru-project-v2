@@ -320,6 +320,12 @@
                                 stroke-width="1.3" />
                         </svg></span><span class="nav-text">{{ __('admin.nav.accounts') }}</span></a>
                 @if (Auth::user()->isSuperAdmin())
+                    <a href="{{ route('admin.profile.edit') }}" data-tooltip="Profile"
+                        class="nav-link {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}"><span
+                            class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                                <circle cx="8" cy="5.5" r="3" stroke="currentColor" stroke-width="1.3" />
+                                <path d="M2.5 14c.6-2.9 2.6-4.5 5.5-4.5s4.9 1.6 5.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            </svg></span><span class="nav-text">Profile</span></a>
                     <a href="{{ route('admin.settings') }}" data-tooltip="{{ __('admin.nav.settings') }}"
                         class="nav-link {{ request()->is('admin/settings') ? 'active' : '' }}"><span
                             class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -915,7 +921,7 @@
         let globalLastActivityId = 0;
         async function fetchInitialActivity() {
             try {
-                const res = await fetch('/api/admin/global-activity?limit=1', {
+                const res = await fetch('/api/admin/global-activity?limit=10', {
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -932,7 +938,7 @@
         async function checkGlobalActivity() {
             if (!"{{ Auth::user()->isAdmin() }}") return;
             try {
-                const res = await fetch(`/api/admin/global-activity?last_id=${globalLastActivityId}`, {
+                const res = await fetch(`/api/admin/global-activity?last_id=${globalLastActivityId}&limit=10`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrf
@@ -976,18 +982,32 @@
             let avatarColor = 'var(--accent)';
             let statusDot = '';
 
-            if (act.type === 'active_session') {
-                avatarBg = 'rgba(16, 185, 129, 0.15)'; // Green
+            if (act.type === 'active_session' || act.type === 'teacher_active') {
+                avatarBg = 'rgba(16, 185, 129, 0.15)';
                 avatarBorder = 'rgba(16, 185, 129, 0.3)';
                 avatarColor = '#10b981';
                 statusDot =
                     `<span style="position:absolute; bottom:0; right:0; width:8px; height:8px; background:#10b981; border-radius:50%; border:1.5px solid var(--surface2); box-shadow: 0 0 5px #10b981; animation: pulse-green 1s infinite alternate;"></span>`;
-            } else if (act.type === 'new_admin') {
-                avatarBg = 'rgba(245, 158, 11, 0.15)'; // Amber
+            } else if (act.type === 'new_admin' || act.type === 'teacher_request' || act.type === 'permission_request') {
+                avatarBg = 'rgba(245, 158, 11, 0.15)';
                 avatarBorder = 'rgba(245, 158, 11, 0.3)';
                 avatarColor = '#f59e0b';
                 statusDot =
                     `<span style="position:absolute; bottom:0; right:0; width:8px; height:8px; background:#f59e0b; border-radius:50%; border:1.5px solid var(--surface2); box-shadow: 0 0 5px #f59e0b; animation: pulse-amber 1s infinite alternate;"></span>`;
+            } else if (act.type === 'teacher_review' || act.type === 'permission_review') {
+                avatarBg = 'rgba(59, 130, 246, 0.14)';
+                avatarBorder = 'rgba(59, 130, 246, 0.3)';
+                avatarColor = '#3b82f6';
+            } else if (act.type === 'attendance') {
+                avatarBg = 'rgba(20, 184, 166, 0.14)';
+                avatarBorder = 'rgba(20, 184, 166, 0.3)';
+                avatarColor = '#14b8a6';
+            } else if (act.type === 'system_alert') {
+                avatarBg = 'rgba(239, 68, 68, 0.14)';
+                avatarBorder = 'rgba(239, 68, 68, 0.3)';
+                avatarColor = '#ef4444';
+                statusDot =
+                    `<span style="position:absolute; bottom:0; right:0; width:8px; height:8px; background:#ef4444; border-radius:50%; border:1.5px solid var(--surface2); box-shadow: 0 0 5px #ef4444; animation: pulse-red 1s infinite alternate;"></span>`;
             }
 
             item.innerHTML = `
@@ -997,7 +1017,7 @@
                 </div>
                 <div style="flex:1">
                     <div style="font-size:11px; font-weight:700; color:var(--text); line-height:1.3">${escapeHTML(act.name)}</div>
-                    <div style="font-size:9px; color:var(--muted2); margin-top:2px">${escapeHTML(act.subject)} · ${act.time}</div>
+                    <div style="font-size:9px; color:var(--muted2); margin-top:2px">${escapeHTML(act.subject)} &middot; ${act.time}</div>
                 </div>
             `;
             list.prepend(item);

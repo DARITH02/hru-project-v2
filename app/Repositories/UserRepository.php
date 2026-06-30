@@ -10,9 +10,11 @@ class UserRepository
 {
     public function findByLoginIdentifier(string $identifier): ?User
     {
+        $identifier = trim($identifier);
+        $normalizedIdentifier = mb_strtolower($identifier);
         $phoneCandidates = $this->phoneLoginCandidates($identifier);
 
-        return User::where('email', $identifier)
+        return User::whereRaw('LOWER(email) = ?', [$normalizedIdentifier])
             ->orWhere('phone', $identifier)
             ->when($phoneCandidates !== [], function ($query) use ($phoneCandidates) {
                 $query->orWhereIn($this->normalizedPhoneColumn(), $phoneCandidates);

@@ -7,6 +7,8 @@ use App\Models\TeacherAttendanceSession;
 use App\Models\TeacherClassChangeRequest;
 use App\Models\TeacherSchedule;
 use App\Models\Teacher;
+use App\Models\Student;
+use App\Models\StudentPermission;
 use App\Services\TeacherAttendanceService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Carbon\Carbon;
@@ -52,11 +54,16 @@ class TeacherAttendanceController extends Controller
 
         $pendingCorrections = TeacherAttendanceCorrection::where('teacher_id', $teacher->id)->where('status', 'pending')->count();
         $pendingChanges = TeacherClassChangeRequest::where('teacher_id', $teacher->id)->where('status', 'pending')->count();
+        $pendingPermissionRequests = StudentPermission::withoutGlobalScope('approved')
+            ->where('requested_by_teacher_id', $teacher->id)
+            ->where('status', 'pending')
+            ->count();
+        $permissionStudents = $this->studentsForTeacher($teacher);
 
         $monthStart = now()->startOfMonth();
         $percentage = $this->attendanceService->teacherAttendancePercentage($teacher, $monthStart, now());
 
-        return view('teacher.attendance', compact('todaySessions', 'upcoming', 'history', 'pendingCorrections', 'pendingChanges', 'percentage'));
+        return view('teacher.attendance', compact('todaySessions', 'upcoming', 'history', 'pendingCorrections', 'pendingChanges', 'pendingPermissionRequests', 'permissionStudents', 'percentage'));
     }
 
     public function scan(Request $request)
@@ -96,7 +103,6 @@ class TeacherAttendanceController extends Controller
         $data = $request->validate([
             'token' => 'required|string',
             'attendance_action' => 'required|in:check_in,check_out',
-            'teacher_identifier' => 'required|string|max:120',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'accuracy' => 'nullable|numeric',
@@ -105,23 +111,21 @@ class TeacherAttendanceController extends Controller
             'longitude.required' => 'Phone location is required. Allow location access and try again.',
         ]);
 
-        $teacher = $this->resolveTeacherCode($data['teacher_identifier']);
+        $qr = $this->attendanceService->findQrToken($data['token']);
+        $teacher = $qr?->attendanceSession?->teacher;
 
         if (!$teacher) {
             return back()
-                ->withInput()
-                ->withErrors(['teacher_identifier' => 'Teacher code was not found.']);
+                ->withErrors(['token' => 'The QR code teacher could not be found. Ask the admin to refresh the QR code.']);
         }
 
         try {
             $session = $this->attendanceService->qrSubmit($data['token'], $teacher, $data['attendance_action'], $request);
         } catch (AuthorizationException $e) {
             return back()
-                ->withInput()
-                ->withErrors(['teacher_identifier' => 'This QR code is not assigned to that teacher.']);
+                ->withErrors(['token' => 'This QR code is not assigned to that teacher.']);
         } catch (ValidationException $e) {
             return back()
-                ->withInput()
                 ->withErrors($e->errors());
         }
 
@@ -247,10 +251,60 @@ class TeacherAttendanceController extends Controller
         return back()->with('success', 'Class change request submitted.');
     }
 
+    public function storeStudentPermissionRequest(Request $request)
+    {
+        $teacher = $request->user()?->teacher;
+        abort_unless($teacher, 404);
+
+        $data = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'type' => 'required|in:sick,event,personal,official',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $allowedStudentIds = $this->studentsForTeacher($teacher)->pluck('id')->all();
+        abort_unless(in_array((int) $data['student_id'], $allowedStudentIds, true), 403);
+
+        StudentPermission::withoutGlobalScope('approved')->create($data + [
+            'status' => 'pending',
+            'requested_by' => $request->user()->id,
+            'requested_by_teacher_id' => $teacher->id,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return back()->with('success', 'Student permission request submitted. It must be approved by admin within 7 days or the student remains absent.');
+    }
+
     private function authorizeTeacherSession(Request $request, TeacherAttendanceSession $session): void
     {
         $teacher = $request->user()?->teacher;
         abort_unless($teacher && $session->teacher_id === $teacher->id, 403);
+    }
+
+    private function studentsForTeacher(Teacher $teacher)
+    {
+        $classes = $teacher->classes()->with('groups')->get();
+        $groupIds = $classes
+            ->flatMap(fn ($class) => $class->groups->pluck('id')->push($class->group_id))
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($groupIds->isEmpty()) {
+            return collect();
+        }
+
+        return Student::with(['user', 'group'])
+            ->whereIn('group_id', $groupIds)
+            ->orderBy(
+                \App\Models\User::select('name')
+                    ->whereColumn('users.id', 'students.user_id')
+                    ->take(1)
+            )
+            ->get();
     }
 
     private function resolveTeacherCode(string $identifier): ?Teacher

@@ -294,11 +294,36 @@
                     <div class="sample-card-head">
                         <div>
                             <h3 class="sample-card-title">{{ __('admin.dashboard.activity_feed') }}</h3>
+                            <p class="sample-card-subtitle">Live system events and requests</p>
                         </div>
+                        <span class="sample-live-chip"><i></i>Live</span>
                     </div>
                     <div class="sample-activity-list">
                         @foreach($activityFeed as $activity)
-                            <div class="sample-activity-item">
+                            @php
+                                $rawTitle = (string) ($activity['title'] ?? '');
+                                $parts = preg_split('/\s+(?:—|â€”|-)\s+/', $rawTitle, 2);
+                                $rawAction = $parts[0] ?? 'System';
+                                $rawTarget = $parts[1] ?? (string) ($activity['detail'] ?? $activity['meta'] ?? '');
+                                $category = $activity['category'] ?? ucwords(strtolower(str_replace('_', ' ', $rawAction)));
+                                $cleanDetail = trim(preg_replace('/\s+/', ' ', str_replace(['_', '.'], [' ', ' · '], preg_replace('/#/', ' #', $rawTarget))));
+                                $cleanTitle = $activity['title'] ?? 'System event';
+
+                                if (str_contains($rawTarget, 'student_permission#')) {
+                                    $cleanTitle = 'Permission assigned';
+                                    $category = 'Permission';
+                                } elseif (str_contains($rawTarget, '.move_to_end')) {
+                                    $cleanTitle = 'Session moved to end';
+                                    $category = 'Schedule';
+                                } elseif (str_contains($rawTarget, 'catalog.classes#')) {
+                                    $cleanTitle = 'Class catalog updated';
+                                    $category = 'Class';
+                                } elseif (str_contains($rawTarget, 'students.bulk_import')) {
+                                    $cleanTitle = 'Students imported';
+                                    $category = 'Students';
+                                }
+                            @endphp
+                            <div class="sample-activity-item sample-activity-item--{{ $activity['accent'] }}">
                                 <div class="sample-activity-icon tone-{{ $activity['accent'] }}">
                                     @switch($activity['accent'])
                                         @case('emerald')
@@ -338,8 +363,18 @@
                                     @endswitch
                                 </div>
                                 <div class="sample-activity-body">
-                                    <div class="sample-activity-item__title">{{ $activity['title'] }}</div>
-                                    <div class="sample-activity-item__meta">{{ $activity['meta'] }}</div>
+                                    <div class="sample-activity-row">
+                                        <span class="sample-activity-chip tone-{{ $activity['accent'] }}">{{ $category }}</span>
+                                        @if(!empty($activity['status']))
+                                            <span class="sample-activity-status">{{ $activity['status'] }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="sample-activity-item__title">{{ $cleanTitle }}</div>
+                                    <div class="sample-activity-item__detail">{{ $cleanDetail ?: ($activity['detail'] ?? $activity['meta']) }}</div>
+                                    <div class="sample-activity-item__meta">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                        {{ $activity['time'] ?? $activity['meta'] }}
+                                    </div>
                                 </div>
                             </div>
                         @endforeach

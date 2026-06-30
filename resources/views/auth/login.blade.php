@@ -402,6 +402,18 @@
             background: rgba(37, 99, 235, .1);
         }
 
+        .password-help {
+            margin: -5px 0 16px;
+            text-align: right;
+            font-size: 12px;
+        }
+
+        .password-help a {
+            color: var(--login-primary-2);
+            font-weight: 800;
+            text-decoration: none;
+        }
+
         @media (max-width: 900px) {
             body {
                 background:
@@ -583,6 +595,10 @@
                                 </button>
                             </div>
                             <div class="hint" id="hint-password">{{ __('auth.password_required') }}</div>
+                        </div>
+
+                        <div class="password-help">
+                            <a href="{{ route('password.request') }}">{{ __('auth.forgot_password_link') }}</a>
                         </div>
 
                         <button type="submit" class="submit-btn">{{ __('auth.sign_in') }}</button>

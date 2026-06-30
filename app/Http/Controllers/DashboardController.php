@@ -453,8 +453,60 @@ class DashboardController extends Controller
 
     public function studentScan($sessionId)
     {
-        $session = AttendanceSession::with('classRoom.subject')->findOrFail($sessionId);
-        return view('student_scan', compact('session'));
+        $session = AttendanceSession::with(['classRoom.subject', 'classRoom.groups', 'attendanceRecords'])->findOrFail($sessionId);
+        $students = $session->classRoom?->all_students ?? collect();
+
+        if (method_exists($students, 'load')) {
+            $students->load(['user', 'group']);
+        }
+
+        $students = collect($students)
+            ->filter(fn ($student) => $student->status !== 'blacklisted')
+            ->sortBy(fn ($student) => $student->user->name ?? $student->student_code)
+            ->values();
+        $attendanceByStudent = $session->attendanceRecords->keyBy('student_id');
+        $qrToken = request('token');
+
+        return view('student_scan', compact('session', 'students', 'attendanceByStudent', 'qrToken'));
+    }
+
+    public function verifyAttendance(Request $request)
+    {
+        $data = $request->validate([
+            'session_id'   => 'required|integer|exists:attendance_sessions,id',
+            'student_id'   => 'required_without:student_code|nullable|integer|exists:students,id',
+            'student_code' => 'required_without:student_id|nullable|string',
+            'qr_token'     => 'required|string',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
+            'accuracy'     => 'nullable|numeric',
+        ]);
+
+        try {
+            if (!empty($data['student_id'])) {
+                $this->attendanceService->processCheckinByStudentId(
+                    $data['session_id'],
+                    $data['student_id'],
+                    $data['qr_token'],
+                    $data['latitude'] ?? null,
+                    $data['longitude'] ?? null,
+                    $data['accuracy'] ?? null
+                );
+            } else {
+                $this->attendanceService->processCheckin(
+                    $data['session_id'],
+                    $data['student_code'],
+                    $data['qr_token'],
+                    $data['latitude'] ?? null,
+                    $data['longitude'] ?? null,
+                    $data['accuracy'] ?? null
+                );
+            }
+
+            return back()->with('success', 'Attendance verified.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function teacherReports(Request $request)

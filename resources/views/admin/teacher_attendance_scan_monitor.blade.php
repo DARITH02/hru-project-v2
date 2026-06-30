@@ -23,6 +23,8 @@
                 <option value="all">{{ __('admin_teacher_scan_monitor.all_departments') }}</option>
             </select>
             <input id="monitorSearch" type="text" placeholder="{{ __('admin_teacher_scan_monitor.search_placeholder') }}">
+            <button id="monitorCompact" type="button">Compact</button>
+            <button id="monitorFullscreen" type="button">Full Screen</button>
             <button id="monitorRefresh" type="button"><span id="monitorRefreshIcon">↻</span>{{ __('admin_teacher_scan_monitor.refresh') }}</button>
         </div>
     </header>
@@ -36,6 +38,10 @@
     </section>
 
     <section class="teacher-monitor-grid">
+        <article class="teacher-monitor-panel all">
+            <header><span>All Teachers</span><strong id="countAll">0</strong></header>
+            <div class="teacher-monitor-list teacher-monitor-list-all" id="listAll"></div>
+        </article>
         <article class="teacher-monitor-panel present">
             <header><span>{{ __('admin_teacher_scan_monitor.present') }}</span><strong id="countPresent">0</strong></header>
             <div class="teacher-monitor-list" id="listPresent"></div>
@@ -85,6 +91,9 @@
 @push('styles')
 <style>
     .teacher-monitor{min-height:calc(100vh - 80px);background:var(--bg);color:var(--text);padding:24px;display:flex;flex-direction:column;gap:18px;font-family:var(--font-sans)}
+    .teacher-monitor.is-fullscreen{position:fixed;inset:0;z-index:3000;min-height:100vh;overflow:auto;padding:18px;background:var(--bg)}
+    .teacher-monitor.is-compact .teacher-monitor-stats,.teacher-monitor.is-compact .teacher-monitor-footer{display:none}
+    .teacher-monitor.is-compact .teacher-monitor-panel{min-height:220px}
     .teacher-monitor-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
     .teacher-monitor-title{display:flex;align-items:center;gap:10px}
     .teacher-monitor-title h1{margin:0;color:var(--text);font-size:22px;font-weight:800;letter-spacing:0}
@@ -108,11 +117,14 @@
     .teacher-monitor-stats em{display:block;margin-top:5px;color:var(--muted2);font-size:11px;font-style:normal}
     .teacher-monitor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .teacher-monitor-panel{border-radius:12px;overflow:hidden;min-height:280px;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
-    .teacher-monitor-panel.present{border-top:3px solid var(--green)}.teacher-monitor-panel.late{border-top:3px solid var(--amber)}.teacher-monitor-panel.absent{border-top:3px solid var(--red)}.teacher-monitor-panel.permission{border-top:3px solid var(--violet)}
+    .teacher-monitor-panel.all{grid-column:1/-1;border-top:3px solid var(--accent);min-height:260px}.teacher-monitor-panel.present{border-top:3px solid var(--green)}.teacher-monitor-panel.late{border-top:3px solid var(--amber)}.teacher-monitor-panel.absent{border-top:3px solid var(--red)}.teacher-monitor-panel.permission{border-top:3px solid var(--violet)}
     .teacher-monitor-panel header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
-    .teacher-monitor-panel header span{font-size:14px;font-weight:800}.teacher-monitor-panel.present header span{color:var(--green)}.teacher-monitor-panel.late header span{color:var(--amber)}.teacher-monitor-panel.absent header span{color:var(--red)}.teacher-monitor-panel.permission header span{color:var(--violet)}
+    .teacher-monitor-panel header span{font-size:14px;font-weight:800}.teacher-monitor-panel.all header span{color:var(--accent)}.teacher-monitor-panel.present header span{color:var(--green)}.teacher-monitor-panel.late header span{color:var(--amber)}.teacher-monitor-panel.absent header span{color:var(--red)}.teacher-monitor-panel.permission header span{color:var(--violet)}
     .teacher-monitor-panel header strong{min-width:28px;text-align:center;border-radius:999px;padding:2px 8px;font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--text)}
     .teacher-monitor-list{padding:12px;display:grid;gap:8px;max-height:360px;overflow:auto}
+    .teacher-monitor-list-all{grid-template-columns:repeat(2,minmax(0,1fr));max-height:430px}
+    .teacher-monitor.is-fullscreen .teacher-monitor-list-all{max-height:calc(100vh - 360px)}
+    .teacher-monitor.is-compact .teacher-monitor-list-all{max-height:calc(100vh - 260px)}
     .monitor-card{display:flex;align-items:center;gap:11px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:10px;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
     .monitor-card:hover{background:var(--surface2);border-color:var(--border2);transform:translateY(-1px)}
     .monitor-card.is-new{animation:monitorFlash 1.3s ease}
@@ -126,7 +138,7 @@
     .teacher-monitor-modal-card>button{position:absolute;right:12px;top:10px;border:0;background:transparent;color:var(--muted);font-size:26px;cursor:pointer}.teacher-monitor-modal-card>button:hover{color:var(--text)}
     .teacher-monitor-modal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}.teacher-monitor-modal-head div:first-child{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:900}.teacher-monitor-modal-head h2{margin:0;color:var(--text);font-size:17px}.teacher-monitor-modal-head p{margin:3px 0 0;color:var(--muted);font-size:12px}.teacher-monitor-modal-head span{margin-left:auto;border-radius:8px;padding:5px 9px;font-size:11px;font-weight:900;text-transform:uppercase}
     .teacher-monitor-modal-card dl{display:grid;gap:0;margin:0}.teacher-monitor-modal-card dl div{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding:10px 0}.teacher-monitor-modal-card dt{color:var(--muted);font-size:12px}.teacher-monitor-modal-card dd{margin:0;text-align:right;color:var(--text2);font-size:12px;font-family:var(--font-mono)}
-    @keyframes monitorPulse{0%,100%{opacity:1}50%{opacity:.28}}@keyframes monitorSpin{to{transform:rotate(360deg)}}@keyframes monitorFlash{0%{box-shadow:0 0 0 0 rgba(59,130,246,.8)}100%{box-shadow:0 0 0 12px rgba(59,130,246,0)}}@media(max-width:1100px){.teacher-monitor-stats{grid-template-columns:repeat(3,1fr)}.teacher-monitor-grid{grid-template-columns:1fr}}@media(max-width:700px){.teacher-monitor{padding:14px}.teacher-monitor-stats{grid-template-columns:repeat(2,1fr)}.teacher-monitor-controls{width:100%}.teacher-monitor-controls input,.teacher-monitor-controls select{flex:1;min-width:135px}.teacher-monitor-title h1{font-size:18px}}
+    @keyframes monitorPulse{0%,100%{opacity:1}50%{opacity:.28}}@keyframes monitorSpin{to{transform:rotate(360deg)}}@keyframes monitorFlash{0%{box-shadow:0 0 0 0 rgba(59,130,246,.8)}100%{box-shadow:0 0 0 12px rgba(59,130,246,0)}}@media(max-width:1100px){.teacher-monitor-stats{grid-template-columns:repeat(3,1fr)}.teacher-monitor-grid{grid-template-columns:1fr}.teacher-monitor-list-all{grid-template-columns:1fr}}@media(max-width:700px){.teacher-monitor{padding:14px}.teacher-monitor-stats{grid-template-columns:repeat(2,1fr)}.teacher-monitor-controls{width:100%}.teacher-monitor-controls input,.teacher-monitor-controls select{flex:1;min-width:135px}.teacher-monitor-title h1{font-size:18px}}
 </style>
 @endpush
 
@@ -136,21 +148,25 @@
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const workspace = document.querySelector('.teacher-monitor');
     const state = {
         payload: window.teacherMonitorInitial || { stats: {}, sessions: [], departments: [] },
         filtered: [],
         seen: new Set(),
-        date: document.querySelector('.teacher-monitor').dataset.date,
+        date: workspace.dataset.date,
     };
 
     const els = {
         shift: document.getElementById('monitorShift'),
         department: document.getElementById('monitorDepartment'),
         search: document.getElementById('monitorSearch'),
+        compact: document.getElementById('monitorCompact'),
+        fullscreen: document.getElementById('monitorFullscreen'),
         refresh: document.getElementById('monitorRefresh'),
         refreshIcon: document.getElementById('monitorRefreshIcon'),
         clock: document.getElementById('monitorClock'),
         lists: {
+            all: document.getElementById('listAll'),
             present: document.getElementById('listPresent'),
             late: document.getElementById('listLate'),
             absent: document.getElementById('listAbsent'),
@@ -213,8 +229,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderLists() {
+        const allItems = [...state.filtered].sort(monitorSort);
+        setText('countAll', allItems.length);
+        els.lists.all.innerHTML = allItems.length ? allItems.map(cardHtml).join('') : '<div class="monitor-empty">No teachers found</div>';
+
         ['present', 'late', 'absent', 'permission'].forEach((group) => {
-            const items = state.filtered.filter((item) => item.group === group);
+            const items = state.filtered.filter((item) => item.group === group).sort(monitorSort);
             setText(`count${group[0].toUpperCase()}${group.slice(1)}`, items.length);
             els.lists[group].innerHTML = items.length ? items.map(cardHtml).join('') : `<div class="monitor-empty">No ${group} teachers</div>`;
         });
@@ -222,6 +242,23 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-monitor-session]').forEach((card) => {
             card.addEventListener('click', () => openModal(Number(card.dataset.monitorSession)));
         });
+    }
+
+    function monitorSort(a, b) {
+        const aScanned = Number(Boolean(a.check_in_time || a.check_out_time));
+        const bScanned = Number(Boolean(b.check_in_time || b.check_out_time));
+        if (aScanned !== bScanned) return bScanned - aScanned;
+
+        const groupRank = { present: 0, late: 1, permission: 2, absent: 3 };
+        const aRank = groupRank[a.group] ?? 9;
+        const bRank = groupRank[b.group] ?? 9;
+        if (aRank !== bRank) return aRank - bRank;
+
+        const aUpdated = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const bUpdated = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        if (aUpdated !== bUpdated) return bUpdated - aUpdated;
+
+        return String(a.scheduled_start_time || '').localeCompare(String(b.scheduled_start_time || ''));
     }
 
     function cardHtml(item) {
@@ -294,9 +331,41 @@ document.addEventListener('DOMContentLoaded', function () {
         return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     }
 
+    function setFullscreenLabel() {
+        const active = document.fullscreenElement === workspace || workspace.classList.contains('is-fullscreen');
+        els.fullscreen.textContent = active ? 'Exit Full Screen' : 'Full Screen';
+    }
+
+    async function toggleFullscreen() {
+        if (document.fullscreenElement === workspace) {
+            await document.exitFullscreen();
+            workspace.classList.remove('is-fullscreen');
+        } else if (workspace.requestFullscreen) {
+            await workspace.requestFullscreen();
+            workspace.classList.add('is-fullscreen');
+        } else {
+            workspace.classList.toggle('is-fullscreen');
+        }
+        setFullscreenLabel();
+    }
+
     els.shift.addEventListener('change', applyFilters);
     els.department.addEventListener('change', applyFilters);
     els.search.addEventListener('input', applyFilters);
+    els.compact.addEventListener('click', () => {
+        workspace.classList.toggle('is-compact');
+        els.compact.textContent = workspace.classList.contains('is-compact') ? 'Expand' : 'Compact';
+    });
+    els.fullscreen.addEventListener('click', () => {
+        toggleFullscreen().catch(() => {
+            workspace.classList.toggle('is-fullscreen');
+            setFullscreenLabel();
+        });
+    });
+    document.addEventListener('fullscreenchange', () => {
+        workspace.classList.toggle('is-fullscreen', document.fullscreenElement === workspace);
+        setFullscreenLabel();
+    });
     els.refresh.addEventListener('click', loadData);
     document.getElementById('teacherMonitorModalClose').addEventListener('click', closeModal);
     document.getElementById('teacherMonitorModal').addEventListener('click', (event) => {

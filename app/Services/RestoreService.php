@@ -110,6 +110,24 @@ class RestoreService
             throw new RuntimeException('Backup zip is missing database.sql.');
         }
 
+        $manifest = $zip->getFromName('manifest.json');
+        if ($manifest !== false) {
+            try {
+                $metadata = json_decode($manifest, true, 512, JSON_THROW_ON_ERROR);
+            } catch (Throwable $e) {
+                $zip->close();
+                throw new RuntimeException('Backup manifest is not valid JSON.', previous: $e);
+            }
+
+            $backupDatabase = $metadata['database'] ?? null;
+            $currentDatabase = DB::connection()->getDriverName();
+
+            if ($backupDatabase !== null && $backupDatabase !== $currentDatabase) {
+                $zip->close();
+                throw new RuntimeException("Backup database driver [{$backupDatabase}] does not match current database driver [{$currentDatabase}].");
+            }
+        }
+
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
             if (!$name || $this->isUnsafeZipPath($name)) {

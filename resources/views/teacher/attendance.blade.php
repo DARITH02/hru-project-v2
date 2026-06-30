@@ -340,6 +340,7 @@
         <div class="teacher-metric"><span class="teacher-kicker">Upcoming</span><strong>{{ $upcoming->count() }}</strong></div>
         <div class="teacher-metric"><span class="teacher-kicker">Pending Corrections</span><strong>{{ $pendingCorrections }}</strong></div>
         <div class="teacher-metric"><span class="teacher-kicker">Pending Changes</span><strong>{{ $pendingChanges }}</strong></div>
+        <div class="teacher-metric"><span class="teacher-kicker">Pending Permissions</span><strong>{{ $pendingPermissionRequests }}</strong></div>
     </div>
 
     <section class="teacher-section">
@@ -440,6 +441,35 @@
                 <input type="text" name="requested_room_name" class="teacher-control" placeholder="Requested room">
                 <textarea name="reason" class="teacher-control" required placeholder="Reason for change"></textarea>
                 <button class="teacher-primary">Submit Request</button>
+            </form>
+        </section>
+
+        <section class="teacher-panel">
+            <h2>Student Permission</h2>
+            <form method="POST" action="{{ route('teacher.student-permissions.store') }}" class="teacher-form">
+                @csrf
+                <select name="student_id" class="teacher-control" required>
+                    <option value="">Select student</option>
+                    @if ($permissionStudents->isEmpty())
+                        <option value="" disabled>No students found in your assigned groups</option>
+                    @endif
+                    @foreach ($permissionStudents as $student)
+                        <option value="{{ $student->id }}">{{ $student->user->name ?? 'Student' }} Â· {{ $student->student_code }}{{ $student->group ? ' Â· ' . $student->group->name : '' }}</option>
+                    @endforeach
+                </select>
+                <div class="teacher-datetime-grid">
+                    <input type="date" name="start_date" value="{{ date('Y-m-d') }}" class="teacher-control" required>
+                    <input type="date" name="end_date" value="{{ date('Y-m-d') }}" class="teacher-control" required>
+                </div>
+                <select name="type" class="teacher-control" required>
+                    <option value="sick">Sick Leave</option>
+                    <option value="event">School Event</option>
+                    <option value="personal">Personal Reason</option>
+                    <option value="official">Official Duty</option>
+                </select>
+                <textarea name="reason" class="teacher-control" required placeholder="Reason for student permission"></textarea>
+                <button class="teacher-primary">Request Admin Approval</button>
+                <p class="text-xs leading-5 text-[var(--muted)]">Admin must approve within 7 days. Until approved, the student is counted absent.</p>
             </form>
         </section>
     </div>

@@ -14,6 +14,7 @@
         .session h2{margin:0;font-size:20px}.session dl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}.session dt{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800}.session dd{margin:3px 0 0;font-size:13px;font-weight:700}
         form{display:grid;gap:12px}.field{display:grid;gap:6px}.field label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.field input{height:46px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--text);padding:0 13px;font-size:16px;outline:none}.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
         .segmented{display:grid;grid-template-columns:1fr 1fr;gap:8px}.segmented label{height:46px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.segmented input{position:absolute;opacity:0;pointer-events:none}.segmented label:has(input:checked){border-color:var(--accent);background:rgba(37,99,235,.1);color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+        .action-pill{height:46px;border:1px solid rgba(37,99,235,.25);border-radius:10px;background:rgba(37,99,235,.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.action-pill.is-check-out{border-color:rgba(22,163,74,.28);background:rgba(22,163,74,.1);color:var(--green)}
         button{height:46px;border:0;border-radius:10px;background:var(--accent);color:white;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}button:disabled{opacity:.55;cursor:not-allowed}.location-btn{background:#111827}
         .error{border:1px solid rgba(220,38,38,.25);background:rgba(220,38,38,.08);color:var(--red);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700}
         .warning{border:1px solid rgba(217,119,6,.28);background:rgba(217,119,6,.08);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.45}
@@ -26,11 +27,13 @@
     @php
         $session = $qr->attendanceSession;
         $isExpired = $qr->expires_at->isPast();
+        $isSessionOne = (int) $session->session_number === 1;
+        $attendanceAction = $isSessionOne ? 'check_in' : 'check_out';
     @endphp
     <main class="scan">
         <header class="brand">
             <h1>Teacher Attendance</h1>
-            <p>Enter your teacher code to submit this QR check-in.</p>
+            <p>Tap present to submit this QR {{ $isSessionOne ? 'check-in' : 'check-out' }}.</p>
         </header>
 
         <section class="card session {{ $isExpired ? 'expired' : '' }}">
@@ -54,19 +57,15 @@
             <form method="POST" action="{{ route('teacher.attendance.public-qr-check-in') }}">
                 @csrf
                 <input type="hidden" name="token" value="{{ $token }}">
+                <input type="hidden" name="attendance_action" value="{{ $attendanceAction }}">
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
                 <input type="hidden" name="accuracy" id="accuracy">
                 <div class="field">
                     <label>Attendance Status</label>
-                    <div class="segmented">
-                        <label><input type="radio" name="attendance_action" value="check_in" @checked(old('attendance_action', 'check_in') === 'check_in')> Check In</label>
-                        <label><input type="radio" name="attendance_action" value="check_out" @checked(old('attendance_action') === 'check_out')> Check Out</label>
+                    <div class="action-pill {{ $isSessionOne ? 'is-check-in' : 'is-check-out' }}">
+                        {{ $isSessionOne ? 'Present' : 'Check Out' }}
                     </div>
-                </div>
-                <div class="field">
-                    <label for="teacher_identifier">Teacher Code</label>
-                    <input id="teacher_identifier" name="teacher_identifier" value="{{ old('teacher_identifier') }}" inputmode="text" autocomplete="username" required autofocus placeholder="Example: {{ $session->teacher->teacher_code ?? 'TCH-123456' }}">
                 </div>
                 @if($requireLocation)
                     <div id="locationStatus" class="location">Tap Enable Location to verify this phone.</div>
@@ -74,11 +73,18 @@
                 @else
                     <div class="location">Location tracking is disabled in system settings.</div>
                 @endif
-                <button id="submitAttendance" type="submit" @disabled($requireLocation)>Submit Attendance</button>
+                <button id="submitAttendance" type="submit" @disabled($requireLocation)>{{ $isSessionOne ? 'Mark Present' : 'Submit Check Out' }}</button>
             </form>
         @endif
 
-        <p class="help">Check in on session 1 to auto check in later same-subject sessions. Choose check-out when session 2 or the latest open session ends. @if($requireLocation) Check-out must use the same location as check-in. @endif</p>
+        <p class="help">
+            @if($isSessionOne)
+                Session 1 QR is for check-in. Later same-subject sessions are checked in automatically.
+            @else
+                Session {{ $session->session_number }} QR is for check-out of this session.
+            @endif
+            @if($requireLocation) Check-out must use the same location as check-in. @endif
+        </p>
     </main>
     <script>
         const requireLocation = @json($requireLocation);

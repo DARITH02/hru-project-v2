@@ -51,6 +51,9 @@ class AttendanceService
 
         // 4. Validate Student via Groups
         $groupIds = $session->classRoom->groups->pluck('id');
+        if ($groupIds->isEmpty() && $session->classRoom->group_id) {
+            $groupIds = collect([$session->classRoom->group_id]);
+        }
         $student = Student::where('student_code', $studentCode)
             ->whereIn('group_id', $groupIds)
             ->first();
@@ -87,6 +90,65 @@ class AttendanceService
         if ($latitude && $longitude) {
             \App\Models\UserLocation::create([
                 'user_id'    => null, // Student is anonymous via code usually, or we can find user if linked
+                'latitude'   => $latitude,
+                'longitude'  => $longitude,
+                'accuracy'   => $accuracy,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->header('User-Agent'),
+            ]);
+        }
+
+        return $attendance;
+    }
+
+    public function processCheckinByStudentId($sessionId, $studentId, $qrToken = null, $latitude = null, $longitude = null, $accuracy = null)
+    {
+        $session = AttendanceSession::with('classRoom.groups')->findOrFail($sessionId);
+
+        $this->validateCheckinWindow($session);
+
+        if (!$qrToken || $qrToken !== $session->qr_token) {
+            throw new Exception("Invalid or expired QR token. Please scan the latest code on the teacher's screen.");
+        }
+
+        $this->validateLocation($latitude, $longitude, $accuracy);
+
+        $groupIds = $session->classRoom?->groups?->pluck('id') ?? collect();
+        if ($groupIds->isEmpty() && $session->classRoom?->group_id) {
+            $groupIds = collect([$session->classRoom->group_id]);
+        }
+        $student = Student::where('id', $studentId)
+            ->whereIn('group_id', $groupIds)
+            ->first();
+
+        if (!$student) {
+            throw new Exception("This student is not enrolled in this class.");
+        }
+
+        $existing = Attendance::where('student_id', $student->id)
+            ->where('session_id', $session->id)
+            ->first();
+
+        if ($existing && in_array($existing->status, ['present', 'late'])) {
+            throw new Exception("Attendance already recorded.");
+        }
+
+        $graceMinutes = \App\Models\Setting::get('grace_period', 15);
+        $start = Carbon::parse($session->start_time);
+        $status = now()->gt($start->addMinutes($graceMinutes)) ? 'late' : 'present';
+
+        $attendance = Attendance::updateOrCreate(
+            ['student_id' => $student->id, 'session_id' => $session->id],
+            [
+                'status'    => $status,
+                'method'    => 'qr',
+                'scan_time' => now()
+            ]
+        );
+
+        if ($latitude && $longitude) {
+            \App\Models\UserLocation::create([
+                'user_id'    => $student->user_id,
                 'latitude'   => $latitude,
                 'longitude'  => $longitude,
                 'accuracy'   => $accuracy,

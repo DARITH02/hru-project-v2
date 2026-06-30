@@ -30,7 +30,7 @@ class SecurityHeadersMiddleware
                 "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; "
                 . "img-src 'self' data: blob: https:; font-src 'self' data: https:; "
                 . "style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https:; "
-                . "connect-src 'self' https: wss:;"
+                . "connect-src 'self' http: https: ws: wss:;"
             );
         }
 

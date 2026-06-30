@@ -288,6 +288,29 @@ class AdminController extends Controller
         $endDate = SemesterAssignment::computeEndDate($request->start_date);
 
         $sessionsTarget = $request->sessions_count ?? 30;
+        $proposedSchedule = $class->schedule;
+        if ($request->time_start && $request->time_end) {
+            $daysPart = $request->schedule_days ?? 'Mon-Fri';
+            $slots = ["{$request->time_start}-{$request->time_end}"];
+            if ($request->time_start2 && $request->time_end2) {
+                $slots[] = "{$request->time_start2}-{$request->time_end2}";
+            }
+            $proposedSchedule = "$daysPart (" . implode(', ', $slots) . ")";
+        }
+
+        if ($conflict = $this->findTeacherScheduleConflict((int) $class->teacher_id, $proposedSchedule, (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->teacherScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
+        if ($conflict = $this->findClassScheduleConflict($proposedSchedule, $class->room_number, $this->classGroupIds($class), (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->classScheduleConflictMessage($conflict),
+            ], 422);
+        }
 
         DB::beginTransaction();
         try {
@@ -406,6 +429,169 @@ class AdminController extends Controller
         return [$allowedDays, $timeSlots];
     }
 
+    private function findTeacherScheduleConflict(?int $teacherId, ?string $schedule, ?int $excludeClassId = null): ?ClassRoom
+    {
+        if (!$teacherId || !$schedule) {
+            return null;
+        }
+
+        [$days, $timeSlots] = $this->parseSchedule($schedule);
+        if (empty($days) || empty($timeSlots)) {
+            return null;
+        }
+
+        $classes = ClassRoom::with(['subject', 'groups'])
+            ->where('teacher_id', $teacherId)
+            ->whereNotNull('schedule')
+            ->where(fn ($query) => $query->whereNull('status')->orWhere('status', '!=', 'archived'))
+            ->when($excludeClassId, fn ($query) => $query->where('id', '!=', $excludeClassId))
+            ->get();
+
+        foreach ($classes as $class) {
+            [$existingDays, $existingSlots] = $this->parseSchedule($class->schedule);
+            if (empty(array_intersect($days, $existingDays))) {
+                continue;
+            }
+
+            foreach ($timeSlots as $slot) {
+                foreach ($existingSlots as $existingSlot) {
+                    if ($this->timeSlotsOverlap($slot, $existingSlot)) {
+                        return $class;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function findClassScheduleConflict(?string $schedule, ?string $roomNumber = null, array $groupIds = [], ?int $excludeClassId = null): ?array
+    {
+        if (!$schedule) {
+            return null;
+        }
+
+        [$days, $timeSlots] = $this->parseSchedule($schedule);
+        if (empty($days) || empty($timeSlots)) {
+            return null;
+        }
+
+        $roomNumber = trim((string) $roomNumber);
+        $groupIds = collect($groupIds)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($roomNumber === '' && empty($groupIds)) {
+            return null;
+        }
+
+        $classes = ClassRoom::with(['subject', 'groups'])
+            ->whereNotNull('schedule')
+            ->where(fn ($query) => $query->whereNull('status')->orWhere('status', '!=', 'archived'))
+            ->when($excludeClassId, fn ($query) => $query->where('id', '!=', $excludeClassId))
+            ->get();
+
+        foreach ($classes as $class) {
+            [$existingDays, $existingSlots] = $this->parseSchedule($class->schedule);
+            if (empty(array_intersect($days, $existingDays))) {
+                continue;
+            }
+
+            $hasOverlappingTime = false;
+            foreach ($timeSlots as $slot) {
+                foreach ($existingSlots as $existingSlot) {
+                    if ($this->timeSlotsOverlap($slot, $existingSlot)) {
+                        $hasOverlappingTime = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$hasOverlappingTime) {
+                continue;
+            }
+
+            if ($roomNumber !== '' && strcasecmp(trim((string) $class->room_number), $roomNumber) === 0) {
+                return ['type' => 'room', 'class' => $class];
+            }
+
+            $existingGroupIds = $this->classGroupIds($class);
+            if (!empty($groupIds) && !empty(array_intersect($groupIds, $existingGroupIds))) {
+                return ['type' => 'group', 'class' => $class];
+            }
+        }
+
+        return null;
+    }
+
+    private function classGroupIds(ClassRoom $class): array
+    {
+        $class->loadMissing('groups');
+        $groupIds = $class->groups->pluck('id')->all();
+
+        if ($class->group_id) {
+            $groupIds[] = (int) $class->group_id;
+        }
+
+        return collect($groupIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function timeSlotsOverlap(array $slot, array $existingSlot): bool
+    {
+        $start = $this->minutesFromTime($slot['start'] ?? null);
+        $end = $this->minutesFromTime($slot['end'] ?? null);
+        $existingStart = $this->minutesFromTime($existingSlot['start'] ?? null);
+        $existingEnd = $this->minutesFromTime($existingSlot['end'] ?? null);
+
+        if ($start === null || $end === null || $existingStart === null || $existingEnd === null) {
+            return false;
+        }
+
+        return $start < $existingEnd && $end > $existingStart;
+    }
+
+    private function minutesFromTime(?string $time): ?int
+    {
+        if (!$time || !preg_match('/^(\d{1,2}):(\d{2})/', $time, $matches)) {
+            return null;
+        }
+
+        return ((int) $matches[1] * 60) + (int) $matches[2];
+    }
+
+    private function teacherScheduleConflictMessage(ClassRoom $class): string
+    {
+        $subject = $class->subject->name ?? "Class #{$class->id}";
+        $groups = $class->groups->pluck('name')->filter()->join(', ');
+        $groupText = $groups ? " for {$groups}" : '';
+
+        return "This teacher is already assigned to {$subject}{$groupText} at {$class->schedule}. Choose another teacher, day, or time.";
+    }
+
+    private function classScheduleConflictMessage(array $conflict): string
+    {
+        /** @var ClassRoom $class */
+        $class = $conflict['class'];
+        $subject = $class->subject->name ?? "Class #{$class->id}";
+        $room = $class->room_number ? " in {$class->room_number}" : '';
+        $groups = $class->groups->pluck('name')->filter()->join(', ');
+        $groupText = $groups ? " for {$groups}" : '';
+
+        if ($conflict['type'] === 'room') {
+            return "Room {$class->room_number} is already used by {$subject}{$groupText} at {$class->schedule}. Choose another room, day, or time.";
+        }
+
+        return "This class group is already assigned to {$subject}{$room} at {$class->schedule}. Choose another group, day, or time.";
+    }
+
     private function generateAcademicSessions($class, $year, $semester, $startDate, $targetCount, $holidayStart = null, $holidayEnd = null)
     {
         list($allowedDays, $timeSlots) = $this->parseSchedule($class->schedule);
@@ -413,11 +599,12 @@ class AdminController extends Controller
             return 0;
 
         // 3. Clear existing scheduled (future) sessions
-        \App\Models\AttendanceSession::where('class_id', $class->id)
+        $scheduledSessionIds = \App\Models\AttendanceSession::where('class_id', $class->id)
             ->where('academic_year', $year)
             ->where('semester', (int) $semester)
             ->where('status', 'scheduled')
-            ->delete();
+            ->pluck('id');
+        $this->deleteCourseSessionsWithTeacherAttendance($scheduledSessionIds);
 
         $currentDate = $startDate->copy();
         $created = 0;
@@ -471,10 +658,11 @@ class AdminController extends Controller
         DB::beginTransaction();
         try {
             // Purge all generated sessions for this class and semester
-            \App\Models\AttendanceSession::where('class_id', $assignment->class_id)
+            $sessionIds = \App\Models\AttendanceSession::where('class_id', $assignment->class_id)
                 ->where('academic_year', $assignment->academic_year)
                 ->where('semester', (int) $assignment->semester)
-                ->delete();
+                ->pluck('id');
+            $this->deleteCourseSessionsWithTeacherAttendance($sessionIds);
 
             $assignment->delete();
             DB::commit();
@@ -491,6 +679,22 @@ class AdminController extends Controller
         if ($request->has('schedule_days') && $request->has('time_start')) {
             $data['schedule'] = $request->schedule_days . ' (' . $request->time_start . '-' . $request->time_end . ')';
         }
+
+        if ($conflict = $this->findTeacherScheduleConflict((int) ($data['teacher_id'] ?? 0), $data['schedule'] ?? null)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->teacherScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
+        $groupIds = $request->input('group_ids', $request->input('group_id') ? [$request->input('group_id')] : []);
+        if ($conflict = $this->findClassScheduleConflict($data['schedule'] ?? null, $data['room_number'] ?? null, (array) $groupIds)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->classScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
         $class = ClassRoom::create($data);
         if ($request->has('group_ids')) {
             $class->groups()->sync($request->group_ids);
@@ -505,6 +709,26 @@ class AdminController extends Controller
         if ($request->has('schedule_days') && $request->has('time_start')) {
             $data['schedule'] = $request->schedule_days . ' (' . $request->time_start . '-' . $request->time_end . ')';
         }
+
+        $teacherId = (int) ($data['teacher_id'] ?? $class->teacher_id);
+        $schedule = $data['schedule'] ?? $class->schedule;
+        if ($conflict = $this->findTeacherScheduleConflict($teacherId, $schedule, (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->teacherScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
+        $groupIds = $request->has('group_ids')
+            ? $request->input('group_ids', [])
+            : $this->classGroupIds($class);
+        if ($conflict = $this->findClassScheduleConflict($schedule, $data['room_number'] ?? $class->room_number, (array) $groupIds, (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->classScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
         $class->update($data);
         if ($request->has('group_ids')) {
             $class->groups()->sync($request->group_ids);
@@ -644,7 +868,7 @@ class AdminController extends Controller
             $this->sendTelegramSummary($class, $assignment);
 
             // 5. Permanently remove all sessions associated with this class (Clean Up)
-            \App\Models\AttendanceSession::where('class_id', $classId)->delete();
+            $this->deleteClassDependencies((int) $classId);
 
             // 6. Update Class status to archived after completion
             $class->update(['status' => 'archived']);
@@ -708,11 +932,64 @@ class AdminController extends Controller
             'teacher_schedules' => $teacherScheduleIds->count(),
         ];
 
-        (clone $teacherAttendanceQuery)->delete();
-        TeacherSchedule::whereIn('id', $teacherScheduleIds)->delete();
+        $this->deleteTeacherAttendanceForSchedules($teacherScheduleIds);
         AttendanceSession::where('class_id', $classId)->delete();
 
         return $deleted;
+    }
+
+    private function deleteCourseSessionsWithTeacherAttendance($sessionIds): array
+    {
+        $sessionIds = collect($sessionIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($sessionIds->isEmpty()) {
+            return [
+                'student_attendance_sessions' => 0,
+                'teacher_attendance_sessions' => 0,
+                'teacher_schedules' => 0,
+            ];
+        }
+
+        $teacherScheduleIds = TeacherSchedule::whereIn('source_attendance_session_id', $sessionIds)->pluck('id');
+
+        $deleted = [
+            'student_attendance_sessions' => AttendanceSession::whereIn('id', $sessionIds)->count(),
+            'teacher_attendance_sessions' => $teacherScheduleIds->isEmpty()
+                ? 0
+                : TeacherAttendanceSession::whereIn('schedule_id', $teacherScheduleIds)->count(),
+            'teacher_schedules' => $teacherScheduleIds->count(),
+        ];
+
+        $this->deleteTeacherAttendanceForSchedules($teacherScheduleIds);
+        AttendanceSession::whereIn('id', $sessionIds)->delete();
+
+        return $deleted;
+    }
+
+    private function deleteTeacherAttendanceForSchedules($scheduleIds): void
+    {
+        $scheduleIds = collect($scheduleIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($scheduleIds->isEmpty()) {
+            return;
+        }
+
+        TeacherAttendanceSession::whereIn('schedule_id', $scheduleIds)->delete();
+        TeacherSchedule::whereIn('id', $scheduleIds)->delete();
+    }
+
+    private function deleteTeacherAttendanceForCourseSession(AttendanceSession $session): void
+    {
+        $scheduleIds = TeacherSchedule::where('source_attendance_session_id', $session->id)->pluck('id');
+        $this->deleteTeacherAttendanceForSchedules($scheduleIds);
     }
 
     public function updateSemesterScore(Request $request, $assignmentId)
@@ -770,6 +1047,7 @@ class AdminController extends Controller
                 'att_score' => $attendanceResult['score'],
                 'attended' => $attendanceResult['attended_sessions'],
                 'permission_sessions' => $attendanceResult['permission_sessions'],
+                'permission_absence_units' => $attendanceResult['permission_absence_units'],
                 'midterm' => $midterm,
                 'assignment' => $asgn,
                 'final' => $final,
@@ -863,6 +1141,7 @@ class AdminController extends Controller
                 'rate' => $attendanceResult['rate'],
                 'att_score' => $attendanceResult['score'],
                 'permission_sessions' => $attendanceResult['permission_sessions'],
+                'permission_absence_units' => $attendanceResult['permission_absence_units'],
                 'midterm' => $midterm,
                 'assignment' => $assignment_score,
                 'final' => $final,
@@ -959,7 +1238,7 @@ class AdminController extends Controller
                     'code' => $subject->code ?? 'N/A',
                 ],
                 'presence_count' => Attendance::where('session_id', $s->id)->whereIn('status', ['present', 'late', 'PRESENT', 'LATE'])->count(),
-                'total_students_count' => $class ? Student::whereIn('group_id', $class->groups->pluck('id'))->count() : 0,
+                'total_students_count' => $class ? $class->all_students->count() : 0,
             ];
         });
 
@@ -978,6 +1257,7 @@ class AdminController extends Controller
         if ($request->status === 'skipped' && $request->reschedule) {
             $nextSlot = $this->calculateNextSlotData($session);
             if ($nextSlot) {
+                $this->deleteTeacherAttendanceForCourseSession($session);
                 $session->update([
                     'start_time' => $nextSlot['start_time'],
                     'end_time' => $nextSlot['end_time'],
@@ -985,6 +1265,7 @@ class AdminController extends Controller
                     'checkin_close_time' => $nextSlot['checkin_close_time'],
                     'status' => 'scheduled' // Re-schedule it to the end
                 ]);
+                app(\App\Services\TeacherAttendanceService::class)->syncFromStudentAttendanceSessions($request->user()?->id);
 
                 ActivityLog::create([
                     'action' => 'UPDATE',
@@ -998,6 +1279,9 @@ class AdminController extends Controller
         }
 
         $session->update(['status' => $request->status]);
+        if ($request->status === 'skipped') {
+            $this->deleteTeacherAttendanceForCourseSession($session);
+        }
 
         ActivityLog::create([
             'action' => 'UPDATE',
@@ -1169,6 +1453,7 @@ class AdminController extends Controller
         $session = AttendanceSession::findOrFail($sessionId);
 
         $data = $request->only(['start_time', 'end_time', 'status']);
+        $this->deleteTeacherAttendanceForCourseSession($session);
 
         // Auto-update checkin windows based on new start_time
         $sTime = \Carbon\Carbon::parse($request->start_time);
@@ -1176,6 +1461,7 @@ class AdminController extends Controller
         $data['checkin_close_time'] = $sTime->copy()->addMinutes(20);
 
         $session->update($data);
+        app(\App\Services\TeacherAttendanceService::class)->syncFromStudentAttendanceSessions($request->user()?->id);
 
         ActivityLog::create([
             'action' => 'UPDATE',
@@ -1209,6 +1495,7 @@ class AdminController extends Controller
             if ($request->reschedule) {
                 $nextSlot = $this->calculateNextSlotData($session);
                 if ($nextSlot) {
+                    $this->deleteTeacherAttendanceForCourseSession($session);
                     $session->update([
                         'start_time' => $nextSlot['start_time'],
                         'end_time' => $nextSlot['end_time'],
@@ -1225,6 +1512,7 @@ class AdminController extends Controller
                 }
             } else {
                 $session->update(['status' => 'skipped']);
+                $this->deleteTeacherAttendanceForCourseSession($session);
                 $affected++;
 
                 ActivityLog::create([
@@ -1232,6 +1520,10 @@ class AdminController extends Controller
                     'target' => "session#{$session->id}.status_skipped"
                 ]);
             }
+        }
+
+        if ($affected > 0 && $request->reschedule) {
+            app(\App\Services\TeacherAttendanceService::class)->syncFromStudentAttendanceSessions($request->user()?->id);
         }
 
         if ($affected > 0) {
@@ -1285,6 +1577,7 @@ class AdminController extends Controller
                     $newStart = $fs->start_time->addWeek();
                     $newEnd = $fs->end_time->addWeek();
 
+                    $this->deleteTeacherAttendanceForCourseSession($fs);
                     $fs->update([
                         'start_time' => $newStart,
                         'end_time' => $newEnd,
@@ -1293,6 +1586,8 @@ class AdminController extends Controller
                     ]);
                 }
             }
+
+            app(\App\Services\TeacherAttendanceService::class)->syncFromStudentAttendanceSessions($request->user()?->id);
 
             \DB::commit();
             return response()->json(['success' => true, 'message' => 'Today\'s sessions shifted to next week successfully.']);
@@ -2096,10 +2391,11 @@ class AdminController extends Controller
                 $class->update(['academic_year' => $year, 'semester' => $semester]);
 
                 // Clear existing sessions for this class and semester to avoid duplicates
-                \App\Models\AttendanceSession::where('class_id', $class->id)
+                $sessionIds = \App\Models\AttendanceSession::where('class_id', $class->id)
                     ->where('semester', $semester)
                     ->where('academic_year', $year)
-                    ->delete();
+                    ->pluck('id');
+                $this->deleteCourseSessionsWithTeacherAttendance($sessionIds);
 
                 // Generate N sessions using the unified generator
                 $sessionsCreated = $this->generateAcademicSessions(
@@ -2158,6 +2454,32 @@ class AdminController extends Controller
         $endDate = $startDate->copy()->addMonths(4);
         $holidayStart = $request->holiday_start ? \Carbon\Carbon::parse($request->holiday_start) : null;
         $holidayEnd = $holidayStart ? $holidayStart->copy()->addWeeks(3) : null;
+
+        $proposedSchedule = $class->schedule;
+        if ($request->time_start && $request->time_end) {
+            $daysPart = 'Mon/Wed/Fri';
+            if ($class->schedule) {
+                $parts = explode(' ', $class->schedule);
+                if ($parts[0]) {
+                    $daysPart = $parts[0];
+                }
+            }
+            $proposedSchedule = "$daysPart ($request->time_start-$request->time_end)";
+        }
+
+        if ($conflict = $this->findTeacherScheduleConflict((int) $class->teacher_id, $proposedSchedule, (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->teacherScheduleConflictMessage($conflict),
+            ], 422);
+        }
+
+        if ($conflict = $this->findClassScheduleConflict($proposedSchedule, $class->room_number, $this->classGroupIds($class), (int) $class->id)) {
+            return response()->json([
+                'success' => false,
+                'error' => $this->classScheduleConflictMessage($conflict),
+            ], 422);
+        }
 
         // Determine status
         $now = now();
@@ -2298,10 +2620,11 @@ class AdminController extends Controller
         DB::beginTransaction();
         try {
             // Purge all generated sessions for this class and semester
-            \App\Models\AttendanceSession::where('class_id', $assignment->class_id)
+            $sessionIds = \App\Models\AttendanceSession::where('class_id', $assignment->class_id)
                 ->where('academic_year', $assignment->academic_year)
                 ->where('semester', (int) $assignment->semester)
-                ->delete();
+                ->pluck('id');
+            $this->deleteCourseSessionsWithTeacherAttendance($sessionIds);
 
             $assignment->delete();
             DB::commit();
@@ -2350,26 +2673,30 @@ class AdminController extends Controller
     public function getGlobalActivity(Request $request)
     {
         try {
+            $limit = min(max((int) $request->query('limit', 10), 1), 30);
+            $lastId = (int) $request->query('last_id', 0);
             $activity = collect();
 
-            // 1. Fetch currently active class sessions
+            // 1. Currently active class sessions.
             $activeSessions = \App\Models\AttendanceSession::where('status', 'active')
                 ->with('classRoom.subject')
                 ->get()
                 ->map(function ($session) {
+                    $time = $session->updated_at ?? $session->start_time ?? now();
+
                     return [
-                        "id" => 1000000 + $session->id,
+                        "id" => $this->activityId($time, 10, $session->id),
                         "action" => "ACTIVE",
                         "target" => "Session " . ($session->classRoom->subject->name ?? 'Class') . " is active",
                         "name" => "Active Class",
                         "subject" => ($session->classRoom->subject->name ?? 'Class') . " in progress",
-                        "time" => $session->start_time ? \Carbon\Carbon::parse($session->start_time)->format("h:i A") : "Now",
+                        "time" => $this->activityTime($time),
                         "type" => "active_session"
                     ];
                 });
             $activity = $activity->merge($activeSessions);
 
-            // 2. Fetch new admin registrations (super_admin only)
+            // 2. New admin registrations (super_admin only).
             if ($request->user() && ($request->user()->role === 'super_admin' || $request->user()->isSuperAdmin())) {
                 $pendingAdmins = \App\Models\User::where('role', 'admin')
                     ->where('is_approved', false)
@@ -2377,59 +2704,216 @@ class AdminController extends Controller
                     ->get()
                     ->map(function ($u) {
                         return [
-                            "id" => 2000000 + $u->id,
+                            "id" => $this->activityId($u->created_at, 20, $u->id),
                             "action" => "REGISTERED",
                             "target" => "New admin " . $u->name . " registered",
                             "name" => "Admin Register",
                             "subject" => $u->name . " is pending approval",
-                            "time" => $u->created_at ? $u->created_at->format("h:i A") : "Just now",
+                            "time" => $this->activityTime($u->created_at),
                             "type" => "new_admin"
                         ];
                     });
                 $activity = $activity->merge($pendingAdmins);
             }
 
-            // 3. Fetch recent system activity logs
-            $logs = ActivityLog::orderBy("id", "desc")->limit(10)->get()->map(function ($log) {
+            // 3. Teacher account requests and approval changes.
+            if (\Illuminate\Support\Facades\Schema::hasTable('teacher_registration_requests')) {
+                $teacherRequests = \App\Models\TeacherRegistrationRequest::with(['user', 'department', 'approvedBy'])
+                    ->orderByDesc('updated_at')
+                    ->limit(20)
+                    ->get()
+                    ->map(function ($teacherRequest) {
+                        $time = $teacherRequest->approved_at ?? $teacherRequest->updated_at ?? $teacherRequest->created_at;
+                        $teacherName = $teacherRequest->user?->name ?? 'Teacher';
+                        $status = strtoupper((string) $teacherRequest->status);
+
+                        return [
+                            "id" => $this->activityId($time, 30, $teacherRequest->id),
+                            "action" => "TEACHER_" . $status,
+                            "target" => "{$teacherName} teacher request {$teacherRequest->status}",
+                            "name" => "Teacher {$status}",
+                            "subject" => "{$teacherName} · " . ($teacherRequest->department?->name ?? 'No department'),
+                            "time" => $this->activityTime($time),
+                            "type" => $teacherRequest->status === 'pending' ? "teacher_request" : "teacher_review"
+                        ];
+                    });
+                $activity = $activity->merge($teacherRequests);
+            }
+
+            // 4. Teacher active/inactive account status changes.
+            $teacherStatusEvents = \App\Models\Teacher::with(['user', 'department'])
+                ->orderByDesc('updated_at')
+                ->limit(10)
+                ->get()
+                ->map(function ($teacher) {
+                    $time = $teacher->updated_at ?? $teacher->created_at;
+                    $status = strtoupper((string) $teacher->status);
+                    $teacherName = $teacher->user?->name ?? 'Teacher';
+
+                    return [
+                        "id" => $this->activityId($time, 35, $teacher->id),
+                        "action" => "TEACHER_STATUS_" . $status,
+                        "target" => "{$teacherName} is {$teacher->status}",
+                        "name" => "Teacher {$status}",
+                        "subject" => "{$teacherName} · " . ($teacher->department?->name ?? 'No department'),
+                        "time" => $this->activityTime($time),
+                        "type" => $teacher->status === 'active' ? "teacher_active" : "teacher_review"
+                    ];
+                });
+            $activity = $activity->merge($teacherStatusEvents);
+
+            // 5. Student permission requests and review changes.
+            if (\Illuminate\Support\Facades\Schema::hasTable('student_permissions')) {
+                $permissionRequests = \App\Models\StudentPermission::withoutGlobalScopes()
+                    ->with(['student.user', 'requestedByTeacher.user', 'attendanceSession.classRoom.subject'])
+                    ->orderByDesc('updated_at')
+                    ->limit(20)
+                    ->get()
+                    ->map(function ($permission) {
+                        $time = $permission->reviewed_at ?? $permission->approved_at ?? $permission->updated_at ?? $permission->created_at;
+                        $studentName = $permission->student?->user?->name ?? 'Student';
+                        $subject = $permission->attendanceSession?->classRoom?->subject?->name;
+                        $requestedBy = $permission->requestedByTeacher?->user?->name;
+                        $status = strtoupper((string) $permission->status);
+
+                        return [
+                            "id" => $this->activityId($time, 40, $permission->id),
+                            "action" => "PERMISSION_" . $status,
+                            "target" => "{$studentName} permission {$permission->status}",
+                            "name" => "Permission {$status}",
+                            "subject" => trim($studentName . ($subject ? " · {$subject}" : '') . ($requestedBy ? " · by {$requestedBy}" : '')),
+                            "time" => $this->activityTime($time),
+                            "type" => $permission->status === 'pending' ? "permission_request" : "permission_review"
+                        ];
+                    });
+                $activity = $activity->merge($permissionRequests);
+            }
+
+            // 6. Teacher class-change and attendance-correction requests.
+            if (\Illuminate\Support\Facades\Schema::hasTable('teacher_class_change_requests')) {
+                $classChangeRequests = \App\Models\TeacherClassChangeRequest::with(['teacher.user', 'schedule.subject'])
+                    ->orderByDesc('updated_at')
+                    ->limit(20)
+                    ->get()
+                    ->map(function ($changeRequest) {
+                        $time = $changeRequest->reviewed_at ?? $changeRequest->updated_at ?? $changeRequest->created_at;
+                        $teacherName = $changeRequest->teacher?->user?->name ?? 'Teacher';
+                        $status = strtoupper((string) $changeRequest->status);
+
+                        return [
+                            "id" => $this->activityId($time, 50, $changeRequest->id),
+                            "action" => "CLASS_CHANGE_" . $status,
+                            "target" => "{$teacherName} class change {$changeRequest->status}",
+                            "name" => "Class Change {$status}",
+                            "subject" => "{$teacherName} · " . ($changeRequest->schedule?->subject?->name ?? $changeRequest->request_type),
+                            "time" => $this->activityTime($time),
+                            "type" => $changeRequest->status === 'pending' ? "teacher_request" : "teacher_review"
+                        ];
+                    });
+                $activity = $activity->merge($classChangeRequests);
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('teacher_attendance_corrections')) {
+                $correctionRequests = \App\Models\TeacherAttendanceCorrection::with(['teacher.user', 'schedule.subject'])
+                    ->orderByDesc('updated_at')
+                    ->limit(20)
+                    ->get()
+                    ->map(function ($correction) {
+                        $time = $correction->reviewed_at ?? $correction->updated_at ?? $correction->created_at;
+                        $teacherName = $correction->teacher?->user?->name ?? 'Teacher';
+                        $status = strtoupper((string) $correction->status);
+
+                        return [
+                            "id" => $this->activityId($time, 60, $correction->id),
+                            "action" => "ATTENDANCE_CORRECTION_" . $status,
+                            "target" => "{$teacherName} attendance correction {$correction->status}",
+                            "name" => "Correction {$status}",
+                            "subject" => "{$teacherName} · " . ($correction->schedule?->subject?->name ?? $correction->request_type),
+                            "time" => $this->activityTime($time),
+                            "type" => $correction->status === 'pending' ? "teacher_request" : "teacher_review"
+                        ];
+                    });
+                $activity = $activity->merge($correctionRequests);
+            }
+
+            // 7. Backup/restore operational events.
+            if (\Illuminate\Support\Facades\Schema::hasTable('backup_restore_logs')) {
+                $backupLogs = \App\Models\BackupRestoreLog::orderByDesc('id')
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($backupLog) {
+                        $time = $backupLog->completed_at ?? $backupLog->updated_at ?? $backupLog->created_at;
+                        $status = strtoupper((string) $backupLog->status);
+
+                        return [
+                            "id" => $this->activityId($time, 70, $backupLog->id),
+                            "action" => strtoupper($backupLog->action),
+                            "target" => $backupLog->message ?? $backupLog->file_name ?? $backupLog->action,
+                            "name" => ucwords(str_replace('_', ' ', $backupLog->action)) . " {$status}",
+                            "subject" => $backupLog->file_name ?: ($backupLog->message ?? 'Backup system event'),
+                            "time" => $this->activityTime($time),
+                            "type" => $backupLog->status === 'failed' ? "system_alert" : "system"
+                        ];
+                    });
+                $activity = $activity->merge($backupLogs);
+            }
+
+            // 8. Existing system activity logs.
+            $logs = ActivityLog::orderBy("id", "desc")->limit(15)->get()->map(function ($log) {
                 return [
-                    "id" => $log->id,
+                    "id" => $this->activityId($log->created_at, 80, $log->id),
                     "action" => $log->action,
                     "target" => $log->target,
                     "name" => $log->action . " Log",
                     "subject" => $log->target,
-                    "time" => $log->created_at->format("h:i A"),
+                    "time" => $this->activityTime($log->created_at),
                     "type" => "system"
                 ];
             });
             $activity = $activity->merge($logs);
 
-            // 4. Fallback to recent attendances if activity is still empty
-            if ($activity->isEmpty()) {
-                $newAttendances = \App\Models\Attendance::with(["student.user", "session.classRoom.subject"])
-                    ->orderBy("id", "desc")
-                    ->limit(10)
-                    ->get()
-                    ->map(function ($att) {
-                        return [
-                            "id" => $att->id,
-                            "action" => "INSERT",
-                            "target" => ($att->student && $att->student->user ? $att->student->user->name : "Unknown") . " @ " . ($att->session && $att->session->classRoom && $att->session->classRoom->subject ? $att->session->classRoom->subject->name : "Unknown"),
-                            "name" => ($att->student && $att->student->user ? $att->student->user->name : "Unknown"),
-                            "subject" => "Checked in to " . ($att->session && $att->session->classRoom && $att->session->classRoom->subject ? $att->session->classRoom->subject->name : "Unknown"),
-                            "time" => $att->created_at->format("h:i A"),
-                            "type" => "attendance"
-                        ];
-                    });
-                $activity = $activity->merge($newAttendances);
+            // 9. Recent attendance scans.
+            $newAttendances = \App\Models\Attendance::with(["student.user", "session.classRoom.subject"])
+                ->orderBy("id", "desc")
+                ->limit(10)
+                ->get()
+                ->map(function ($att) {
+                    $time = $att->created_at ?? $att->scan_time ?? now();
+
+                    return [
+                        "id" => $this->activityId($time, 90, $att->id),
+                        "action" => "ATTENDANCE",
+                        "target" => ($att->student && $att->student->user ? $att->student->user->name : "Unknown") . " @ " . ($att->session && $att->session->classRoom && $att->session->classRoom->subject ? $att->session->classRoom->subject->name : "Unknown"),
+                        "name" => ($att->student && $att->student->user ? $att->student->user->name : "Attendance"),
+                        "subject" => "Checked in to " . ($att->session && $att->session->classRoom && $att->session->classRoom->subject ? $att->session->classRoom->subject->name : "Unknown"),
+                        "time" => $this->activityTime($time),
+                        "type" => "attendance"
+                    ];
+                });
+            $activity = $activity->merge($newAttendances);
+
+            if ($lastId > 0) {
+                $activity = $activity->filter(fn ($item) => (int) $item['id'] > $lastId);
             }
 
-            // Return sorted by ID descending to keep order correct
-            $sortedActivity = $activity->sortByDesc('id')->values()->take(10);
+            $sortedActivity = $activity->sortByDesc('id')->values()->take($limit);
 
             return response()->json(["success" => true, "activity" => $sortedActivity]);
         } catch (\Exception $e) {
             return response()->json(["error" => $e->getMessage()], 500);
         }
+    }
+
+    private function activityId($time, int $bucket, int $id): int
+    {
+        $timestamp = $time ? \Carbon\Carbon::parse($time)->timestamp : now()->timestamp;
+
+        return ($timestamp * 100000) + ($bucket * 1000) + ($id % 1000);
+    }
+
+    private function activityTime($time): string
+    {
+        return $time ? \Carbon\Carbon::parse($time)->format("h:i A") : "Just now";
     }
 
     public function bulkDeleteSessions(Request $request)
@@ -2453,12 +2937,14 @@ class AdminController extends Controller
             ], 422);
         }
 
-        \App\Models\AttendanceSession::whereIn('id', $allowed->pluck('id'))->delete();
+        $deleted = $this->deleteCourseSessionsWithTeacherAttendance($allowed->pluck('id'));
 
         return response()->json([
             'success' => true,
             'deleted' => $allowed->count(),
             'skipped' => $skipped,
+            'teacher_attendance_deleted' => $deleted['teacher_attendance_sessions'],
+            'teacher_schedules_deleted' => $deleted['teacher_schedules'],
             'message' => "Deleted {$allowed->count()} session(s)." . ($skipped > 0 ? " {$skipped} non-scheduled session(s) were skipped." : '')
         ]);
     }

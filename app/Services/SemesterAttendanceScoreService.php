@@ -22,6 +22,8 @@ class SemesterAttendanceScoreService
                 'credited_sessions' => 0,
                 'attended_sessions' => 0,
                 'permission_sessions' => 0,
+                'permission_credit_sessions' => 0,
+                'permission_absence_units' => 0,
                 'rate' => 0,
                 'score' => 0,
             ];
@@ -43,22 +45,31 @@ class SemesterAttendanceScoreService
             ->filter(function ($session) use ($permissions) {
                 $sessionDate = Carbon::parse($session->start_time)->toDateString();
 
-                return $permissions->contains(function ($permission) use ($sessionDate) {
+                return $permissions->contains(function ($permission) use ($session, $sessionDate) {
+                    if ($permission->attendance_session_id) {
+                        return (int) $permission->attendance_session_id === (int) $session->id;
+                    }
+
                     return $permission->start_date <= $sessionDate && $permission->end_date >= $sessionDate;
                 });
             })
             ->pluck('id')
             ->unique();
 
+        $permissionAbsenceUnits = intdiv($permissionSessionIds->count(), 2);
+        $permissionCreditSessions = $permissionSessionIds->count() - $permissionAbsenceUnits;
+
         $creditedSessions = min(
             self::SEMESTER_SESSIONS,
-            $attendedSessionIds->count() + $permissionSessionIds->count()
+            $attendedSessionIds->count() + $permissionCreditSessions
         );
 
         return [
             'credited_sessions' => $creditedSessions,
             'attended_sessions' => $attendedSessionIds->count(),
             'permission_sessions' => $permissionSessionIds->count(),
+            'permission_credit_sessions' => $permissionCreditSessions,
+            'permission_absence_units' => $permissionAbsenceUnits,
             'rate' => round(($creditedSessions / self::SEMESTER_SESSIONS) * 100, 1),
             'score' => round(($creditedSessions / self::SEMESTER_SESSIONS) * self::FULL_SCORE, 2),
         ];

@@ -47,6 +47,14 @@ class TeacherController extends Controller
             ->firstOrFail();
     }
 
+    private function studentScanUrl(AttendanceSession $session): string
+    {
+        $baseUrl = rtrim(config('app.student_qr_public_url') ?: config('app.url'), '/');
+        $scanPath = route('student.scan', ['session_id' => $session->id], false);
+
+        return $baseUrl . $scanPath . '?token=' . urlencode((string) $session->qr_token);
+    }
+
     private function syncSessionStatuses($teacherId)
     {
         $now = now();
@@ -167,17 +175,30 @@ class TeacherController extends Controller
         $allStudents = collect();
         if ($session->classRoom) {
             $groupIds = $session->classRoom->groups->pluck('id');
-            $allStudents = \App\Models\Student::whereIn('group_id', $groupIds)->get();
+            $allStudents = \App\Models\Student::with(['user', 'group', 'major'])
+                ->whereIn('group_id', $groupIds)
+                ->get();
         }
 
         $sessionsCount = AttendanceSession::where('class_id', $session->class_id)->count();
 
         $sessionDate = Carbon::parse($session->start_time)->toDateString();
-        $permissions = \App\Models\StudentPermission::where('start_date', '<=', $sessionDate)
-            ->where('end_date', '>=', $sessionDate)
+        $permissions = \App\Models\StudentPermission::withoutGlobalScope('approved')
             ->whereIn('student_id', $allStudents->pluck('id'))
+            ->where(function ($query) use ($session, $sessionDate) {
+                $query
+                    ->where('attendance_session_id', $session->id)
+                    ->orWhere(function ($dateQuery) use ($sessionDate) {
+                        $dateQuery
+                            ->whereNull('attendance_session_id')
+                            ->where('start_date', '<=', $sessionDate)
+                            ->where('end_date', '>=', $sessionDate);
+                    });
+            })
+            ->latest()
             ->get()
-            ->keyBy('student_id');
+            ->groupBy('student_id')
+            ->map(fn ($items) => $items->firstWhere('status', 'approved') ?? $items->first());
 
         $rows = $allStudents->map(function ($student) use ($attendances, $permissions) {
             $att = $attendances->get($student->id);
@@ -189,7 +210,7 @@ class TeacherController extends Controller
             $status = 'ABSENT';
             if ($att) {
                 $status = strtoupper($att->status);
-            } elseif ($perm) {
+            } elseif ($perm && $perm->status === 'approved') {
                 $status = 'EXCUSED';
             }
             
@@ -199,16 +220,19 @@ class TeacherController extends Controller
                 'initials' => strtoupper($initials),
                 'name' => $userName,
                 'student_code' => $student->student_code,
+                'group_name' => $student->group->name ?? null,
+                'major_name' => $student->major->name ?? null,
                 'status' => $status,
                 'permission_reason' => $perm ? $perm->reason : null,
                 'permission_type' => $perm ? $perm->type : null,
+                'permission_status' => $perm ? $perm->status : null,
                 'check_in_time' => $att && $att->scan_time ? Carbon::parse($att->scan_time)->format('H:i') : '—',
                 'method' => $att ? strtoupper($att->method) : '—',
                 'avatar_color' => '#' . substr(md5($student->user_id), 0, 6)
             ];
         });
 
-        $excusedCount = $permissions->count();
+        $excusedCount = $permissions->where('status', 'approved')->count();
         $presentCount = $attendances->whereIn('status', ['present', 'late', 'PRESENT', 'LATE'])->count();
 
         return response()->json([
@@ -256,7 +280,7 @@ class TeacherController extends Controller
         return response()->json([
             'success'   => true,
             'qr_token'  => $session->qr_token,
-            'scan_url'  => url("/scan/{$session->id}"),
+            'scan_url'  => $this->studentScanUrl($session),
             'expires_at' => $close->format('H:i'),
             'refresh_in' => 60 // Client should re-fetch every 60s
         ]);
@@ -505,7 +529,7 @@ class TeacherController extends Controller
         return response()->json([
             'success' => true,
             'qr_token' => $newToken,
-            'scan_url' => url("/scan/{$session->id}"),
+            'scan_url' => $this->studentScanUrl($session),
             'expires_at' => Carbon::parse($session->end_time)->format('H:i')
         ]);
     }
@@ -837,10 +861,12 @@ class TeacherController extends Controller
         // Use the common logic to get scores
         $adminCtrl = new AdminController();
         $data = $adminCtrl->getGradingPreviewData($assignment);
+        $subjectName = $class->subject->name ?? 'Subject Scores';
+        $safeSubjectName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $subjectName);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\SubjectScoresExport($data, $class->subject->name),
-            "Scores_{$class->subject->name}.xlsx"
+            new \App\Exports\SubjectScoresExport($data['students'] ?? [], $subjectName),
+            "Scores_{$safeSubjectName}.xlsx"
         );
     }
 

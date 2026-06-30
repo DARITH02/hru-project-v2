@@ -32,6 +32,7 @@ return [
         '192.168.18.2:3001',
         '192.168.18.2:5173',
         '192.168.18.2:8080',
+        '192.168.18.10:8080',
         '::1',
         parse_url((string) env('APP_URL'), PHP_URL_HOST)
             ? parse_url((string) env('APP_URL'), PHP_URL_HOST).(parse_url((string) env('APP_URL'), PHP_URL_PORT) ? ':'.parse_url((string) env('APP_URL'), PHP_URL_PORT) : '')

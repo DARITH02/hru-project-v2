@@ -86,6 +86,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::get('/teacher/attendance/required-checkouts', [TeacherAttendanceController::class, 'requiredCheckouts']);
         Route::get('/teacher/attendance/corrections', [TeacherAttendanceController::class, 'corrections']);
         Route::post('/teacher/attendance/corrections', [TeacherAttendanceController::class, 'storeCorrection']);
+        Route::post('/teacher/student-permissions', [TeacherAttendanceController::class, 'storeStudentPermissionRequest']);
         Route::get('/teacher/attendance/class-change-requests', [TeacherAttendanceController::class, 'classChanges']);
         Route::post('/teacher/attendance/class-change-requests', [TeacherAttendanceController::class, 'storeClassChange']);
     });

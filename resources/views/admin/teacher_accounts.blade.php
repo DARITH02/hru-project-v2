@@ -131,8 +131,8 @@
                 </td>
                 <td style="text-align:right">
                     <div style="display:flex; justify-content:flex-end; gap:8px">
-                        @if(auth()->user()->isSuperAdmin())
-                            @if(!$user->is_approved)
+                        @if(auth()->user()->isSuperAdmin() || $user->role === 'teacher')
+                            @if(!$user->is_approved && (auth()->user()->isSuperAdmin() || $user->role === 'teacher'))
                                 <form action="{{ route('admin.users.approve', $user->id) }}" method="POST" style="display:inline">
                                     @csrf
                                     <button type="submit" class="action-btn" style="color:var(--green); background:color-mix(in srgb, var(--green) 8%, transparent)" title="Approve Account">
@@ -140,7 +140,9 @@
                                     </button>
                                 </form>
                             @endif
-                            
+                        @endif
+
+                        @if(auth()->user()->isSuperAdmin())
                             <button class="action-btn btn-edit" title="Manage Credentials" onclick="openAccountModal(this.closest('tr'))">
                                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 11-7.743-5.743L11 3l1 1 1-1 1 1 1-1 1 1 1-1 1 1"/></svg>
                             </button>

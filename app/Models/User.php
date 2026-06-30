@@ -91,6 +91,11 @@ class User extends Authenticatable
         return $this->hasOne(Teacher::class);
     }
 
+    public function teacherRegistrationRequest()
+    {
+        return $this->hasOne(TeacherRegistrationRequest::class);
+    }
+
     public function student()
     {
         return $this->hasOne(Student::class);

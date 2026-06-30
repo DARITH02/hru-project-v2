@@ -3279,7 +3279,11 @@
                     const statusClr = isSkipped ? 'var(--red)' : isCompleted ? 'var(--muted)' : isActive ? 'var(--green)' : 'var(--amber)';
                     const statusBg = isSkipped ? 'color-mix(in srgb, var(--red) 8%, transparent)' : isCompleted ? 'var(--surface3)' : isActive ? 'color-mix(in srgb, var(--green) 8%, transparent)' : 'color-mix(in srgb, var(--amber) 8%, transparent)';
 
-                    const pct = s.total_students_count > 0 ? Math.round((s.presence_count / s.total_students_count) * 100) : 0;
+                    const hasStudents = s.total_students_count > 0;
+                    const pct = hasStudents ? Math.round((s.presence_count / s.total_students_count) * 100) : 0;
+                    const attendanceLabel = hasStudents
+                        ? `${s.presence_count} / ${s.total_students_count} <span style="font-weight:400; font-size:9px; color:var(--muted)">ARRIVED</span>`
+                        : `<span style="font-weight:400; font-size:9px; color:var(--muted)">NO STUDENTS</span>`;
 
                     return `
                                         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; background:var(--surface2); transition:all 0.2s" onmouseover="this.style.borderColor='color-mix(in srgb, var(--amber) 27%, transparent)'; this.style.transform='translateX(4px)'" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
@@ -3293,7 +3297,7 @@
                                                     <div style="display:flex; align-items:center; gap:8px; margin-top:4px">
                                                         <span style="font-family:var(--font-mono); font-size:8px; padding:2px 8px; border-radius:10px; background:${statusBg}; color:${statusClr}; font-weight:800; text-transform:uppercase">${s.status}</span>
                                                         <span style="font-size:10px; color:var(--muted)">•</span>
-                                                        <span style="font-family:var(--font-mono); font-size:10px; color:var(--text2); font-weight:700">${s.presence_count} / ${s.total_students_count} <span style="font-weight:400; font-size:9px; color:var(--muted)">ARRIVED</span></span>
+                                                        <span style="font-family:var(--font-mono); font-size:10px; color:var(--text2); font-weight:700">${attendanceLabel}</span>
                                                     </div>
                                                 </div>
                                             </div>

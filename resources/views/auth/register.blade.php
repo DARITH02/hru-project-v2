@@ -8,6 +8,8 @@
         $appSub = $branding['app_sub'] ?? __('auth.login_subtitle', ['app' => $appName]);
         $institutionName = $branding['institution_name'] ?? 'HRU';
         $appLogo = $branding['app_logo'] ?? 'https://res.cloudinary.com/dnrblpkal/image/upload/q_auto/f_auto/v1775536855/branding/k6obqtagifkszo8pehnd.png';
+        $registrationRole = $registrationRole ?? 'admin';
+        $isTeacherRegistration = $registrationRole === 'teacher';
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,7 +56,8 @@
             }
 
         button,
-        input {
+        input,
+        select {
             font: inherit;
         }
 
@@ -69,7 +72,7 @@
 
         .register-frame {
             display: grid;
-            grid-template-columns: minmax(0, .95fr) 500px;
+            grid-template-columns: minmax(0, 1fr) 500px;
             min-height: 720px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, .68);
@@ -273,7 +276,8 @@
             pointer-events: none;
         }
 
-        .input-wrap input {
+        .input-wrap input,
+        .input-wrap select {
             width: 100%;
             height: 48px;
             padding: 0 14px 0 42px;
@@ -289,7 +293,8 @@
             color: #9aa8ba;
         }
 
-        .input-wrap input:focus {
+        .input-wrap input:focus,
+        .input-wrap select:focus {
             border-color: var(--register-primary-2);
             background: #fff;
             box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
@@ -307,6 +312,40 @@
 
         .input-wrap input.has-toggle {
             padding-right: 46px;
+        }
+
+        .email-verify-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 126px;
+            gap: 8px;
+        }
+
+        .email-verify-row .input-wrap input {
+            height: 48px;
+        }
+
+        .otp-button {
+            height: 48px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--register-primary);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+        }
+
+        .otp-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(30, 58, 138, .22);
+        }
+
+        .otp-button:disabled {
+            cursor: not-allowed;
+            opacity: .62;
+            transform: none;
+            box-shadow: none;
         }
 
         .password-toggle {
@@ -511,6 +550,10 @@
                 gap: 0;
             }
 
+            .email-verify-row {
+                grid-template-columns: 1fr;
+            }
+
             .form-title {
                 font-size: 26px;
             }
@@ -555,9 +598,11 @@
 
             <div class="form-panel">
                 <div class="form-card">
-                    <div class="form-kicker">{{ __('auth.secure_sign_in') }}</div>
-                    <h1 class="form-title">{{ __('auth.create_account_title') }}</h1>
-                    <p class="form-subtitle">{{ __('auth.register_subtitle', ['app' => $appName]) }}</p>
+                    <div class="form-kicker">{{ $isTeacherRegistration ? 'Teacher Invite' : __('auth.secure_sign_in') }}</div>
+                    <h1 class="form-title">{{ $isTeacherRegistration ? 'Teacher Registration' : __('auth.create_account_title') }}</h1>
+                    <p class="form-subtitle">
+                        {{ $isTeacherRegistration ? 'Enter your teaching profile. Your data is reviewed first and added to the teacher system only after admin approval.' : __('auth.register_subtitle', ['app' => $appName]) }}
+                    </p>
 
                     @if ($errors->any())
                         <div class="alert">
@@ -569,8 +614,11 @@
 
                     <div class="alert" id="jsAlert" hidden></div>
 
-                    <form action="{{ route('register.post') }}" method="POST" id="registerForm" novalidate>
+                    <form action="{{ $isTeacherRegistration ? url()->full() : route('register.post') }}" method="POST" id="registerForm" novalidate>
                         @csrf
+                        @if ($isTeacherRegistration)
+                            <input type="hidden" name="role" value="teacher">
+                        @endif
 
                         <div class="field">
                             <label for="name">{{ __('auth.full_name') }}</label>
@@ -591,36 +639,119 @@
 
                         <div class="field">
                             <label for="email">{{ __('auth.email_address') }}</label>
-                            <div class="input-wrap">
-                                <span class="input-icon" aria-hidden="true">
-                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                                        <path d="m22 7-10 7L2 7" />
-                                    </svg>
-                                </span>
-                                <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                    placeholder="{{ __('auth.email_placeholder') }}" autocomplete="email" required>
+                            <div class="email-verify-row">
+                                <div class="input-wrap">
+                                    <span class="input-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                                            <path d="m22 7-10 7L2 7" />
+                                        </svg>
+                                    </span>
+                                    <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                        placeholder="{{ __('auth.email_placeholder') }}" autocomplete="email" required>
+                                </div>
+                                <button type="button" class="otp-button" id="sendEmailOtpButton" data-url="{{ route('register.email-otp') }}">{{ __('auth.send_email_code') }}</button>
                             </div>
                             <div class="hint" id="hint-email">{{ __('auth.email_invalid') }}</div>
                         </div>
 
                         <div class="field">
-                            <label for="admin_key">{{ __('auth.admin_secret_key_optional') }}</label>
+                            <label for="email_otp">{{ __('auth.email_verification_code') }}</label>
                             <div class="input-wrap">
                                 <span class="input-icon" aria-hidden="true">
                                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
                                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">
-                                        <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78Zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                                        <path d="M12 2v20" />
+                                        <path d="m17 5-5-3-5 3" />
+                                        <path d="m17 19-5 3-5-3" />
+                                        <path d="M2 12h20" />
                                     </svg>
                                 </span>
-                                <input type="password" id="admin_key" name="admin_key"
-                                    placeholder="{{ __('auth.admin_secret_key_placeholder') }}" autocomplete="off">
+                                <input type="text" id="email_otp" name="email_otp" value="{{ old('email_otp') }}"
+                                    placeholder="{{ __('auth.email_otp_placeholder') }}" inputmode="numeric"
+                                    pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
                             </div>
-                            <div class="hint ok" id="hint-admin-key">{{ __('auth.admin_key_help') }}</div>
+                            <div class="hint" id="hint-email-otp">{{ __('auth.email_otp_required') }}</div>
                         </div>
+
+                        @if ($isTeacherRegistration)
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label for="phone">Phone Number</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon" aria-hidden="true">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.91.33 1.79.62 2.63a2 2 0 0 1-.45 2.11L8.09 9.65a16 16 0 0 0 6.26 6.26l1.19-1.19a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.63.62A2 2 0 0 1 22 16.92Z" />
+                                            </svg>
+                                        </span>
+                                        <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
+                                            placeholder="Phone number" autocomplete="tel" required>
+                                    </div>
+                                    <div class="hint" id="hint-phone">Phone number is required.</div>
+                                </div>
+
+                                <div class="field">
+                                    <label for="department_id">Department</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon" aria-hidden="true">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                                <path d="M3 21h18" />
+                                                <path d="M5 21V7l8-4v18" />
+                                                <path d="M19 21V11l-6-4" />
+                                            </svg>
+                                        </span>
+                                        <select id="department_id" name="department_id">
+                                            <option value="">Select department</option>
+                                            @foreach (($departments ?? collect()) as $department)
+                                                <option value="{{ $department->id }}" @selected(old('department_id') == $department->id)>
+                                                    {{ $department->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label for="specialization">Specialization</label>
+                                <div class="input-wrap">
+                                    <span class="input-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M12 6.25v13" />
+                                            <path d="M4 19.25A2.25 2.25 0 0 1 6.25 17H20" />
+                                            <path d="M4 4.75A2.25 2.25 0 0 1 6.25 2.5H20v17H6.25A2.25 2.25 0 0 1 4 17.25V4.75Z" />
+                                        </svg>
+                                    </span>
+                                    <input type="text" id="specialization" name="specialization" value="{{ old('specialization') }}"
+                                        placeholder="Example: Computer Science, English, Accounting" autocomplete="organization-title">
+                                </div>
+                            </div>
+                        @else
+                            <div class="field">
+                                <label for="admin_key">{{ __('auth.admin_secret_key_optional') }}</label>
+                                <div class="input-wrap">
+                                    <span class="input-icon" aria-hidden="true">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78Zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                                        </svg>
+                                    </span>
+                                    <input type="password" id="admin_key" name="admin_key"
+                                        placeholder="{{ __('auth.admin_secret_key_placeholder') }}" autocomplete="off">
+                                </div>
+                                <div class="hint ok" id="hint-admin-key">{{ __('auth.admin_key_help') }}</div>
+                            </div>
+                        @endif
 
                         <div class="field-grid">
                             <div class="field">
@@ -707,7 +838,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="submit-btn">{{ __('auth.create_account_button') }}</button>
+                        <button type="submit" class="submit-btn">{{ $isTeacherRegistration ? 'Submit for Approval' : __('auth.create_account_button') }}</button>
                     </form>
 
                     <div class="form-footer">
@@ -725,6 +856,11 @@
             'nameRequired' => __('auth.full_name_required'),
             'emailRequired' => __('auth.email_required'),
             'emailInvalid' => __('auth.email_invalid'),
+            'emailOtpRequired' => __('auth.email_otp_required'),
+            'emailOtpInvalid' => __('auth.email_otp_invalid'),
+            'emailOtpSending' => __('auth.email_otp_sending'),
+            'sendEmailCode' => __('auth.send_email_code'),
+            'resendIn' => __('auth.resend_in_seconds'),
             'adminKeyHelp' => __('auth.admin_key_help'),
             'adminKeyEntered' => __('auth.admin_key_entered'),
             'passwordMin' => __('auth.password_min_required'),
@@ -786,7 +922,10 @@
 
         var nameInput = document.getElementById('name');
         var emailInput = document.getElementById('email');
+        var emailOtpInput = document.getElementById('email_otp');
+        var sendEmailOtpButton = document.getElementById('sendEmailOtpButton');
         var adminKeyInput = document.getElementById('admin_key');
+        var phoneInput = document.getElementById('phone');
         var passwordInput = document.getElementById('password');
         var confirmInput = document.getElementById('password_confirmation');
         var strengthWrap = document.getElementById('strengthWrap');
@@ -823,9 +962,109 @@
             }
         });
 
-        adminKeyInput.addEventListener('input', function() {
-            showHint('hint-admin-key', adminKeyInput.value ? registerText.adminKeyEntered : registerText.adminKeyHelp, true);
+        emailInput.addEventListener('input', function() {
+            if (emailOtpInput) {
+                emailOtpInput.value = '';
+                setFieldState(emailOtpInput);
+                clearHint('hint-email-otp');
+            }
         });
+
+        if (emailOtpInput) {
+            emailOtpInput.addEventListener('input', function() {
+                emailOtpInput.value = emailOtpInput.value.replace(/\D/g, '').slice(0, 6);
+                if (emailOtpInput.value.length === 6) {
+                    setFieldState(emailOtpInput, 'valid');
+                    clearHint('hint-email-otp');
+                }
+            });
+        }
+
+        function startOtpCooldown(seconds) {
+            var remaining = seconds;
+            sendEmailOtpButton.disabled = true;
+            sendEmailOtpButton.textContent = registerText.resendIn.replace(':seconds', remaining);
+
+            var timer = setInterval(function() {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    sendEmailOtpButton.disabled = false;
+                    sendEmailOtpButton.textContent = registerText.sendEmailCode;
+                    return;
+                }
+
+                sendEmailOtpButton.textContent = registerText.resendIn.replace(':seconds', remaining);
+            }, 1000);
+        }
+
+        if (sendEmailOtpButton) {
+            sendEmailOtpButton.addEventListener('click', async function() {
+                var emailValue = emailInput.value.trim();
+                var emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+                var alert = document.getElementById('jsAlert');
+
+                if (!emailValue || !emailValid) {
+                    setFieldState(emailInput, 'invalid');
+                    showHint('hint-email', emailValue ? registerText.emailInvalid : registerText.emailRequired);
+                    return;
+                }
+
+                sendEmailOtpButton.disabled = true;
+                sendEmailOtpButton.textContent = registerText.emailOtpSending;
+                alert.hidden = true;
+                alert.innerHTML = '';
+
+                try {
+                    const response = await fetch(sendEmailOtpButton.dataset.url, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            email: emailValue,
+                            role: @json($isTeacherRegistration ? 'teacher' : null),
+                        }),
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        const errors = data.errors ? Object.values(data.errors).flat() : [data.message || registerText.emailOtpInvalid];
+                        throw new Error(errors.join('<br>'));
+                    }
+
+                    setFieldState(emailInput, 'valid');
+                    showHint('hint-email', data.message || registerText.emailOtpRequired, true);
+                    startOtpCooldown(60);
+                } catch (error) {
+                    alert.hidden = false;
+                    alert.innerHTML = '<div>' + (error.message || registerText.emailOtpInvalid) + '</div>';
+                    sendEmailOtpButton.disabled = false;
+                    sendEmailOtpButton.textContent = registerText.sendEmailCode;
+                }
+            });
+        }
+
+        if (adminKeyInput) {
+            adminKeyInput.addEventListener('input', function() {
+                showHint('hint-admin-key', adminKeyInput.value ? registerText.adminKeyEntered : registerText.adminKeyHelp, true);
+            });
+        }
+
+        if (phoneInput) {
+            phoneInput.addEventListener('blur', function() {
+                if (!phoneInput.value.trim()) {
+                    setFieldState(phoneInput, 'invalid');
+                    showHint('hint-phone', 'Phone number is required.');
+                } else {
+                    setFieldState(phoneInput, 'valid');
+                    clearHint('hint-phone');
+                }
+            });
+        }
 
         passwordInput.addEventListener('input', function() {
             var value = passwordInput.value;
@@ -889,8 +1128,10 @@
             var nameValue = nameInput.value.trim();
             var emailValue = emailInput.value.trim();
             var emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+            var emailOtpValue = emailOtpInput ? emailOtpInput.value.trim() : '';
             var passwordValue = passwordInput.value;
             var confirmValue = confirmInput.value;
+            var phoneValue = phoneInput ? phoneInput.value.trim() : '';
 
             if (!nameValue) {
                 setFieldState(nameInput, 'invalid');
@@ -908,6 +1149,12 @@
                 errors.push(registerText.emailInvalid);
             }
 
+            if (!emailOtpValue || !/^\d{6}$/.test(emailOtpValue)) {
+                setFieldState(emailOtpInput, 'invalid');
+                showHint('hint-email-otp', emailOtpValue ? registerText.emailOtpInvalid : registerText.emailOtpRequired);
+                errors.push(emailOtpValue ? registerText.emailOtpInvalid : registerText.emailOtpRequired);
+            }
+
             if (!passwordValue || passwordValue.length < 8) {
                 setFieldState(passwordInput, 'invalid');
                 showHint('hint-password', registerText.passwordMin);
@@ -918,6 +1165,12 @@
                 setFieldState(confirmInput, 'invalid');
                 showHint('hint-confirm', registerText.passwordsMustMatch);
                 errors.push(registerText.passwordsDoNotMatch);
+            }
+
+            if (phoneInput && !phoneValue) {
+                setFieldState(phoneInput, 'invalid');
+                showHint('hint-phone', 'Phone number is required.');
+                errors.push('Phone number is required.');
             }
 
             var alert = document.getElementById('jsAlert');

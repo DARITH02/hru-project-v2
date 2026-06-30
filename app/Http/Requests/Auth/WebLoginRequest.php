@@ -6,6 +6,13 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class WebLoginRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => trim((string) $this->email),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

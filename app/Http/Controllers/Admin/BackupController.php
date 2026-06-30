@@ -17,18 +17,21 @@ class BackupController extends Controller
 {
     public function index(BackupService $backups, GoogleDriveService $googleDrive)
     {
+        $googleDriveStatus = $googleDrive->configurationStatus();
+
         return view('admin.backup_restore', [
             'localBackups' => $backups->localBackups(),
             'cloudBackups' => $googleDrive->listBackups(),
             'logs' => BackupRestoreLog::with('user')->latest()->paginate(20),
-            'googleDriveConfigured' => $googleDrive->configured(),
+            'googleDriveConfigured' => $googleDriveStatus['configured'],
+            'googleDriveStatus' => $googleDriveStatus,
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, GoogleDriveService $googleDrive): RedirectResponse
     {
         try {
-            BackupJob::dispatchSync($request->user()->id, true);
+            BackupJob::dispatchSync($request->user()->id, $googleDrive->configured());
         } catch (Throwable $e) {
             report($e);
 

@@ -24,6 +24,10 @@
             </button>
         </div>
         @endif
+
+
+
+        
     </div>
 
     @if(isset($error))
@@ -102,6 +106,9 @@
                                     <div style="font-size:9px; color:var(--muted);">{{ $s['rate'] }}%</div>
                                     @if(($s['permission_sessions'] ?? 0) > 0)
                                         <div style="font-size:8px; color:var(--accent); font-family:var(--font-mono); margin-top:2px;">{{ $s['permission_sessions'] }} PERMISSION</div>
+                                        @if(($s['permission_absence_units'] ?? 0) > 0)
+                                            <div style="font-size:8px; color:var(--red); font-family:var(--font-mono); margin-top:2px;">{{ $s['permission_absence_units'] }} ABSENT BY RULE</div>
+                                        @endif
                                     @endif
                                 </td>
                                 <td style="padding:18px 24px; text-align:center;">
@@ -142,6 +149,7 @@
                                 <th style="padding:12px 10px; text-align:center; font-size:9px; color:var(--muted); font-weight:800; text-transform:uppercase; width:85px; border-left:1px solid var(--border);">
                                     <div style="color:var(--text); margin-bottom:2px;">{{ \Carbon\Carbon::parse($session->start_time)->format('M d') }}</div>
                                     <div style="font-size:8px; opacity:0.6; font-weight:500;">#{{ $loop->iteration }}</div>
+                                    <div style="font-size:7px; margin-top:2px; color:var(--muted); font-weight:700;">{{ strtoupper($session->status ?? 'scheduled') }}</div>
                                 </th>
                                 @endforeach
                             </tr>
@@ -153,13 +161,73 @@
                                     {{ $s['name'] }}
                                 </td>
                                 @foreach($sessions as $session)
-                                <td style="padding:12px 10px; text-align:center; border-left:1px solid var(--border);">
+                                <td style="padding:10px 8px; text-align:center; border-left:1px solid var(--border); vertical-align:top;">
                                     @php
-                                        $status = $attendanceGrid[$s['id']][$session->id] ?? 'absent';
-                                        $color = $status == 'present' ? 'var(--green)' : ($status == 'late' ? 'var(--amber)' : 'var(--red)');
-                                        $opacity = $status == 'absent' ? '0.2' : '1';
+                                        $cell = $attendanceGrid[$s['id']][$session->id] ?? ['status' => 'absent'];
+                                        $status = is_array($cell) ? ($cell['status'] ?? 'absent') : $cell;
+                                        $permissionStatus = is_array($cell) ? ($cell['permission_status'] ?? null) : null;
+                                        $permissionReason = is_array($cell) ? ($cell['permission_reason'] ?? null) : null;
+                                        $permissionType = is_array($cell) ? ($cell['permission_type'] ?? null) : null;
+                                        $scanTime = is_array($cell) ? ($cell['scan_time'] ?? null) : null;
+                                        $method = is_array($cell) ? ($cell['method'] ?? null) : null;
+                                        $color = match($status) {
+                                            'present', 'on_time' => 'var(--green)',
+                                            'late', 'very_late', 'early_leave' => 'var(--amber)',
+                                            'excused', 'permission', 'permission_pending' => 'var(--violet)',
+                                            'permission_rejected' => 'var(--red)',
+                                            'absent' => 'var(--red)',
+                                            'scheduled' => 'var(--muted)',
+                                            default => 'var(--accent)',
+                                        };
+                                        $background = match($status) {
+                                            'present', 'on_time' => 'color-mix(in srgb, var(--green) 10%, transparent)',
+                                            'late', 'very_late', 'early_leave' => 'color-mix(in srgb, var(--amber) 13%, transparent)',
+                                            'excused', 'permission', 'permission_pending' => 'color-mix(in srgb, var(--violet) 12%, transparent)',
+                                            'permission_rejected', 'absent' => 'color-mix(in srgb, var(--red) 8%, transparent)',
+                                            default => 'var(--surface3)',
+                                        };
+                                        $border = match($status) {
+                                            'present', 'on_time' => 'color-mix(in srgb, var(--green) 25%, transparent)',
+                                            'late', 'very_late', 'early_leave' => 'color-mix(in srgb, var(--amber) 35%, transparent)',
+                                            'excused', 'permission', 'permission_pending' => 'color-mix(in srgb, var(--violet) 30%, transparent)',
+                                            'permission_rejected', 'absent' => 'color-mix(in srgb, var(--red) 22%, transparent)',
+                                            default => 'var(--border)',
+                                        };
+                                        $label = match($status) {
+                                            'present' => 'P',
+                                            'on_time' => 'ON',
+                                            'late' => 'L',
+                                            'very_late' => 'VL',
+                                            'early_leave' => 'EL',
+                                            'excused' => 'EX',
+                                            'permission' => 'PER',
+                                            'permission_pending' => 'PEND',
+                                            'permission_rejected' => 'REJ',
+                                            'absent' => 'ABS',
+                                            default => strtoupper(str_replace('_', ' ', $status)),
+                                        };
+                                        $titleParts = [ucwords(str_replace('_', ' ', $status))];
+                                        if ($scanTime) $titleParts[] = 'Scan: ' . $scanTime;
+                                        if ($method) $titleParts[] = 'Method: ' . strtoupper($method);
+                                        if ($permissionStatus) $titleParts[] = 'Permission: ' . strtoupper($permissionStatus);
+                                        if ($permissionType) $titleParts[] = 'Type: ' . strtoupper($permissionType);
+                                        if ($permissionReason) $titleParts[] = 'Reason: ' . $permissionReason;
+                                        $title = implode(' | ', $titleParts);
                                     @endphp
-                                    <div style="width:12px; height:12px; border-radius:50%; background:{{ $color }}; margin:0 auto; opacity:{{ $opacity }}; box-shadow:0 0 8px {{ $status != 'absent' ? $color : 'transparent' }};" title="{{ ucfirst($status) }}"></div>
+                                    <div title="{{ $title }}" style="min-width:48px; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 7px; border-radius:11px; border:1px solid {{ $border }}; background:{{ $background }};">
+                                        <span style="font-size:9px; line-height:1; font-weight:900; color:{{ $color }}; font-family:var(--font-mono);">{{ $label }}</span>
+                                        @if($scanTime)
+                                            <span style="font-size:7px; line-height:1; color:var(--muted); font-family:var(--font-mono);">{{ $scanTime }}</span>
+                                        @endif
+                                        @if($permissionStatus)
+                                            <span style="font-size:7px; line-height:1; color:{{ $color }}; font-family:var(--font-mono);">{{ strtoupper($permissionStatus) }}</span>
+                                        @endif
+                                    </div>
+                                    @if($permissionReason)
+                                        <div title="{{ $permissionReason }}" style="max-width:78px; margin:4px auto 0; font-size:7px; line-height:1.2; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                            {{ $permissionType ? strtoupper($permissionType) . ': ' : '' }}{{ $permissionReason }}
+                                        </div>
+                                    @endif
                                 </td>
                                 @endforeach
                             </tr>
@@ -171,9 +239,12 @@
                         </tbody>
                     </table>
                 </div>
-                <div style="padding:15px 24px; border-top:1px solid var(--border); display:flex; gap:20px; font-size:10px; font-weight:700; color:var(--muted);">
+                <div style="padding:15px 24px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:14px 20px; font-size:10px; font-weight:700; color:var(--muted);">
                     <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--green);"></div> PRESENT</div>
                     <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--amber);"></div> LATE</div>
+                    <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--violet);"></div> EXCUSED / APPROVED PERMISSION</div>
+                    <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--violet); opacity:.55;"></div> PENDING PERMISSION</div>
+                    <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--red); opacity:.55;"></div> REJECTED PERMISSION</div>
                     <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px; height:8px; border-radius:50%; background:var(--red);"></div> ABSENT</div>
                 </div>
             </div>

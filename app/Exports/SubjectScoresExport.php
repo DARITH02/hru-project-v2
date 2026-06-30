@@ -21,7 +21,7 @@ class SubjectScoresExport implements FromCollection, WithHeadings, WithMapping, 
 
     public function collection()
     {
-        return $this->data;
+        return collect($this->data);
     }
 
     public function headings(): array

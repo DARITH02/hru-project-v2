@@ -17,9 +17,11 @@ use App\Models\ActivityLog;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\TeacherAttendanceSession;
+use App\Models\TeacherRegistrationRequest;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\HruAttendanceAiAgentService;
 use App\Services\HruAttendanceAiAssistantService;
@@ -858,8 +860,17 @@ class AdminController extends Controller
 
         $instructors = $query->paginate(10)->appends($request->all());
         $depts = Department::orderBy('name')->get();
+        $teacherRegisterUrl = URL::temporarySignedRoute('register', now()->addDays(7), [
+            'role' => 'teacher',
+        ]);
+        $pendingTeacherApprovals = TeacherRegistrationRequest::where('status', 'pending')->count();
 
-        return view('admin.instructors', compact('instructors', 'depts'));
+        return view('admin.instructors', compact(
+            'instructors',
+            'depts',
+            'teacherRegisterUrl',
+            'pendingTeacherApprovals'
+        ));
     }
 
     public function teacherAccounts(Request $request)
@@ -1056,6 +1067,8 @@ class AdminController extends Controller
                 'code' => $student->student_code,
                 'attended' => $attendanceResult['attended_sessions'],
                 'permission_sessions' => $attendanceResult['permission_sessions'],
+                'permission_credit_sessions' => $attendanceResult['permission_credit_sessions'],
+                'permission_absence_units' => $attendanceResult['permission_absence_units'],
                 'rate' => $attendanceResult['rate'],
                 'att_score' => $attendanceResult['score'],
                 'midterm' => $midterm,
@@ -1069,19 +1082,66 @@ class AdminController extends Controller
 
         // Fetch detailed session-by-session attendance for the grid
         $attendanceGrid = [];
+        $allSessionDates = $sessions
+            ->map(fn ($session) => \Carbon\Carbon::parse($session->start_time)->toDateString())
+            ->unique()
+            ->values();
+        $permissionsByStudent = \App\Models\StudentPermission::withoutGlobalScope('approved')
+            ->whereIn('student_id', $students->pluck('id')->filter())
+            ->where(function ($query) use ($sessions, $allSessionDates) {
+                $query->whereIn('attendance_session_id', $sessions->pluck('id')->filter());
+
+                if ($allSessionDates->isNotEmpty()) {
+                    $query->orWhere(function ($dateQuery) use ($allSessionDates) {
+                        $dateQuery
+                            ->where('start_date', '<=', $allSessionDates->max())
+                            ->where('end_date', '>=', $allSessionDates->min());
+                    });
+                }
+            })
+            ->latest()
+            ->get()
+            ->groupBy('student_id');
+
+        $attendanceRecords = \App\Models\Attendance::whereIn('student_id', $students->pluck('id')->filter())
+            ->whereIn('session_id', $sessionIds)
+            ->get()
+            ->keyBy(fn ($record) => $record->student_id . ':' . $record->session_id);
+
         foreach ($students as $student) {
             $studentAttendance = [];
-            $studentPermissions = \App\Models\StudentPermission::where('student_id', $student->id)->get();
+            $studentPermissions = $permissionsByStudent->get($student->id, collect());
             foreach ($sessions as $session) {
-                $record = \App\Models\Attendance::where('student_id', $student->id)
-                    ->where('session_id', $session->id)
-                    ->first();
+                $record = $attendanceRecords->get($student->id . ':' . $session->id);
                 $sessionDate = \Carbon\Carbon::parse($session->start_time)->toDateString();
-                $hasPermission = $studentPermissions->contains(function ($permission) use ($sessionDate) {
-                    return $permission->start_date <= $sessionDate && $permission->end_date >= $sessionDate;
-                });
+                $permission = $studentPermissions->first(function ($permission) use ($session, $sessionDate) {
+                    if ($permission->attendance_session_id) {
+                        return (int) $permission->attendance_session_id === (int) $session->id;
+                    }
 
-                $studentAttendance[$session->id] = $record ? strtolower($record->status) : ($hasPermission ? 'excused' : 'absent');
+                    $permissionStart = \Carbon\Carbon::parse($permission->start_date)->toDateString();
+                    $permissionEnd = \Carbon\Carbon::parse($permission->end_date)->toDateString();
+
+                    return $permissionStart <= $sessionDate && $permissionEnd >= $sessionDate;
+                });
+                $permissionStatus = strtolower((string) ($permission->status ?? ''));
+                $rawStatus = $record ? strtolower((string) $record->status) : null;
+                $status = $rawStatus ?: match ($permissionStatus) {
+                    'approved' => 'excused',
+                    'pending' => 'permission_pending',
+                    'rejected' => 'permission_rejected',
+                    default => 'absent',
+                };
+
+                $studentAttendance[$session->id] = [
+                    'status' => $status,
+                    'attendance_status' => $rawStatus,
+                    'scan_time' => $record?->scan_time ? \Carbon\Carbon::parse($record->scan_time)->format('H:i') : null,
+                    'method' => $record?->method,
+                    'permission_status' => $permissionStatus ?: null,
+                    'permission_type' => $permission?->type,
+                    'permission_reason' => $permission?->reason,
+                ];
             }
             $attendanceGrid[$student->id] = $studentAttendance;
         }
@@ -1524,16 +1584,27 @@ class AdminController extends Controller
 
     public function permissions(Request $request)
     {
-        $query = \App\Models\StudentPermission::with(['student.user']);
+        $query = \App\Models\StudentPermission::withoutGlobalScope('approved')
+            ->with(['student.user', 'requestedByTeacher.user', 'createdBy']);
 
         if ($request->filled('search')) {
             $q = $request->search;
-            $query->whereHas('student.user', function ($u) use ($q) {
-                $u->where('name', 'like', "%$q%")
-                    ->orWhere('email', 'like', "%$q%");
-            })->orWhereHas('student', function ($s) use ($q) {
-                $s->where('student_code', 'like', "%$q%");
+            $query->where(function ($query) use ($q) {
+                $query->whereHas('student.user', function ($u) use ($q) {
+                    $u->where('name', 'like', "%$q%")
+                        ->orWhere('email', 'like', "%$q%");
+                })->orWhereHas('student', function ($s) use ($q) {
+                    $s->where('student_code', 'like', "%$q%");
+                });
             });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'expired') {
+                $query->where('status', 'pending')->where('expires_at', '<', now());
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         $permissions = $query->latest()->paginate(10)->appends($request->all());
@@ -1559,7 +1630,14 @@ class AdminController extends Controller
             'type' => 'required|in:sick,event,personal,official',
         ]);
 
-        $permission = \App\Models\StudentPermission::create($data);
+        $permission = \App\Models\StudentPermission::withoutGlobalScope('approved')->create($data + [
+            'status' => 'approved',
+            'requested_by' => $request->user()?->id,
+            'approved_at' => now(),
+            'approved_by' => $request->user()?->id,
+            'reviewed_at' => now(),
+            'reviewed_by' => $request->user()?->id,
+        ]);
 
         ActivityLog::create([
             'action' => 'ASSIGN_PERMISSION',
@@ -1571,7 +1649,7 @@ class AdminController extends Controller
 
     public function destroyPermission($id)
     {
-        $permission = \App\Models\StudentPermission::findOrFail($id);
+        $permission = \App\Models\StudentPermission::withoutGlobalScope('approved')->findOrFail($id);
         $target = 'student_permission#' . $permission->id . ' student#' . $permission->student_id;
 
         $permission->delete();
@@ -1582,6 +1660,42 @@ class AdminController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Permission removed.');
+    }
+
+    public function approvePermission(Request $request, $id)
+    {
+        $permission = \App\Models\StudentPermission::withoutGlobalScope('approved')->findOrFail($id);
+        $permission->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => $request->user()?->id,
+            'reviewed_at' => now(),
+            'reviewed_by' => $request->user()?->id,
+        ]);
+
+        ActivityLog::create([
+            'action' => 'APPROVE_PERMISSION',
+            'target' => 'student_permission#' . $permission->id . ' student#' . $permission->student_id,
+        ]);
+
+        return redirect()->back()->with('success', 'Permission approved.');
+    }
+
+    public function rejectPermission(Request $request, $id)
+    {
+        $permission = \App\Models\StudentPermission::withoutGlobalScope('approved')->findOrFail($id);
+        $permission->update([
+            'status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => $request->user()?->id,
+        ]);
+
+        ActivityLog::create([
+            'action' => 'REJECT_PERMISSION',
+            'target' => 'student_permission#' . $permission->id . ' student#' . $permission->student_id,
+        ]);
+
+        return redirect()->back()->with('success', 'Permission rejected.');
     }
 
     public function clearCache()

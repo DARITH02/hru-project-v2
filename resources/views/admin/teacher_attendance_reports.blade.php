@@ -2,6 +2,10 @@
 
 @section('content')
 @php
+    $formatReportHours = function ($hours) {
+        $hours = (float) $hours;
+        return number_format($hours, $hours > 0 && $hours < 0.1 ? 2 : 1);
+    };
     $statusConfig = [
         'late'             => ['bg'=>'rgba(245,158,11,.1)',  'color'=>'var(--amber)',   'border'=>'rgba(245,158,11,.25)',  'label'=>'LATE'],
         'very_late'        => ['bg'=>'rgba(251,146,60,.1)',  'color'=>'var(--orange)',  'border'=>'rgba(251,146,60,.25)',  'label'=>'VERY LATE'],
@@ -108,6 +112,8 @@
                 <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.08em;font-weight:700;">GROUP BY:</label>
                 <select name="group_by" class="form-input" style="height:36px;padding:0 12px;font-size:12px;width:150px;">
                     <option value="department" @selected(($groupBy ?? request('group_by', 'department')) === 'department')>Department</option>
+                    <option value="teacher" @selected(($groupBy ?? request('group_by')) === 'teacher')>Teacher</option>
+                    <option value="subject" @selected(($groupBy ?? request('group_by')) === 'subject')>Subject</option>
                     <option value="major" @selected(($groupBy ?? request('group_by')) === 'major')>Major</option>
                 </select>
             </div>
@@ -205,7 +211,7 @@
                             </td>
                         </tr>
                     @else
-                        @foreach(($reportGroups ?? collect([['name' => 'All Sessions', 'sessions' => $sessions, 'count' => $sessions->count(), 'late' => 0, 'absent' => 0, 'hours' => $sessions->sum('actual_teaching_hours')]])) as $reportGroup)
+                        @foreach(($reportGroups ?? collect([['name' => 'All Sessions', 'sessions' => $sessions, 'count' => $sessions->count(), 'late' => 0, 'absent' => 0, 'hours' => $sessions->sum('report_teaching_hours')]])) as $reportGroup)
                             <tr>
                                 <td colspan="6" style="background:var(--surface3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
                                     <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 2px;">
@@ -219,7 +225,7 @@
                                             <span>{{ $reportGroup['count'] }} SESSIONS</span>
                                             <span>{{ $reportGroup['late'] }} LATE</span>
                                             <span>{{ $reportGroup['absent'] }} ABSENT</span>
-                                            <span>{{ number_format($reportGroup['hours'], 1) }} HRS</span>
+                                            <span>{{ $formatReportHours($reportGroup['hours']) }} HRS</span>
                                         </div>
                                     </div>
                                 </td>
@@ -290,7 +296,7 @@
                                     {{-- Hours --}}
                                     <td style="text-align:right;">
                                         <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--accent);">
-                                            {{ number_format($session->actual_teaching_hours, 1) }}
+                                            {{ $formatReportHours($session->report_teaching_hours ?? $session->actual_teaching_hours) }}
                                         </span>
                                         <span style="font-size:10px;color:var(--muted);margin-left:2px;">hrs</span>
                                     </td>

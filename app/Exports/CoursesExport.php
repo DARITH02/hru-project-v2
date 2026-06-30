@@ -11,7 +11,7 @@ class CoursesExport implements FromCollection, WithHeadings, WithMapping
 {
     public function collection()
     {
-        return ClassRoom::with(['subject', 'teacher.user', 'group'])->get();
+        return ClassRoom::with(['subject', 'teacher.user', 'groups'])->get();
     }
 
     public function headings(): array
@@ -26,7 +26,7 @@ class CoursesExport implements FromCollection, WithHeadings, WithMapping
             $class->subject->code ?? 'N/A',
             $class->subject->name ?? 'N/A',
             $class->teacher->user->name ?? 'N/A',
-            $class->group->name ?? 'N/A',
+            $class->groups->pluck('name')->filter()->join(', ') ?: 'N/A',
             $class->room_number,
             $class->schedule,
             $class->status

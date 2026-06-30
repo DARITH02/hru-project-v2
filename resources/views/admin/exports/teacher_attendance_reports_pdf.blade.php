@@ -37,6 +37,13 @@
     </style>
 </head>
 <body>
+    @php
+        $formatReportHours = function ($hours) {
+            $hours = (float) $hours;
+            return number_format($hours, $hours > 0 && $hours < 0.1 ? 2 : 1);
+        };
+    @endphp
+
     <div class="header">
         <h1>Teacher Attendance Report</h1>
         <p>OFFICIAL ATTENDANCE MONITORING RECORD · ATTENDAI SYSTEM</p>
@@ -81,7 +88,7 @@
         </div>
         <div class="summary-box">
             <span class="meta-label">Teaching Hours</span>
-            <div class="summary-num" style="color: #9333ea;">{{ number_format($summary['teaching_hours'], 1) }}</div>
+            <div class="summary-num" style="color: #9333ea;">{{ $formatReportHours($summary['teaching_hours']) }}</div>
         </div>
         <div class="summary-box">
             <span class="meta-label">Attendance Rate</span>
@@ -93,51 +100,56 @@
     @if($sessions->isEmpty())
         <p style="font-size: 11px; color: #666; font-style: italic; padding-left: 10px;">No records match the selected filter criteria.</p>
     @else
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 12%;">Date</th>
-                    <th style="width: 20%;">Teacher</th>
-                    <th style="width: 25%;">Subject / Group</th>
-                    <th style="width: 11%; text-align: center;">Status</th>
-                    <th style="width: 24%;">Schedule vs Actual Time</th>
-                    <th style="width: 8%; text-align: right;">Hours</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($sessions as $session)
+        @foreach(($reportGroups ?? collect([['name' => 'All Sessions', 'sessions' => $sessions, 'count' => $sessions->count(), 'late' => 0, 'absent' => 0, 'hours' => $sessions->sum('report_teaching_hours')]])) as $reportGroup)
+            <div class="section-title">
+                {{ $reportGroup['name'] }} · {{ $reportGroup['count'] }} records · {{ $formatReportHours($reportGroup['hours']) }} hrs
+            </div>
+            <table>
+                <thead>
                     <tr>
-                        <td style="font-family: monospace;">
-                            <strong>{{ $session->attendance_date?->format('Y-m-d') }}</strong>
-                            <div style="font-size: 8px; color: #6b7280; margin-top: 1px;">{{ $session->attendance_date?->format('l') }}</div>
-                        </td>
-                        <td>
-                            <div style="font-weight: bold; color: #111827;">{{ $session->teacher->user->name ?? 'Unknown' }}</div>
-                            <div style="font-size: 8px; color: #6b7280; margin-top: 1px;">{{ $session->teacher->department->name ?? 'No dept.' }}</div>
-                        </td>
-                        <td>
-                            <div style="font-weight: 500;">{{ $session->subject->name ?? '-' }}</div>
-                            <div style="font-size: 8.5px; color: #4b5563; font-family: monospace; margin-top: 2px;">
-                                {{ $session->classGroup->name ?? $session->classRoom->name ?? 'No Group' }}
-                            </div>
-                        </td>
-                        <td style="text-align: center;">
-                            @php
-                                $statusLabel = str_replace('_', ' ', strtoupper($session->attendance_status));
-                            @endphp
-                            <span class="badge {{ $session->attendance_status }}">{{ $statusLabel }}</span>
-                        </td>
-                        <td style="font-family: monospace; font-size: 9px; line-height: 1.3;">
-                            <div><span style="color: #6b7280;">SCHED:</span> {{ $session->scheduled_start_time?->format('H:i') }} - {{ $session->scheduled_end_time?->format('H:i') }}</div>
-                            <div style="margin-top: 1px;"><span style="color: #6b7280;">ACTUAL:</span> {{ $session->check_in_time?->format('H:i') ?? '-' }} - {{ $session->check_out_time?->format('H:i') ?? '-' }}</div>
-                        </td>
-                        <td style="text-align: right; font-family: monospace; font-weight: bold; font-size: 11px; color: #2563eb;">
-                            {{ number_format($session->actual_teaching_hours, 1) }}
-                        </td>
+                        <th style="width: 12%;">Date</th>
+                        <th style="width: 20%;">Teacher</th>
+                        <th style="width: 25%;">Subject / Group</th>
+                        <th style="width: 11%; text-align: center;">Status</th>
+                        <th style="width: 24%;">Schedule vs Actual Time</th>
+                        <th style="width: 8%; text-align: right;">Hours</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($reportGroup['sessions'] as $session)
+                        <tr>
+                            <td style="font-family: monospace;">
+                                <strong>{{ $session->attendance_date?->format('Y-m-d') }}</strong>
+                                <div style="font-size: 8px; color: #6b7280; margin-top: 1px;">{{ $session->attendance_date?->format('l') }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: bold; color: #111827;">{{ $session->teacher->user->name ?? 'Unknown' }}</div>
+                                <div style="font-size: 8px; color: #6b7280; margin-top: 1px;">{{ $session->teacher->department->name ?? 'No dept.' }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500;">{{ $session->subject->name ?? '-' }}</div>
+                                <div style="font-size: 8.5px; color: #4b5563; font-family: monospace; margin-top: 2px;">
+                                    {{ $session->classGroup->name ?? $session->classRoom->name ?? 'No Group' }}
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                @php
+                                    $statusLabel = str_replace('_', ' ', strtoupper($session->attendance_status));
+                                @endphp
+                                <span class="badge {{ $session->attendance_status }}">{{ $statusLabel }}</span>
+                            </td>
+                            <td style="font-family: monospace; font-size: 9px; line-height: 1.3;">
+                                <div><span style="color: #6b7280;">SCHED:</span> {{ $session->scheduled_start_time?->format('H:i') }} - {{ $session->scheduled_end_time?->format('H:i') }}</div>
+                                <div style="margin-top: 1px;"><span style="color: #6b7280;">ACTUAL:</span> {{ $session->check_in_time?->format('H:i') ?? '-' }} - {{ $session->check_out_time?->format('H:i') ?? '-' }}</div>
+                            </td>
+                            <td style="text-align: right; font-family: monospace; font-weight: bold; font-size: 11px; color: #2563eb;">
+                                {{ $formatReportHours($session->report_teaching_hours ?? $session->actual_teaching_hours) }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endforeach
     @endif
 
     <div class="footer">

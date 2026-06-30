@@ -17,12 +17,44 @@ class GoogleDriveService
 
     public function configured(): bool
     {
+        return $this->configurationStatus()['configured'];
+    }
+
+    public function configurationStatus(): array
+    {
+        $missing = [];
+        $message = null;
+        $mode = 'none';
+
         try {
-            return (bool) ($this->folderId() && ($this->oauthConfigured() || $this->credentials()));
+            if (!$this->folderId()) {
+                $missing[] = 'GOOGLE_DRIVE_FOLDER_ID';
+            }
+
+            $oauthReady = $this->oauthConfigured();
+            $serviceAccountReady = (bool) $this->credentials();
+
+            if ($oauthReady) {
+                $mode = 'oauth';
+            } elseif ($serviceAccountReady) {
+                $mode = 'service_account';
+            } else {
+                $missing[] = 'GOOGLE_DRIVE_CLIENT_ID';
+                $missing[] = 'GOOGLE_DRIVE_CLIENT_SECRET';
+                $missing[] = 'GOOGLE_DRIVE_REFRESH_TOKEN';
+                $missing[] = 'GOOGLE_DRIVE_CREDENTIALS or GOOGLE_DRIVE_CREDENTIALS_BASE64 or GOOGLE_DRIVE_CREDENTIALS_PATH';
+            }
         } catch (Throwable $e) {
             Log::warning('Google Drive backup configuration is invalid: ' . $e->getMessage());
-            return false;
+            $message = $e->getMessage();
         }
+
+        return [
+            'configured' => empty($missing) && $message === null,
+            'mode' => $mode,
+            'missing' => array_values(array_unique($missing)),
+            'message' => $message,
+        ];
     }
 
     public function upload(string $absolutePath, string $fileName): ?array

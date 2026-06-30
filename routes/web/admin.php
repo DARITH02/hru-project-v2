@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminController as AdminUIController;
 use App\Http\Controllers\Admin\AdminDocumentController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\RestoreController;
 use App\Http\Controllers\Admin\TeacherAttendanceController as AdminTeacherAttendanceController;
 use App\Http\Controllers\Admin\TelegramBotController;
@@ -18,6 +19,7 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::get('/admin/attendance-issues/export/pdf', [AdminUIController::class, 'exportAttendanceIssuesPdf'])->name('admin.attendance-issues.export.pdf');
     Route::post('/admin/attendance-issues/send-telegram', [AdminUIController::class, 'sendAttendanceIssuesToTelegram'])->name('admin.attendance-issues.send-telegram');
     Route::get('/admin/teacher-accounts', [AdminUIController::class, 'teacherAccounts'])->name('admin.teacher-accounts');
+    Route::post('/admin/users/{id}/approve', [AdminUIController::class, 'approveUser'])->name('admin.users.approve');
 
     Route::get('/admin/documents', [AdminDocumentController::class, 'index'])->name('admin.documents.index');
     Route::get('/admin/documents/{document}/preview', [AdminDocumentController::class, 'preview'])->name('admin.documents.preview');
@@ -45,7 +47,9 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::post('/admin/teacher-attendance/reports/send-telegram', [AdminTeacherAttendanceController::class, 'sendReportsToTelegram'])->name('admin.teacher-attendance.reports.send-telegram');
 
     Route::middleware(['auth', 'role:super_admin'])->group(function () {
-        Route::post('/admin/users/{id}/approve', [AdminUIController::class, 'approveUser'])->name('admin.users.approve');
+        Route::get('/admin/profile', [ProfileController::class, 'edit'])->name('admin.profile.edit');
+        Route::put('/admin/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
+
         Route::delete('/admin/users/{id}', [AdminUIController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::delete('/admin/documents/rejected', [AdminDocumentController::class, 'destroyRejected'])->name('admin.documents.rejected.destroy');
         Route::delete('/admin/attendance-issues/history/drop-all', [AdminUIController::class, 'dropAllHistory'])->name('admin.attendance-issues.history.drop-all');
@@ -58,6 +62,7 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
         Route::delete('/admin/backup-restore/local/{fileName}', [BackupController::class, 'destroyLocal'])->name('admin.backup-restore.local.destroy');
         Route::delete('/admin/backup-restore/cloud/{fileId}', [BackupController::class, 'destroyCloud'])->name('admin.backup-restore.cloud.destroy');
         Route::post('/admin/backup-restore/restore', [RestoreController::class, 'store'])->name('admin.backup-restore.restore');
+        Route::post('/admin/backup-restore/restore-upload', [RestoreController::class, 'upload'])->name('admin.backup-restore.restore.upload');
         Route::post('/admin/backup-restore/restore/cloud', [RestoreController::class, 'storeCloud'])->name('admin.backup-restore.restore.cloud');
 
         Route::get('/admin/settings/maintenance', [AdminUIController::class, 'maintenanceStatus'])->name('admin.settings.maintenance.status');
@@ -75,6 +80,8 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::get('/admin/departments', [AdminUIController::class, 'departments'])->name('admin.departments');
     Route::get('/admin/permissions', [AdminUIController::class, 'permissions'])->name('admin.permissions');
     Route::post('/admin/permissions', [AdminUIController::class, 'storePermission'])->name('admin.permissions.store');
+    Route::post('/admin/permissions/{id}/approve', [AdminUIController::class, 'approvePermission'])->name('admin.permissions.approve');
+    Route::post('/admin/permissions/{id}/reject', [AdminUIController::class, 'rejectPermission'])->name('admin.permissions.reject');
     Route::delete('/admin/permissions/{id}', [AdminUIController::class, 'destroyPermission'])->name('admin.permissions.destroy');
     Route::get('/admin/settings', [AdminUIController::class, 'settings'])->name('admin.settings');
     Route::post('/admin/settings', [AdminUIController::class, 'updateSettings'])->name('admin.settings.update');

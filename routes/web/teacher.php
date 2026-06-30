@@ -23,6 +23,7 @@ Route::middleware(['auth', 'demo.readonly', 'role:teacher'])->group(function () 
     Route::post('/teacher/attendance/{session}/check-out', [TeacherAttendanceController::class, 'checkOut'])->name('teacher.attendance.check-out');
     Route::post('/teacher/attendance/corrections', [TeacherAttendanceController::class, 'storeCorrection'])->name('teacher.attendance.corrections.store');
     Route::post('/teacher/attendance/class-change-requests', [TeacherAttendanceController::class, 'storeClassChange'])->name('teacher.attendance.class-change.store');
+    Route::post('/teacher/student-permissions', [TeacherAttendanceController::class, 'storeStudentPermissionRequest'])->name('teacher.student-permissions.store');
 
     Route::get('/teacher/documents', [TeacherDocumentController::class, 'index'])->name('teacher.documents.index');
     Route::get('/teacher/documents/create', [TeacherDocumentController::class, 'create'])->name('teacher.documents.create');

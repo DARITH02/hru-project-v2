@@ -24,6 +24,7 @@ use Illuminate\Validation\ValidationException;
 class TeacherAttendanceService
 {
     public const VALID_PRESENT_STATUSES = ['present', 'on_time', 'late', 'very_late', 'teaching', 'completed', 'early_leave', 'permission'];
+    private const LATE_GRACE_MINUTES = 15;
 
     public function syncFromStudentAttendanceSessions(?int $actorId = null): int
     {
@@ -36,6 +37,11 @@ class TeacherAttendanceService
                 foreach ($sessions as $session) {
                     $class = $session->classRoom;
                     if (!$class || !$class->teacher_id) {
+                        continue;
+                    }
+
+                    if (in_array($session->status, ['skipped', 'cancelled'], true)) {
+                        $this->deleteScheduleForCourseSession((int) $session->id);
                         continue;
                     }
 
@@ -54,9 +60,9 @@ class TeacherAttendanceService
                             'schedule_date' => $start->toDateString(),
                             'scheduled_start_time' => $start,
                             'scheduled_end_time' => $end,
-                            'session_number' => $this->nextSessionNumber($class->teacher_id, $class->subject_id, $start),
+                            'session_number' => $this->nextSessionNumber($class->teacher_id, $start),
                             'check_in_opens_at' => $start->copy()->subMinutes(30),
-                            'check_in_closes_at' => $start->copy()->addMinutes(15),
+                            'check_in_closes_at' => $end->copy(),
                             'check_out_opens_at' => $end->copy()->subMinutes(15),
                             'check_out_closes_at' => $end->copy()->addMinutes(60),
                             'semester' => $session->semester ?? $class->semester,
@@ -69,6 +75,24 @@ class TeacherAttendanceService
 
                     if ($schedule->wasRecentlyCreated) {
                         $created++;
+                    } elseif ($schedule->source === 'generated') {
+                        $schedule->forceFill([
+                            'teacher_id' => $class->teacher_id,
+                            'subject_id' => $class->subject_id,
+                            'class_id' => $class->id,
+                            'class_group_id' => $group?->id ?? $class->group_id,
+                            'room_name' => $class->room_number,
+                            'schedule_date' => $start->toDateString(),
+                            'scheduled_start_time' => $start,
+                            'scheduled_end_time' => $end,
+                            'session_number' => $this->nextSessionNumber($class->teacher_id, $start, $schedule->id),
+                            'check_in_opens_at' => $start->copy()->subMinutes(30),
+                            'check_in_closes_at' => $end->copy(),
+                            'check_out_opens_at' => $end->copy()->subMinutes(15),
+                            'check_out_closes_at' => $end->copy()->addMinutes(60),
+                            'semester' => $session->semester ?? $class->semester,
+                            'academic_year' => $session->academic_year ?? $class->academic_year,
+                        ])->save();
                     }
 
                     $this->ensureAttendanceSession($schedule, $actorId);
@@ -78,9 +102,20 @@ class TeacherAttendanceService
         return $created;
     }
 
+    private function deleteScheduleForCourseSession(int $courseSessionId): void
+    {
+        $schedule = TeacherSchedule::where('source_attendance_session_id', $courseSessionId)->first();
+        if (!$schedule) {
+            return;
+        }
+
+        TeacherAttendanceSession::where('schedule_id', $schedule->id)->delete();
+        $schedule->delete();
+    }
+
     public function ensureAttendanceSession(TeacherSchedule $schedule, ?int $actorId = null): TeacherAttendanceSession
     {
-        return TeacherAttendanceSession::firstOrCreate(
+        $session = TeacherAttendanceSession::firstOrCreate(
             ['schedule_id' => $schedule->id],
             [
                 'teacher_id' => $schedule->teacher_id,
@@ -96,19 +131,36 @@ class TeacherAttendanceService
                 'created_by' => $actorId,
             ]
         );
+
+        if (!$session->wasRecentlyCreated && $session->session_number !== $schedule->session_number) {
+            $session->forceFill(['session_number' => $schedule->session_number])->save();
+        }
+
+        return $session;
     }
 
     public function generateQrToken(TeacherAttendanceSession $session, int $ttlSeconds = 60): array
     {
-        if ($session->session_number !== 1) {
-            throw ValidationException::withMessages([
-                'session' => 'QR check-in is only generated for session 1. Later sessions use session 1 check-in for the same subject and date.',
-            ]);
-        }
-
         if ($session->attendance_status === 'permission') {
             throw ValidationException::withMessages(['session' => 'This session is already marked as permission.']);
         }
+
+        $now = now();
+        $schedule = $session->schedule;
+        if ($schedule) {
+            $opensAt = Carbon::parse($schedule->check_in_opens_at);
+            $closesAt = $schedule->check_out_closes_at
+                ? Carbon::parse($schedule->check_out_closes_at)
+                : Carbon::parse($session->scheduled_end_time)->addMinutes(60);
+
+            if ($now->lt($opensAt) || $now->gt($closesAt)) {
+                throw ValidationException::withMessages([
+                    'session' => 'QR is available from 30 minutes before class until the checkout window closes.',
+                ]);
+            }
+        }
+
+        $expiresAt = $now->copy()->addSeconds($ttlSeconds);
 
         $raw = implode('|', [
             'teacher-attendance',
@@ -130,14 +182,23 @@ class TeacherAttendanceService
             'attendance_date' => $session->attendance_date,
             'session_number' => $session->session_number,
             'token_hash' => hash('sha256', $token),
-            'expires_at' => now()->addSeconds($ttlSeconds),
+            'expires_at' => $expiresAt,
         ]);
 
         return [
             'token' => $token,
-            'expires_at' => now()->addSeconds($ttlSeconds)->toIso8601String(),
+            'expires_at' => $expiresAt->toIso8601String(),
             'ttl_seconds' => $ttlSeconds,
         ];
+    }
+
+    public function qrWindowTtlSeconds(TeacherAttendanceSession $session): int
+    {
+        $closesAt = $session->schedule?->check_out_closes_at
+            ? Carbon::parse($session->schedule->check_out_closes_at)
+            : Carbon::parse($session->scheduled_end_time)->addMinutes(60);
+
+        return (int) max(1, now()->diffInSeconds($closesAt, false));
     }
 
     public function findQrToken(string $token): ?TeacherAttendanceQrToken
@@ -203,8 +264,8 @@ class TeacherAttendanceService
         }
 
         $session = $qr->attendanceSession;
-        if (!$session || $session->session_number !== 1) {
-            throw ValidationException::withMessages(['session' => 'Only session 1 QR codes can submit teacher attendance.']);
+        if (!$session) {
+            throw ValidationException::withMessages(['session' => 'The QR code session could not be found.']);
         }
 
         if ($session->teacher_id !== $teacher->id ||
@@ -215,9 +276,17 @@ class TeacherAttendanceService
             throw ValidationException::withMessages(['token' => 'The QR token does not match the teacher, subject, schedule, date, and session.']);
         }
 
-        return $action === 'check_out'
-            ? $this->qrCheckOutOpenSameSubjectSession($qr, $session, $request, $time)
-            : $this->qrCheckInSessionOne($qr, $session, $request, $time);
+        if ($action === 'check_out') {
+            return $this->qrCheckOutOpenSameSubjectSession($qr, $session, $request, $time);
+        }
+
+        if ($session->session_number !== 1) {
+            throw ValidationException::withMessages([
+                'attendance_action' => 'Only session 1 QR can check in. Use check-out for later session QR codes.',
+            ]);
+        }
+
+        return $this->qrCheckInSessionOne($qr, $session, $request, $time);
     }
 
     private function qrCheckInSessionOne(TeacherAttendanceQrToken $qr, TeacherAttendanceSession $session, ?Request $request, Carbon $time): TeacherAttendanceSession
@@ -240,17 +309,23 @@ class TeacherAttendanceService
 
     private function qrCheckOutOpenSameSubjectSession(TeacherAttendanceQrToken $qr, TeacherAttendanceSession $source, ?Request $request, Carbon $time): TeacherAttendanceSession
     {
+        if ($source->session_number === 1) {
+            throw ValidationException::withMessages([
+                'attendance_action' => 'Session 1 QR is only for check-in. Use the later session QR to check out.',
+            ]);
+        }
+
         $session = TeacherAttendanceSession::where('teacher_id', $source->teacher_id)
             ->where('subject_id', $source->subject_id)
             ->whereDate('attendance_date', $source->attendance_date)
+            ->where('id', $source->id)
             ->whereNotNull('check_in_time')
             ->whereNull('check_out_time')
             ->whereNotIn('attendance_status', ['cancelled', 'rescheduled', 'permission'])
-            ->orderByDesc('session_number')
             ->first();
 
         if (!$session) {
-            throw ValidationException::withMessages(['attendance_action' => 'No checked-in session is waiting for checkout, or checkout was already submitted.']);
+            throw ValidationException::withMessages(['attendance_action' => 'This session is not checked in yet, or check-out was already submitted.']);
         }
 
         $this->validateCheckoutLocation($session, $request);
@@ -286,13 +361,16 @@ class TeacherAttendanceService
             ]);
         }
 
+        $checkInTime = $this->autoSessionCheckInTime($source, $session);
+        $lateMinutes = $this->checkInLateMinutes($session, $checkInTime);
+
         $old = $session->toArray();
         $session->fill([
-            'check_in_time' => $source->check_in_time,
+            'check_in_time' => $checkInTime,
             'check_in_method' => 'auto_session',
             'auto_check_in_source_session_id' => $source->id,
-            'attendance_status' => $source->attendance_status === 'permission' ? 'permission' : 'present',
-            'late_minutes' => 0,
+            'attendance_status' => $source->attendance_status === 'permission' ? 'permission' : ($lateMinutes > 0 ? 'late' : 'present'),
+            'late_minutes' => $lateMinutes,
             'check_in_latitude' => $source->check_in_latitude,
             'check_in_longitude' => $source->check_in_longitude,
         ]);
@@ -303,6 +381,14 @@ class TeacherAttendanceService
         event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'auto_checked_in'));
 
         return $session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule', 'autoCheckInSourceSession']);
+    }
+
+    private function autoSessionCheckInTime(TeacherAttendanceSession $source, TeacherAttendanceSession $session): Carbon
+    {
+        $sourceCheckIn = Carbon::parse($source->check_in_time);
+        $sessionStart = Carbon::parse($session->scheduled_start_time);
+
+        return $sourceCheckIn->gt($sessionStart) ? $sourceCheckIn : $sessionStart;
     }
 
     public function autoCheckInLaterSameSubjectSessions(TeacherAttendanceSession $source, ?Request $request = null, ?Carbon $time = null): int
@@ -342,16 +428,9 @@ class TeacherAttendanceService
         }
 
         $old = $session->toArray();
-        $schedule = $session->schedule;
 
-        $status = 'present';
-        $lateMinutes = max(0, Carbon::parse($session->scheduled_start_time)->diffInMinutes($time, false));
-
-        if ($schedule && $time->gt(Carbon::parse($schedule->check_in_closes_at))) {
-            $status = 'very_late';
-        } elseif ($time->gt(Carbon::parse($session->scheduled_start_time))) {
-            $status = 'late';
-        }
+        $lateMinutes = $this->checkInLateMinutes($session, $time);
+        $status = $lateMinutes > 0 ? 'late' : 'present';
 
         $session->fill([
             'check_in_time' => $time,
@@ -365,10 +444,23 @@ class TeacherAttendanceService
         $this->recalculate($session);
         $session->save();
         $this->log($session, 'checked_in', $old, $session->fresh()->toArray(), $request);
-        app(TeacherAttendanceNotificationService::class)->lateCheckIn($session->fresh(['teacher.user', 'subject']));
+        if ($status === 'late') {
+            app(TeacherAttendanceNotificationService::class)->lateCheckIn($session->fresh(['teacher.user', 'subject']));
+        }
         event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'checked_in'));
 
         return $session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']);
+    }
+
+    private function checkInLateMinutes(TeacherAttendanceSession $session, Carbon $time): int
+    {
+        $lateStartsAt = Carbon::parse($session->scheduled_start_time)->addMinutes(self::LATE_GRACE_MINUTES);
+
+        if (!$time->gt($lateStartsAt)) {
+            return 0;
+        }
+
+        return max(0, $lateStartsAt->diffInMinutes($time, false));
     }
 
     private function validateCheckInWindow(TeacherAttendanceSession $session, Carbon $time): void
@@ -381,7 +473,9 @@ class TeacherAttendanceService
             ]);
         }
 
-        $opensAt = Carbon::parse($session->scheduled_start_time);
+        $opensAt = $session->schedule?->check_in_opens_at
+            ? Carbon::parse($session->schedule->check_in_opens_at)
+            : Carbon::parse($session->scheduled_start_time);
         $closesAt = Carbon::parse($session->scheduled_end_time);
 
         if ($time->lt($opensAt) || $time->gt($closesAt)) {
@@ -422,7 +516,46 @@ class TeacherAttendanceService
         $this->log($session, 'checked_out', $old, $session->fresh()->toArray(), $request);
         event(new TeacherAttendanceUpdated($session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'checked_out'));
 
+        if ($session->session_number > 1) {
+            $this->autoCheckOutSessionOneForLaterSession($session, $request, $time);
+        }
+
         return $session->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']);
+    }
+
+    private function autoCheckOutSessionOneForLaterSession(TeacherAttendanceSession $laterSession, ?Request $request, Carbon $time): void
+    {
+        $sessionOne = TeacherAttendanceSession::where('teacher_id', $laterSession->teacher_id)
+            ->where('subject_id', $laterSession->subject_id)
+            ->whereDate('attendance_date', $laterSession->attendance_date)
+            ->where('session_number', 1)
+            ->whereNotNull('check_in_time')
+            ->whereNull('check_out_time')
+            ->whereNotIn('attendance_status', ['cancelled', 'rescheduled', 'permission', 'absent'])
+            ->first();
+
+        if (!$sessionOne) {
+            return;
+        }
+
+        $old = $sessionOne->toArray();
+        $checkOutTime = Carbon::parse($sessionOne->scheduled_end_time);
+        if ($checkOutTime->gt($time)) {
+            $checkOutTime = $time;
+        }
+
+        $sessionOne->fill([
+            'check_out_time' => $checkOutTime,
+            'check_out_method' => 'system',
+            'attendance_status' => $checkOutTime->lt(Carbon::parse($sessionOne->scheduled_end_time)) ? 'early_leave' : 'completed',
+            'check_out_latitude' => $request?->input('latitude'),
+            'check_out_longitude' => $request?->input('longitude'),
+        ]);
+
+        $this->recalculate($sessionOne);
+        $sessionOne->save();
+        $this->log($sessionOne, 'auto_checked_out_from_later_session', $old, $sessionOne->fresh()->toArray(), $request, 'Session 1 was closed after session ' . $laterSession->session_number . ' checkout.');
+        event(new TeacherAttendanceUpdated($sessionOne->fresh(['teacher.user', 'subject', 'classRoom', 'classGroup', 'schedule']), 'checked_out'));
     }
 
     private function validateCheckoutLocation(TeacherAttendanceSession $session, ?Request $request): void
@@ -513,7 +646,7 @@ class TeacherAttendanceService
 
         if ($session->check_in_time) {
             $checkIn = Carbon::parse($session->check_in_time);
-            $session->late_minutes = max(0, $start->diffInMinutes($checkIn, false));
+            $session->late_minutes = $this->checkInLateMinutes($session, $checkIn);
         }
 
         if ($session->check_out_time) {
@@ -642,7 +775,7 @@ class TeacherAttendanceService
             'scheduled_start_time' => $start,
             'scheduled_end_time' => $end,
             'check_in_opens_at' => $start->copy()->subMinutes(30),
-            'check_in_closes_at' => $start->copy()->addMinutes(15),
+            'check_in_closes_at' => $end->copy(),
             'check_out_opens_at' => $end->copy()->subMinutes(15),
             'check_out_closes_at' => $end->copy()->addMinutes(60),
             'approved_by' => $request->user()?->id,
@@ -668,17 +801,100 @@ class TeacherAttendanceService
         }
 
         $sourceSession->update([
+            'status' => 'skipped',
+        ]);
+
+        $replacementSession = AttendanceSession::firstOrCreate([
+            'class_id' => $sourceSession->class_id,
             'start_time' => $nextSlot['start_time'],
             'end_time' => $nextSlot['end_time'],
+            'semester' => $sourceSession->semester,
+            'academic_year' => $sourceSession->academic_year,
+        ], [
             'checkin_open_time' => $nextSlot['checkin_open_time'],
             'checkin_close_time' => $nextSlot['checkin_close_time'],
             'status' => 'scheduled',
+            'qr_token' => bin2hex(random_bytes(8)),
         ]);
+
+        if (!$replacementSession->wasRecentlyCreated) {
+            $replacementSession->forceFill([
+                'checkin_open_time' => $nextSlot['checkin_open_time'],
+                'checkin_close_time' => $nextSlot['checkin_close_time'],
+                'status' => 'scheduled',
+            ])->save();
+        }
+
+        $this->createTeacherScheduleForReplacementCourseSession($teacherSession, $replacementSession);
 
         ActivityLog::create([
             'action' => 'UPDATE',
-            'target' => "session#{$sourceSession->id}.teacher_permission_move_to_end",
+            'target' => "session#{$sourceSession->id}.teacher_permission_skipped_replacement#{$replacementSession->id}",
         ]);
+    }
+
+    private function createTeacherScheduleForReplacementCourseSession(TeacherAttendanceSession $sourceTeacherSession, AttendanceSession $replacementSession): void
+    {
+        $sourceSchedule = $sourceTeacherSession->schedule;
+        $class = $replacementSession->classRoom;
+
+        if (!$sourceSchedule || !$class || !$class->teacher_id) {
+            return;
+        }
+
+        $start = Carbon::parse($replacementSession->start_time);
+        $end = Carbon::parse($replacementSession->end_time);
+        $group = $class->groups?->first();
+
+        $schedule = TeacherSchedule::firstOrCreate(
+            ['source_attendance_session_id' => $replacementSession->id],
+            [
+                'teacher_id' => $class->teacher_id,
+                'subject_id' => $class->subject_id,
+                'class_id' => $class->id,
+                'class_group_id' => $group?->id ?? $class->group_id ?? $sourceSchedule->class_group_id,
+                'room_name' => $class->room_number ?? $sourceSchedule->room_name,
+                'schedule_date' => $start->toDateString(),
+                'scheduled_start_time' => $start,
+                'scheduled_end_time' => $end,
+                'session_number' => $this->nextSessionNumber($class->teacher_id, $start),
+                'check_in_opens_at' => $start->copy()->subMinutes(30),
+                'check_in_closes_at' => $end->copy(),
+                'check_out_opens_at' => $end->copy()->subMinutes(15),
+                'check_out_closes_at' => $end->copy()->addMinutes(60),
+                'semester' => $replacementSession->semester ?? $sourceSchedule->semester,
+                'academic_year' => $replacementSession->academic_year ?? $sourceSchedule->academic_year,
+                'status' => 'scheduled',
+                'source' => 'generated',
+                'created_by' => $sourceTeacherSession->approved_by,
+                'approved_by' => $sourceTeacherSession->approved_by,
+                'remarks' => 'Replacement for teacher permission session #' . $sourceTeacherSession->id,
+            ]
+        );
+
+        if (!$schedule->wasRecentlyCreated) {
+            $schedule->forceFill([
+                'teacher_id' => $class->teacher_id,
+                'subject_id' => $class->subject_id,
+                'class_id' => $class->id,
+                'class_group_id' => $group?->id ?? $class->group_id ?? $sourceSchedule->class_group_id,
+                'room_name' => $class->room_number ?? $sourceSchedule->room_name,
+                'schedule_date' => $start->toDateString(),
+                'scheduled_start_time' => $start,
+                'scheduled_end_time' => $end,
+                'session_number' => $this->nextSessionNumber($class->teacher_id, $start, $schedule->id),
+                'check_in_opens_at' => $start->copy()->subMinutes(30),
+                'check_in_closes_at' => $end->copy(),
+                'check_out_opens_at' => $end->copy()->subMinutes(15),
+                'check_out_closes_at' => $end->copy()->addMinutes(60),
+                'semester' => $replacementSession->semester ?? $sourceSchedule->semester,
+                'academic_year' => $replacementSession->academic_year ?? $sourceSchedule->academic_year,
+                'status' => 'scheduled',
+                'approved_by' => $sourceTeacherSession->approved_by,
+            ])->save();
+        }
+
+        $this->ensureAttendanceSession($schedule, $sourceTeacherSession->approved_by);
     }
 
     private function calculateNextCourseSlotData(AttendanceSession $session): ?array
@@ -894,9 +1110,9 @@ class TeacherAttendanceService
                     'schedule_date' => Carbon::parse($date)->toDateString(),
                     'scheduled_start_time' => $start,
                     'scheduled_end_time' => $end,
-                    'session_number' => $this->nextSessionNumber($schedule->teacher_id, $schedule->subject_id, $start),
+                    'session_number' => $this->nextSessionNumber($schedule->teacher_id, $start),
                     'check_in_opens_at' => $start->copy()->subMinutes(30),
-                    'check_in_closes_at' => $start->copy()->addMinutes(15),
+                    'check_in_closes_at' => $end->copy(),
                     'check_out_opens_at' => $end->copy()->subMinutes(15),
                     'check_out_closes_at' => $end->copy()->addMinutes(60),
                     'semester' => $schedule->semester,
@@ -975,11 +1191,18 @@ class TeacherAttendanceService
         ]);
     }
 
-    private function nextSessionNumber(int $teacherId, ?int $subjectId, Carbon $start): int
+    private function nextSessionNumber(int $teacherId, Carbon $start, ?int $ignoreScheduleId = null): int
     {
-        return (int) TeacherSchedule::where('teacher_id', $teacherId)
-            ->where('subject_id', $subjectId)
-            ->whereDate('schedule_date', $start->toDateString())
-            ->max('session_number') + 1;
+        $query = TeacherSchedule::where('teacher_id', $teacherId)
+            ->whereDate('schedule_date', $start->toDateString());
+
+        if ($ignoreScheduleId) {
+            $query->where('id', '!=', $ignoreScheduleId);
+        }
+
+        return $query
+            ->whereDate('scheduled_start_time', $start->toDateString())
+            ->whereTime('scheduled_start_time', '<', $start->format('H:i:s'))
+            ->exists() ? 2 : 1;
     }
 }

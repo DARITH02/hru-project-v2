@@ -13,6 +13,10 @@ class Attendance extends Model
 
     protected $fillable = ['student_id', 'session_id', 'status', 'method', 'scan_time'];
 
+    protected $casts = [
+        'scan_time' => 'datetime',
+    ];
+
     public function student()
     {
         return $this->belongsTo(Student::class);

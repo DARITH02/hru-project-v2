@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\StudentPermission;
 use App\Models\TeacherAttendanceCorrection;
 use App\Models\TeacherAttendanceSession;
 use App\Models\TeacherClassChangeRequest;
@@ -204,6 +205,53 @@ class TeacherAttendanceController extends Controller
             ->where('teacher_id', $teacher->id)
             ->latest()
             ->paginate(20));
+    }
+
+    public function storeStudentPermissionRequest(Request $request)
+    {
+        $teacher = $request->user()->teacher;
+        abort_unless($teacher, 404);
+
+        $data = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'attendance_session_id' => 'nullable|exists:attendance_sessions,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'type' => 'required|in:sick,event,personal,official',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $allowedStudentIds = $teacher->classes()
+            ->with('groups')
+            ->get()
+            ->flatMap(fn ($class) => $class->groups->pluck('id')->push($class->group_id))
+            ->filter()
+            ->unique()
+            ->pipe(fn ($groupIds) => \App\Models\Student::whereIn('group_id', $groupIds)->pluck('id'))
+            ->all();
+
+        abort_unless(in_array((int) $data['student_id'], $allowedStudentIds, true), 403);
+
+        if (!empty($data['attendance_session_id'])) {
+            $sessionBelongsToTeacher = \App\Models\AttendanceSession::where('id', $data['attendance_session_id'])
+                ->whereHas('classRoom', fn ($query) => $query->where('teacher_id', $teacher->id))
+                ->exists();
+
+            abort_unless($sessionBelongsToTeacher, 403);
+        }
+
+        $permission = StudentPermission::withoutGlobalScope('approved')->create($data + [
+            'status' => 'pending',
+            'requested_by' => $request->user()->id,
+            'requested_by_teacher_id' => $teacher->id,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'permission' => $permission,
+            'message' => 'Student permission request submitted. It must be approved by admin within 7 days or the student remains absent.',
+        ], 201);
     }
 
     private function authorizeTeacherSession(Request $request, TeacherAttendanceSession $session): void

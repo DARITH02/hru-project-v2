@@ -13,9 +13,9 @@ class SettingSeeder extends Seeder
     public function run(): void
     {
         $defaults = [
-            'app_name' => 'AttendAI',
-            'institution_name' => 'Obsidian Academy',
-            'app_sub' => 'MANAGEMENT SYSTEM',
+            'app_name' => 'HRU-ATMS',
+            'institution_name' => 'HRU',
+            'app_sub' => 'Management System',
             'academic_year' => '2025-2026',
             'semester' => '1',
             'grace_period' => '15',

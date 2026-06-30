@@ -158,17 +158,45 @@ class BackupService
     public function localBackups(): array
     {
         $this->ensureBackupDirectory();
+        $currentDriver = DB::connection()->getDriverName();
 
         return collect(File::files($this->backupDirectory()))
             ->filter(fn ($file) => str_ends_with($file->getFilename(), '.zip'))
             ->sortByDesc(fn ($file) => $file->getMTime())
-            ->map(fn ($file) => [
-                'name' => $file->getFilename(),
-                'size' => $file->getSize(),
-                'modified_at' => date('Y-m-d H:i:s', $file->getMTime()),
-            ])
+            ->map(function ($file) use ($currentDriver) {
+                $databaseDriver = $this->backupDatabaseDriver($file->getPathname());
+
+                return [
+                    'name' => $file->getFilename(),
+                    'size' => $file->getSize(),
+                    'modified_at' => date('Y-m-d H:i:s', $file->getMTime()),
+                    'database_driver' => $databaseDriver,
+                    'is_compatible' => $databaseDriver === null || $databaseDriver === $currentDriver,
+                ];
+            })
             ->values()
             ->all();
+    }
+
+    private function backupDatabaseDriver(string $path): ?string
+    {
+        $zip = new ZipArchive();
+
+        if ($zip->open($path) !== true) {
+            return null;
+        }
+
+        try {
+            $manifest = $zip->getFromName('manifest.json');
+            if ($manifest === false) {
+                return null;
+            }
+
+            $metadata = json_decode($manifest, true);
+            return is_array($metadata) ? ($metadata['database'] ?? null) : null;
+        } finally {
+            $zip->close();
+        }
     }
 
     public function deleteLocalBackup(string $fileName): bool

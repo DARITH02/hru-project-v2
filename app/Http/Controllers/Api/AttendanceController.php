@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\AttendanceService;
+use App\Models\Attendance;
+use App\Models\AttendanceSession;
+use App\Models\Student;
+use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
@@ -22,7 +26,8 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'session_id'   => 'required',
-            'student_code' => 'required',
+            'student_id'   => 'required_without:student_code|nullable|integer|exists:students,id',
+            'student_code' => 'required_without:student_id|nullable|string',
             'qr_token'     => 'required',
             'latitude'     => 'nullable|numeric',
             'longitude'    => 'nullable|numeric',
@@ -30,19 +35,36 @@ class AttendanceController extends Controller
         ]);
 
         try {
-            $this->attendanceService->processCheckin(
-                $request->session_id, 
-                $request->student_code,
-                $request->qr_token,
-                $request->latitude,
-                $request->longitude,
-                $request->accuracy
-            );
+            if ($request->filled('student_id')) {
+                $attendance = $this->attendanceService->processCheckinByStudentId(
+                    $request->session_id,
+                    $request->student_id,
+                    $request->qr_token,
+                    $request->latitude,
+                    $request->longitude,
+                    $request->accuracy
+                );
+            } else {
+                $attendance = $this->attendanceService->processCheckin(
+                    $request->session_id,
+                    $request->student_code,
+                    $request->qr_token,
+                    $request->latitude,
+                    $request->longitude,
+                    $request->accuracy
+                );
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Check-in successful!',
-                'status' => 'Present'
+                'status' => strtoupper($attendance->status),
+                'attendance' => [
+                    'student_id' => $attendance->student_id,
+                    'session_id' => $attendance->session_id,
+                    'status' => $attendance->status,
+                    'scan_time' => optional($attendance->scan_time)->toISOString(),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -55,20 +77,44 @@ class AttendanceController extends Controller
     /**
      * Get Session details for student API scan
      */
-    public function getScanInfo($sessionId)
+    public function getScanInfo(Request $request, $sessionId)
     {
         try {
-            $session = \App\Models\AttendanceSession::with('classRoom.subject')->findOrFail($sessionId);
+            $session = AttendanceSession::with(['classRoom.subject', 'classRoom.groups', 'attendanceRecords'])->findOrFail($sessionId);
+            $students = $this->studentsForSession($session);
+            $attendanceByStudent = $session->attendanceRecords->keyBy('student_id');
 
             return response()->json([
                 'success' => true,
                 'session' => [
                     'id' => $session->id,
-                    'room' => 100 + ($session->id % 400),
+                    'class_id' => $session->class_id,
+                    'room' => $session->classRoom->room_number ?? (100 + ($session->id % 400)),
                     'start_time' => $session->start_time,
                     'end_time' => $session->end_time,
+                    'status' => $session->status,
                     'subject' => $session->classRoom->subject->name ?? 'Unknown',
-                ]
+                    'groups' => $session->classRoom?->groups?->map(fn ($group) => [
+                        'id' => $group->id,
+                        'name' => $group->name,
+                        'year_level' => $group->year_level,
+                    ])->values() ?? [],
+                ],
+                'qr_token' => $request->query('token'),
+                'students' => $students->map(function ($student) use ($attendanceByStudent) {
+                    $attendance = $attendanceByStudent->get($student->id);
+
+                    return [
+                        'id' => $student->id,
+                        'student_code' => $student->student_code,
+                        'name' => $student->user->name ?? 'Unknown Student',
+                        'group_id' => $student->group_id,
+                        'group_name' => $student->group->name ?? null,
+                        'status' => $attendance?->status ?? 'absent',
+                        'already_checked_in' => $attendance && in_array($attendance->status, ['present', 'late'], true),
+                        'scan_time' => $attendance?->scan_time ? Carbon::parse($attendance->scan_time)->format('H:i') : null,
+                    ];
+                })->values(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -76,6 +122,26 @@ class AttendanceController extends Controller
                 'message' => 'Session not found or unavailable'
             ], 404);
         }
+    }
+
+    private function studentsForSession(AttendanceSession $session)
+    {
+        $classRoom = $session->classRoom;
+
+        if (!$classRoom) {
+            return collect();
+        }
+
+        $students = $classRoom->all_students;
+
+        if (method_exists($students, 'load')) {
+            $students->load(['user', 'group']);
+        }
+
+        return collect($students)
+            ->filter(fn ($student) => $student->status !== 'blacklisted')
+            ->sortBy(fn ($student) => $student->user->name ?? $student->student_code)
+            ->values();
     }
 
     public function getPortalData(Request $request)
