@@ -4,6 +4,7 @@
 @php
     $initial = strtoupper(substr($user->name ?? 'S', 0, 1));
     $roleLabel = strtoupper(str_replace('_', ' ', $user->role ?? 'super_admin'));
+    $profilePhotoUrl = $user->primaryPhoto?->url;
 @endphp
 
 <div class="page-header">
@@ -37,7 +38,7 @@
 @endif
 
 <div class="main-grid" style="grid-template-columns:minmax(0,1fr) 340px;align-items:start;">
-    <form action="{{ route('admin.profile.update') }}" method="POST">
+    <form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -68,6 +69,12 @@
                         <input id="profile-current-password" name="current_password" class="form-input" type="password" autocomplete="current-password" required>
                         <p style="margin:6px 0 0;color:var(--muted);font-family:var(--font-mono);font-size:9px;">Required to save profile changes.</p>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-top:12px;margin-bottom:0;">
+                    <label class="form-label" for="profile-photo">Profile photo</label>
+                    <input id="profile-photo" name="profile_photo" class="form-input" type="file" accept="image/*">
+                    <p style="margin:6px 0 0;color:var(--muted);font-family:var(--font-mono);font-size:9px;">JPG, PNG, WEBP, or GIF up to 5MB.</p>
                 </div>
             </div>
         </div>
@@ -100,9 +107,13 @@
     <aside class="panel">
         <div class="panel-body" style="padding:24px;">
             <div style="display:flex;align-items:center;gap:14px;">
-                <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#0f766e);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;font-family:var(--font-display);">
-                    {{ $initial }}
-                </div>
+                @if($profilePhotoUrl)
+                    <img src="{{ $profilePhotoUrl }}" alt="{{ $user->name }}" style="width:64px;height:64px;border-radius:18px;object-fit:cover;border:1px solid var(--border);">
+                @else
+                    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#0f766e);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;font-family:var(--font-display);">
+                        {{ $initial }}
+                    </div>
+                @endif
                 <div style="min-width:0;">
                     <div style="font-family:var(--font-display);font-size:18px;font-weight:900;color:var(--text);line-height:1.2;">{{ $user->name }}</div>
                     <div style="margin-top:5px;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--accent);">{{ $roleLabel }}</div>

@@ -1165,6 +1165,7 @@
                             $code2 = $instructor->teacher_code ?? '—';
                             $status2 = $instructor->status ?? 'active';
                             $rate2 = min(99, 82 + $cls2 * 3);
+                            $photoUrl2 = $instructor->primaryPhoto?->url ?? $instructor->user?->primaryPhoto?->url;
                         @endphp
                         <div class="teacher-card animate-card cursor-pointer overflow-hidden rounded-2xl bg-white shadow-[0_2px_20px_rgba(0,0,0,.06)]"
                             style="animation-delay: {{ $loop->index * 0.05 }}s" data-id="{{ $instructor->id }}"
@@ -1172,7 +1173,8 @@
                             data-dept="{{ $dept2 }}" data-dept-id="{{ $instructor->department_id }}"
                             data-status="{{ $status2 }}" data-spec="{{ strtolower($spec2) }}"
                             data-email="{{ strtolower($instructor->user->email ?? '') }}"
-                            data-phone="{{ $instructor->user->phone ?? '—' }}" data-classes="{{ $cls2 }}">
+                            data-phone="{{ $instructor->user->phone ?? '—' }}" data-classes="{{ $cls2 }}"
+                            data-photo-url="{{ $photoUrl2 }}">
                             @if (Auth::user()->isSuperAdmin())
                                 <label style="position:absolute;top:10px;right:10px;z-index:5;background:rgba(255,255,255,.95);border:1px solid rgba(148,163,184,.35);border-radius:8px;padding:5px;cursor:pointer"
                                     onclick="event.stopPropagation()">
@@ -1201,8 +1203,13 @@
                             <div class="teacher-card-body px-5 pb-5">
                                 <div class="teacher-card-avatar-row">
                                     <div class="avatar-ring">
-                                        <div class="teacher-card-avatar" style="background:{{ $col2[0] }}">
-                                            {{ strtoupper($init2) }}</div>
+                                        @if($photoUrl2)
+                                            <img src="{{ $photoUrl2 }}" alt="{{ $name2 }}" class="teacher-card-avatar"
+                                                style="object-fit:cover;border:3px solid #fff;background:{{ $col2[0] }}">
+                                        @else
+                                            <div class="teacher-card-avatar" style="background:{{ $col2[0] }}">
+                                                {{ strtoupper($init2) }}</div>
+                                        @endif
                                     </div>
                                     <div class="teacher-rating">
                                         <span class="text-[13px] text-[#f5a623]">★</span><span
@@ -1291,6 +1298,7 @@
                                     $classes = $instructor->classes_count ?? 0;
                                     $status = $instructor->status ?? 'active';
                                     $email = $instructor->user->email ?? __('admin_instructors.not_available');
+                                    $photoUrl = $instructor->primaryPhoto?->url ?? $instructor->user?->primaryPhoto?->url;
                                     $code = $instructor->teacher_code ?? '—';
                                 @endphp
                                 <tr data-id="{{ $instructor->id }}" data-name="{{ strtolower($name) }}"
@@ -1298,7 +1306,7 @@
                                     data-dept-id="{{ $instructor->department_id }}" data-status="{{ $status }}"
                                     data-spec="{{ strtolower($spec) }}" data-email="{{ strtolower($email) }}"
                                     data-phone="{{ $instructor->user->phone ?? '—' }}"
-                                    data-classes="{{ $classes }}" class="fade-up">
+                                    data-classes="{{ $classes }}" data-photo-url="{{ $photoUrl }}" class="fade-up">
 
                                     {{-- Instructor --}}
                                     @if (Auth::user()->isSuperAdmin())
@@ -1311,10 +1319,15 @@
                                     {{-- Instructor --}}
                                     <td>
                                         <div class="subject-cell">
-                                            <div class="subject-avatar"
-                                                style="background:{{ $col[0] }}22;color:{{ $col[0] }};border:1px solid {{ $col[0] }}33;font-size:10px;width:36px;height:36px;border-radius:50%">
-                                                {{ $init }}
-                                            </div>
+                                            @if($photoUrl)
+                                                <img src="{{ $photoUrl }}" alt="{{ $name }}" class="subject-avatar"
+                                                    style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid {{ $col[0] }}33;">
+                                            @else
+                                                <div class="subject-avatar"
+                                                    style="background:{{ $col[0] }}22;color:{{ $col[0] }};border:1px solid {{ $col[0] }}33;font-size:10px;width:36px;height:36px;border-radius:50%">
+                                                    {{ $init }}
+                                                </div>
+                                            @endif
                                             <div>
                                                 <div class="subject-name">{{ $name }}</div>
                                                 <div class="subject-id" style="color:var(--muted)">
@@ -1964,6 +1977,16 @@
         });
 
         // ── View Profile ───────────────────────────────
+        function escapeInstructorHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, match => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[match]));
+        }
+
         function openProfile(row) {
             // Works for both <tr> table rows and .instructor-card grid divs
             const name = row.dataset.name ?
@@ -1974,11 +1997,17 @@
             const email = row.dataset.email || '—';
             const code = row.dataset.code || '—';
             const classes = row.dataset.classes || '0';
+            const photoUrl = row.dataset.photoUrl || '';
             const spec = row.dataset.spec || '—';
             const phone = row.dataset.phone || '—';
             const init = name.trim().split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-            document.getElementById('profileAvatar').textContent = init;
+            const avatar = document.getElementById('profileAvatar');
+            if (photoUrl) {
+                avatar.innerHTML = `<img src="${escapeInstructorHtml(photoUrl)}" alt="${escapeInstructorHtml(name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+            } else {
+                avatar.textContent = init;
+            }
             document.getElementById('profileName').textContent = name;
             document.getElementById('profileDept').textContent = dept.toUpperCase ? dept.toUpperCase() : dept;
             document.getElementById('profileEmail').textContent = email;

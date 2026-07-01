@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use App\Models\Chat\Conversation;
 use App\Models\Chat\Message;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,6 +18,13 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            $user->photos()->each->delete();
+        });
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -99,6 +108,16 @@ class User extends Authenticatable
     public function student()
     {
         return $this->hasOne(Student::class);
+    }
+
+    public function photos(): MorphMany
+    {
+        return $this->morphMany(Photo::class, 'photoable')->latest();
+    }
+
+    public function primaryPhoto(): MorphOne
+    {
+        return $this->morphOne(Photo::class, 'photoable')->where('is_primary', true)->latestOfMany();
     }
 
     public function chatConversations()

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Student extends Model
 {
@@ -14,6 +16,13 @@ class Student extends Model
     protected $casts = [
         'blacklist_semesters' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Student $student) {
+            $student->photos()->each->delete();
+        });
+    }
 
     public function user()
     {
@@ -43,6 +52,16 @@ class Student extends Model
     public function restoreHistories()
     {
         return $this->hasMany(StudentRestoreHistory::class, 'student_id');
+    }
+
+    public function photos(): MorphMany
+    {
+        return $this->morphMany(Photo::class, 'photoable')->latest();
+    }
+
+    public function primaryPhoto(): MorphOne
+    {
+        return $this->morphOne(Photo::class, 'photoable')->where('is_primary', true)->latestOfMany();
     }
 
     public function isBlacklistedInSemester($academicYear, $semester)

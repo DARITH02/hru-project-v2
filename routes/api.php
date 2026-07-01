@@ -29,6 +29,7 @@ Route::get('/branding', [AuthController::class, 'branding']);
 //  PROTECTED API (SHARED)
 Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
+    Route::post('/profile/photo', [AuthController::class, 'updateProfilePhoto']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::middleware('role:teacher,admin,super_admin')->prefix('chat')->group(function () {
@@ -134,8 +135,11 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::get('/admin/students', [AdminController::class, 'listStudents']);
         Route::get('/admin/students/export', [AdminController::class, 'exportStudents']);
         Route::post('/admin/students/import', [AdminController::class, 'importStudents']);
+        Route::post('/admin/students/import-photos', [AdminController::class, 'importStudentPhotos']);
         Route::post('/admin/students', [AdminController::class, 'storeStudent']);
         Route::put('/admin/students/{studentId}', [AdminController::class, 'updateStudent']);
+        Route::post('/admin/students/{studentId}/photos', [AdminController::class, 'storeStudentPhotos']);
+        Route::delete('/admin/students/{studentId}/photos/{photoId}', [AdminController::class, 'deleteStudentPhoto']);
         Route::middleware('role:super_admin')->delete('/admin/students/bulk-delete', [AdminController::class, 'bulkDeleteStudents']);
         Route::middleware('role:super_admin')->delete('/admin/students/{studentId}', [AdminController::class, 'deleteStudent']);
         Route::get('/admin/students/{studentId}/attendance', [AdminController::class, 'listStudentAttendance']);
@@ -178,8 +182,10 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
         Route::middleware('role:super_admin')->delete('/admin/semesters/{assignmentId}', [AdminController::class, 'deleteSemesterAssignment']);
         Route::post('/admin/semesters/{assignmentId}/score', [AdminController::class, 'updateSemesterScore']);
         Route::get('/admin/semesters/{assignmentId}/preview', [AdminController::class, 'getGradingPreview']);
+        Route::post('/admin/semesters/{assignmentId}/archive-gpa', [AdminController::class, 'archiveSemesterGpa']);
         Route::post('/admin/semesters/{assignmentId}/student-scores', [AdminController::class, 'updateStudentScores']);
         Route::get('/admin/semesters/{assignmentId}/report', [AdminController::class, 'generateSemesterReport']);
+        Route::get('/admin/students/{studentId}/gpa-history', [AdminController::class, 'studentGpaHistory']);
     });
 });
 
@@ -190,6 +196,7 @@ Route::middleware(['auth:sanctum', 'demo.readonly'])->group(function () {
     Route::get('/student/documents', [StudentDocumentController::class, 'index']);
     Route::get('/student/documents/{document}/preview', [StudentDocumentController::class, 'preview']);
     Route::get('/student/documents/{document}/download', [StudentDocumentController::class, 'download']);
+    Route::get('/student/transcript', [AttendanceController::class, 'getTranscript']);
     Route::get('/student/classes', [AttendanceController::class, 'getStudentClasses']);
     Route::get('/student/classes/{classId}/history', [AttendanceController::class, 'getStudentClassHistory']);
 });

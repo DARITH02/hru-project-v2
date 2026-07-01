@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Models\Setting;
 use App\Services\Auth\AuthService;
+use App\Services\PhotoService;
 use App\Support\Http\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,8 @@ class AuthController extends Controller
             return $this->invalidCredentialsResponse();
         }
 
+        $user->load('primaryPhoto');
+
         $deviceName = $request->device_name ?? 'web-dashboard';
         $token = $user->createToken($deviceName)->plainTextToken;
 
@@ -38,6 +41,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'profile_photo_url' => $user->primaryPhoto?->url,
                 'student' => $this->auth->studentPayload($user),
                 'teacher' => $this->auth->teacherPayload($user),
             ]
@@ -55,15 +59,34 @@ class AuthController extends Controller
 
     public function profile(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('primaryPhoto');
 
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'profile_photo_url' => $user->primaryPhoto?->url,
             'student' => $this->auth->studentPayload($user),
             'teacher' => $this->auth->teacherPayload($user),
+        ]);
+    }
+
+    public function updateProfilePhoto(Request $request, PhotoService $photos)
+    {
+        $user = $request->user();
+
+        abort_unless(in_array($user->role, ['teacher', 'admin', 'super_admin'], true), 403);
+
+        $request->validate([
+            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+        ]);
+
+        $photo = $photos->store($user, $request->file('profile_photo'), $user->id, 'profile', true);
+
+        return ApiResponse::success([
+            'profile_photo_url' => $photo->url,
+            'photo' => $photo,
         ]);
     }
 

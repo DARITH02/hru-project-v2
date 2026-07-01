@@ -1,0 +1,2 @@
+﻿python -m git_filter_repo --replace-text replacements.txt --force970517063724-o0jhtkev1osb7r8spe3ofa7radbpisdg.apps.googleusercontent.com==>your-google-client-id
+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==>your-google-client-secret

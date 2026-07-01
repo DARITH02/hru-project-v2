@@ -22,6 +22,7 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\HruAttendanceAiAgentService;
 use App\Services\HruAttendanceAiAssistantService;
@@ -822,7 +823,7 @@ class AdminController extends Controller
     
     public function instructors(Request $request)
     {
-        $query = Teacher::with(['user', 'department'])
+        $query = Teacher::with(['user.primaryPhoto', 'department', 'primaryPhoto'])
             ->withCount('classes')
             ->orderBy(
                 User::select('name')
@@ -963,7 +964,7 @@ class AdminController extends Controller
     public function students(Request $request)
     {
         $this->syncDatabaseSchema();
-        $query = Student::with(['user', 'group.major', 'major']);
+        $query = Student::with(['user', 'group.major', 'major', 'primaryPhoto']);
         $majors = \App\Models\Major::orderBy('name')->get();
         $classGroups = \App\Models\ClassGroup::orderBy('name')->get();
 
@@ -997,6 +998,93 @@ class AdminController extends Controller
         $departments = Department::orderBy('name')->get();
 
         return view('admin.students', compact('students', 'classes', 'departments', 'majors', 'classGroups'));
+    }
+
+    public function gpaTranscripts()
+    {
+        $students = \App\Models\StudentSemesterGpaHistory::with('subjectGrades')
+            ->orderBy('student_name')
+            ->orderByDesc('academic_year')
+            ->orderByDesc('semester')
+            ->get()
+            ->groupBy('student_id')
+            ->map(function ($rows) {
+                $latest = $rows->first();
+                $previous = $rows->skip(1)->first();
+
+                return [
+                    'id' => $latest->student_id,
+                    'name' => $latest->student_name,
+                    'code' => $latest->student_code,
+                    'program' => $latest->major_name ?: __('admin.gpa_transcripts.general_program'),
+                    'group' => $latest->class_group_name ?: __('admin.gpa_transcripts.unassigned_group'),
+                    'year' => $latest->year_level ? __('admin.gpa_transcripts.year') . ' ' . $latest->year_level : 'N/A',
+                    'gpa' => (float) $latest->cumulative_gpa,
+                    'prev_gpa' => (float) ($previous?->cumulative_gpa ?? $latest->cumulative_gpa),
+                    'credits' => (float) $latest->cumulative_credits,
+                    'status' => $this->academicStanding((float) $latest->cumulative_gpa),
+                    'download_url' => route('admin.gpa-transcripts.download', $latest->student_id),
+                    'histories' => $rows->values(),
+                ];
+            })
+            ->values();
+
+        return view('admin.gpa_transcripts', [
+            'title' => __('admin.gpa_transcripts.title'),
+            'students' => $students,
+            'cohortAvg' => round($students->avg('gpa') ?? 0, 2),
+            'warningCount' => $students->where('status', 'Academic Warning')->count(),
+            'probationCount' => $students->where('status', 'Probation')->count(),
+        ]);
+    }
+
+    public function downloadGpaTranscript($student)
+    {
+        $histories = \App\Models\StudentSemesterGpaHistory::with(['subjectGrades' => function ($query) {
+                $query->orderBy('subject_name');
+            }])
+            ->where('student_id', $student)
+            ->orderByDesc('academic_year')
+            ->orderByDesc('semester')
+            ->get();
+
+        abort_if($histories->isEmpty(), 404, 'No archived GPA transcript found for this student.');
+
+        $latest = $histories->first();
+        $studentName = $latest->student_name;
+        $studentCode = $latest->student_code;
+        $fileName = 'Transcript_' . Str::slug($studentName ?: 'student') . '_' . Str::slug($studentCode ?: (string) $student) . '.pdf';
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.exports.gpa_transcript_pdf', [
+            'title' => 'Official Transcript',
+            'latest' => $latest,
+            'histories' => $histories,
+            'standing' => $this->academicStandingLabel((float) $latest->cumulative_gpa),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download($fileName);
+    }
+
+    private function academicStanding(float $gpa): string
+    {
+        if ($gpa >= 2.5) {
+            return 'Good Standing';
+        }
+
+        if ($gpa >= 2.0) {
+            return 'Academic Warning';
+        }
+
+        return 'Probation';
+    }
+
+    private function academicStandingLabel(float $gpa): string
+    {
+        return match ($this->academicStanding($gpa)) {
+            'Good Standing' => __('admin.gpa_transcripts.good_standing'),
+            'Academic Warning' => __('admin.gpa_transcripts.academic_warning'),
+            default => __('admin.gpa_transcripts.probation'),
+        };
     }
 
     public function coursePreEnd($id)

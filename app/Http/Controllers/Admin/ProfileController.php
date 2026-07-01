@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\PhotoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -11,12 +12,14 @@ class ProfileController extends Controller
 {
     public function edit(Request $request)
     {
+        $user = $request->user()->load('primaryPhoto');
+
         return view('admin.profile', [
-            'user' => $request->user(),
+            'user' => $user,
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, PhotoService $photos)
     {
         $user = $request->user();
 
@@ -26,6 +29,7 @@ class ProfileController extends Controller
             'phone' => ['nullable', 'string', 'max:50', Rule::unique('users', 'phone')->ignore($user->id)],
             'current_password' => ['required', 'string'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
         ]);
 
         if (!Hash::check($data['current_password'], $user->password)) {
@@ -45,6 +49,10 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        if ($request->hasFile('profile_photo')) {
+            $photos->store($user, $request->file('profile_photo'), $user->id, 'profile', true);
+        }
 
         return back()->with('success', 'Profile updated successfully.');
     }

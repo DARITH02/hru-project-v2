@@ -402,4 +402,39 @@ class AttendanceController extends Controller
             'scores' => $scoresData
         ]);
     }
+
+    public function getTranscript(Request $request)
+    {
+        $student = Student::with(['user', 'group.major'])->where('user_id', $request->user()->id)->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Student record not found'], 404);
+        }
+
+        $histories = \App\Models\StudentSemesterGpaHistory::with(['subjectGrades' => function ($query) {
+                $query->orderBy('subject_name');
+            }])
+            ->where('student_id', $student->id)
+            ->orderByDesc('academic_year')
+            ->orderByDesc('semester')
+            ->get();
+
+        return response()->json([
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->user->name ?? 'Unknown',
+                'student_code' => $student->student_code,
+                'group' => $student->group?->name,
+                'major' => $student->major?->name ?? $student->group?->major?->name,
+                'year_level' => $student->group?->year_level,
+            ],
+            'histories' => $histories,
+            'summary' => [
+                'semester_count' => $histories->count(),
+                'total_credits' => round((float) $histories->sum('total_credits'), 2),
+                'latest_gpa' => round((float) ($histories->first()?->semester_gpa ?? 0), 2),
+                'cumulative_gpa' => round((float) ($histories->first()?->cumulative_gpa ?? 0), 2),
+            ],
+        ]);
+    }
 }

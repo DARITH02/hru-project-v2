@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\Schema;
 
 class Teacher extends Model
@@ -11,6 +13,13 @@ class Teacher extends Model
     use HasFactory;
 
     protected $fillable = ['user_id', 'teacher_code', 'department_id', 'specialization', 'status', 'telegram_id'];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Teacher $teacher) {
+            $teacher->photos()->each->delete();
+        });
+    }
 
     public static function hasTeacherCodeColumn(): bool
     {
@@ -73,5 +82,15 @@ class Teacher extends Model
     public function documents()
     {
         return $this->hasMany(Document::class);
+    }
+
+    public function photos(): MorphMany
+    {
+        return $this->morphMany(Photo::class, 'photoable')->latest();
+    }
+
+    public function primaryPhoto(): MorphOne
+    {
+        return $this->morphOne(Photo::class, 'photoable')->where('is_primary', true)->latestOfMany();
     }
 }

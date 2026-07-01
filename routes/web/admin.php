@@ -20,6 +20,8 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::post('/admin/attendance-issues/send-telegram', [AdminUIController::class, 'sendAttendanceIssuesToTelegram'])->name('admin.attendance-issues.send-telegram');
     Route::get('/admin/teacher-accounts', [AdminUIController::class, 'teacherAccounts'])->name('admin.teacher-accounts');
     Route::post('/admin/users/{id}/approve', [AdminUIController::class, 'approveUser'])->name('admin.users.approve');
+    Route::get('/admin/profile', [ProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::put('/admin/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
 
     Route::get('/admin/documents', [AdminDocumentController::class, 'index'])->name('admin.documents.index');
     Route::get('/admin/documents/{document}/preview', [AdminDocumentController::class, 'preview'])->name('admin.documents.preview');
@@ -47,9 +49,6 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     Route::post('/admin/teacher-attendance/reports/send-telegram', [AdminTeacherAttendanceController::class, 'sendReportsToTelegram'])->name('admin.teacher-attendance.reports.send-telegram');
 
     Route::middleware(['auth', 'role:super_admin'])->group(function () {
-        Route::get('/admin/profile', [ProfileController::class, 'edit'])->name('admin.profile.edit');
-        Route::put('/admin/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
-
         Route::delete('/admin/users/{id}', [AdminUIController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::delete('/admin/documents/rejected', [AdminDocumentController::class, 'destroyRejected'])->name('admin.documents.rejected.destroy');
         Route::delete('/admin/attendance-issues/history/drop-all', [AdminUIController::class, 'dropAllHistory'])->name('admin.attendance-issues.history.drop-all');
@@ -72,6 +71,10 @@ Route::middleware(['auth', 'demo.readonly', 'role:admin,super_admin'])->group(fu
     });
 
     Route::get('/admin/students', [AdminUIController::class, 'students'])->name('admin.students');
+    Route::get('/admin/gpa-transcripts', [AdminUIController::class, 'gpaTranscripts'])->name('admin.gpa-transcripts');
+    Route::get('/admin/gpa-transcripts/{student}/download', [AdminUIController::class, 'downloadGpaTranscript'])
+        ->whereNumber('student')
+        ->name('admin.gpa-transcripts.download');
     Route::get('/admin/courses', [AdminUIController::class, 'courses'])->name('admin.courses');
     Route::get('/admin/pre-end-review/{id}', [AdminUIController::class, 'coursePreEnd'])->name('admin.courses.pre-end');
     Route::get('/admin/pre-end-review/{id}/export', [AdminUIController::class, 'exportCoursePreEnd'])->name('admin.courses.pre-end.export');

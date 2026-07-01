@@ -270,6 +270,24 @@
 
                         <div style="height:1px; background:var(--border); margin:20px 0; opacity:0.5"></div>
 
+                        <div style="margin-bottom:20px">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+                                <span
+                                    style="font-family:var(--font-mono);font-size:9px;font-weight:800;color:var(--text2);letter-spacing:0.05em">PHOTOS</span>
+                                <label class="btn-secondary"
+                                    style="height:30px;padding:0 10px;display:inline-flex;align-items:center;gap:7px;font-size:9px;cursor:pointer">
+                                    <input id="studentPhotoInput" type="file" accept="image/*" multiple style="display:none"
+                                        onchange="uploadStudentPhotos(this)">
+                                    UPLOAD
+                                </label>
+                            </div>
+                            <div id="smPhotoGallery" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+                            <div id="smPhotoEmpty"
+                                style="display:none;text-align:center;padding:14px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);font-family:var(--font-mono);font-size:9px">
+                                NO PHOTOS UPLOADED
+                            </div>
+                        </div>
+
                         {{-- Recent Attendance --}}
                         <div>
                             <div
@@ -335,6 +353,24 @@
                     <button type="button" onclick="document.getElementById('importFileInput').click()" class="btn-primary"
                         style="width:100%">SELECT FILE</button>
                 </div>
+                <div
+                    style="margin-top:16px;background:color-mix(in srgb, var(--green) 7%, transparent);border:1px dashed color-mix(in srgb, var(--green) 27%, transparent);border-radius:12px;padding:24px;text-align:center;">
+                    <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        style="color:var(--green);margin-bottom:14px">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div
+                        style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">
+                        Import Student Images</div>
+                    <div
+                        style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-bottom:18px;letter-spacing:.05em;line-height:1.6">
+                        file name must match student code, e.g. STUD-2026-001.jpg</div>
+                    <input type="file" id="studentImagesInput" accept="image/*" multiple style="display:none"
+                        onchange="handleImagesSelected(this)">
+                    <button type="button" onclick="document.getElementById('studentImagesInput').click()" class="btn-secondary"
+                        style="width:100%;border-color:color-mix(in srgb,var(--green) 35%,var(--border));color:var(--green)">SELECT IMAGES</button>
+                </div>
                 <div id="importStatus"
                     style="display:none;margin-top:16px;font-family:var(--font-mono);font-size:10px;color:var(--accent);text-align:center;font-weight:700">
                     PROCESSING...</div>
@@ -389,6 +425,13 @@
                             d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     IMPORT BULK
+                </button>
+                <button onclick="openImageImport()" class="btn-secondary" style="gap:7px;border-color:color-mix(in srgb,var(--green) 28%,var(--border));color:var(--green)">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    IMPORT IMAGES
                 </button>
             @endif
             @if(Auth::user()->isSuperAdmin())
@@ -532,12 +575,14 @@
                                 $displayMajorId = $student->major_id ?? $student->group?->major_id;
                                 $displayMajorName = $displayMajor?->name ?? 'N/A';
                                 $className = $student->classRoom->subject->name ?? 'Unassigned';
+                                $primaryPhotoUrl = $student->primaryPhoto?->url;
                             @endphp
                             <tr data-id="{{ $student->id }}" data-name="{{ strtolower($student->user->name) }}"
                                 data-email="{{ strtolower($student->user->email) }}"
                                 data-phone="{{ $student->user->phone ?? '—' }}"
                                 data-code="{{ strtolower($student->student_code) }}" data-major-id="{{ $displayMajorId }}"
                                 data-group-id="{{ $student->group_id }}" data-status="{{ $student->status }}"
+                                data-primary-photo-url="{{ $primaryPhotoUrl }}"
                                 data-rate="{{ 85 + ($loop->index % 15) }}"
                                 data-joined="{{ $student->created_at ? $student->created_at->format('M Y') : 'SEP 2025' }}"
                                 data-subject="{{ strtolower($className) }}"
@@ -553,10 +598,15 @@
                                 {{-- Student --}}
                                 <td>
                                     <div class="subject-cell">
-                                        <div class="subject-avatar"
-                                            style="background:{{ $col[0] }}22;color:{{ $col[0] }};border:1px solid {{ $col[0] }}33;font-size:10px;width:36px;height:36px;border-radius:50%">
-                                            {{ $init }}
-                                        </div>
+                                        @if($primaryPhotoUrl)
+                                            <img src="{{ $primaryPhotoUrl }}" alt="{{ $student->user->name }}" class="subject-avatar"
+                                                style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid {{ $col[0] }}33;">
+                                        @else
+                                            <div class="subject-avatar"
+                                                style="background:{{ $col[0] }}22;color:{{ $col[0] }};border:1px solid {{ $col[0] }}33;font-size:10px;width:36px;height:36px;border-radius:50%">
+                                                {{ $init }}
+                                            </div>
+                                        @endif
                                         <div>
                                             <div class="subject-name">{{ $student->user->name }}</div>
                                         </div>
@@ -674,12 +724,13 @@
                         $displayMajorId2 = $student->major_id ?? $student->group?->major_id;
                         $majorDisplay = $displayMajor2?->name ?? 'N/A';
                         $rate2 = 85 + ($loop->index % 15);
+                        $primaryPhotoUrl2 = $student->primaryPhoto?->url;
                     @endphp
                     <div class="instructor-card fade-up" data-id="{{ $student->id }}"
                         data-name="{{ strtolower($student->user->name) }}" data-email="{{ strtolower($student->user->email) }}"
                         data-phone="{{ $student->user->phone ?? '—' }}" data-code="{{ strtolower($student->student_code) }}"
                         data-major-id="{{ $displayMajorId2 }}" data-group-id="{{ $student->group_id }}"
-                        data-status="{{ $student->status }}" data-rate="{{ $rate2 }}"
+                        data-status="{{ $student->status }}" data-primary-photo-url="{{ $primaryPhotoUrl2 }}" data-rate="{{ $rate2 }}"
                         data-joined="{{ $student->created_at ? $student->created_at->format('M Y') : 'SEP 2025' }}"
                         data-subject="{{ strtolower($className2 ?? 'Unassigned') }}"
                         data-room="{{ strtolower($student->classRoom->room_number ?? 'N/A') }}"
@@ -699,10 +750,15 @@
                             style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{{ $col2[0] }},{{ $col2[1] }})">
                         </div>
 
-                        <div
-                            style="width:52px;height:52px;border-radius:50%;background:{{ $col2[0] }}22;border:2px solid {{ $col2[0] }}44;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:{{ $col2[0] }};">
-                            {{ $init2 }}
-                        </div>
+                        @if($primaryPhotoUrl2)
+                            <img src="{{ $primaryPhotoUrl2 }}" alt="{{ $student->user->name }}"
+                                style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid {{ $col2[0] }}44;">
+                        @else
+                            <div
+                                style="width:52px;height:52px;border-radius:50%;background:{{ $col2[0] }}22;border:2px solid {{ $col2[0] }}44;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:{{ $col2[0] }};">
+                                {{ $init2 }}
+                            </div>
+                        @endif
 
                         <div
                             style="font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);line-height:1.3">
@@ -795,6 +851,11 @@
                 ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
                 : (val.slice(0, 2).toUpperCase() || '?');
             document.getElementById('modalAvatarPreview').textContent = init;
+        }
+
+        function openImageImport() {
+            openModal('importModal');
+            setTimeout(() => document.getElementById('studentImagesInput').click(), 120);
         }
 
         // ── View toggle ────────────────────────────────
@@ -951,9 +1012,82 @@
         });
 
         // ── View Profile ───────────────────────────────
+        let currentProfileStudentId = null;
+        let currentProfileElement = null;
+
+        function initialsForName(name) {
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, match => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[match]));
+        }
+
+        function renderProfileAvatar(student) {
+            const box = document.getElementById('smInitials');
+            if (student.primary_photo_url) {
+                box.innerHTML = `<img src="${escapeHtml(student.primary_photo_url)}" alt="${escapeHtml(student.name)}" style="width:100%;height:100%;border-radius:22px;object-fit:cover">`;
+                return;
+            }
+            box.textContent = initialsForName(student.name || '') || '-';
+        }
+
+        function renderPhotoGallery(photos) {
+            const gallery = document.getElementById('smPhotoGallery');
+            const empty = document.getElementById('smPhotoEmpty');
+            photos = Array.isArray(photos) ? photos : [];
+            empty.style.display = photos.length ? 'none' : 'block';
+            gallery.innerHTML = photos.map(photo => `
+                <div style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface3)">
+                    <img src="${escapeHtml(photo.url)}" alt="${escapeHtml(photo.original_name || 'Student photo')}" style="width:100%;height:100%;object-fit:cover">
+                    ${photo.is_primary ? '<span style="position:absolute;left:5px;top:5px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:2px 6px;font-family:var(--font-mono);font-size:7px;font-weight:800">MAIN</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        async function uploadStudentPhotos(input) {
+            if (!currentProfileStudentId || !input.files || input.files.length === 0) return;
+            const formData = new FormData();
+            [...input.files].forEach(file => formData.append('photos[]', file));
+            formData.append('photo_type', 'gallery');
+
+            try {
+                const res = await fetch(`/api/admin/students/${currentProfileStudentId}/photos`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                });
+                const data = await res.json().catch(() => ({ success: res.ok }));
+                if (!res.ok || !data.success) {
+                    const msg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.error || data.message || 'Photo upload failed.');
+                    showToast(msg, 'error');
+                    return;
+                }
+                showToast(`${data.photos.length} photo(s) uploaded.`, 'success');
+                if (currentProfileElement) {
+                    openProfile(currentProfileElement);
+                }
+            } catch (e) {
+                showToast('Network error uploading photos.', 'error');
+            } finally {
+                input.value = '';
+            }
+        }
+
         async function openProfile(el) {
+            currentProfileElement = el;
             const hist = document.getElementById('smHistory');
             hist.innerHTML = '<div style="text-align:center; padding:30px; font-size:11px; color:var(--muted)">RETRIEVING PROFILE...</div>';
+            renderPhotoGallery([]);
 
             // Clear previous view
             document.getElementById('smName').textContent = 'Loading...';
@@ -963,6 +1097,7 @@
             openModal('profileModal');
 
             const studentId = el.dataset.id;
+            currentProfileStudentId = studentId;
             try {
                 const res = await fetch(`/api/admin/students/${studentId}/attendance`);
                 const data = await res.json();
@@ -971,7 +1106,8 @@
                 // Populate Header
                 document.getElementById('smName').textContent = s.name.toUpperCase();
                 document.getElementById('smCode').textContent = s.student_code.toUpperCase();
-                document.getElementById('smInitials').textContent = s.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                renderProfileAvatar(s);
+                renderPhotoGallery(s.photos);
 
                 // Populate Analytics
                 document.getElementById('smMajor').textContent = s.major || 'N/A';
@@ -1132,6 +1268,52 @@
             } catch (e) {
                 showToast('Network error during import.', 'error');
                 status.style.display = 'none';
+            }
+        }
+
+        async function handleImagesSelected(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            const status = document.getElementById('importStatus');
+            status.style.display = 'block';
+            status.textContent = `IMPORTING ${input.files.length} IMAGE(S)...`;
+
+            const formData = new FormData();
+            [...input.files].forEach(file => formData.append('images[]', file));
+
+            try {
+                const res = await fetch('/api/admin/students/import-photos', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                });
+                const data = await res.json().catch(() => ({ success: res.ok }));
+
+                if (!res.ok || !data.success) {
+                    const skipped = Array.isArray(data.skipped) && data.skipped.length
+                        ? ` ${data.skipped.slice(0, 3).map(row => `${row.file}: ${row.reason}`).join(' ')}`
+                        : '';
+                    showToast((data.message || data.error || 'Image import failed.') + skipped, 'error');
+                    status.style.display = 'none';
+                    return;
+                }
+
+                const imported = data.imported_count ?? 0;
+                const skipped = data.skipped_count ?? 0;
+                const message = skipped > 0
+                    ? `Imported ${imported} image(s). Skipped ${skipped}.`
+                    : `Imported ${imported} image(s).`;
+                status.textContent = message;
+                showToast(message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } catch (e) {
+                showToast('Network error during image import.', 'error');
+                status.style.display = 'none';
+            } finally {
+                input.value = '';
             }
         }
     </script>

@@ -69,6 +69,11 @@
 </head>
 
 <body>
+    @php
+        $currentUser = Auth::user();
+        $currentUserPhotoUrl = $currentUser?->primaryPhoto?->url;
+        $currentUserInitial = strtoupper(substr($currentUser?->name ?? 'U', 0, 1));
+    @endphp
 
     <div id="appConfirmModal"
         style="position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.56);backdrop-filter:blur(4px);padding:20px">
@@ -250,6 +255,13 @@
                             <path d="M2 13c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.3"
                                 stroke-linecap="round" />
                         </svg></span><span class="nav-text">{{ __('admin.nav.students') }}</span></a>
+                <a href="{{ route('admin.gpa-transcripts') }}" data-tooltip="{{ __('admin.gpa_transcripts.nav') }}"
+                    class="nav-link {{ request()->routeIs('admin.gpa-transcripts') ? 'active' : '' }}"><span
+                        class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 2.5h10v11H3v-11Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                            <path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                            <path d="M11 12.5l1 1 1.8-2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg></span><span class="nav-text">{{ __('admin.gpa_transcripts.nav') }}</span></a>
                 <a href="{{ route('admin.permissions') }}" data-tooltip="{{ __('admin.nav.permissions') }}"
                     class="nav-link {{ request()->is('admin/permissions') ? 'active' : '' }}"><span
                         class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -319,7 +331,7 @@
                             <circle cx="8" cy="5" r="3.5" stroke="currentColor"
                                 stroke-width="1.3" />
                         </svg></span><span class="nav-text">{{ __('admin.nav.accounts') }}</span></a>
-                @if (Auth::user()->isSuperAdmin())
+                @if (Auth::user()->isAdmin())
                     <a href="{{ route('admin.profile.edit') }}" data-tooltip="Profile"
                         class="nav-link {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}"><span
                             class="nav-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -405,16 +417,21 @@
         </nav>
 
         <div class="sidebar-profile">
-            <div class="avatar" style="background:var(--accent)">
-                {{ strtoupper(substr(Auth::user()?->name ?? 'U', 0, 1)) }}
-            </div>
+            @if ($currentUserPhotoUrl)
+                <img class="avatar" src="{{ $currentUserPhotoUrl }}" alt="{{ $currentUser?->name ?? 'User' }}"
+                    style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);background:var(--surface2);">
+            @else
+                <div class="avatar" style="background:var(--accent)">
+                    {{ $currentUserInitial }}
+                </div>
+            @endif
             <div style="flex:1;min-width:0">
                 <div class="profile-name" style="font-size:13px; font-weight:600;">
-                    {{ Auth::user()?->name ?? 'User' }}
+                    {{ $currentUser?->name ?? 'User' }}
                 </div>
                 <div class="profile-role"
                     style="font-family:var(--font-mono); font-size:9px; color:var(--muted); text-transform:uppercase;">
-                    {{ str_replace('_', ' ', Auth::user()?->role ?? 'Guest') }}
+                    {{ str_replace('_', ' ', $currentUser?->role ?? 'Guest') }}
                 </div>
             </div>
             <form action="{{ route('logout') }}" method="POST" style="display:inline;">
@@ -514,9 +531,27 @@
                         </div>
                     </div>
                 </div>
-                <div class="avatar" style="width:34px; height:34px;">
-                    {{ strtoupper(substr(Auth::user()?->name ?? 'U', 0, 1)) }}
-                </div>
+                @if ($currentUser?->isAdmin() && $currentUserPhotoUrl)
+                    <a href="{{ route('admin.profile.edit') }}" title="Profile" class="avatar"
+                        style="width:34px;height:34px;padding:0;overflow:hidden;text-decoration:none;background:var(--surface2);">
+                        <img src="{{ $currentUserPhotoUrl }}" alt="{{ $currentUser?->name ?? 'User' }}"
+                            style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    </a>
+                @elseif ($currentUser?->isAdmin())
+                    <a href="{{ route('admin.profile.edit') }}" title="Profile" class="avatar"
+                        style="width:34px; height:34px;text-decoration:none;">
+                        {{ $currentUserInitial }}
+                    </a>
+                @elseif ($currentUserPhotoUrl)
+                    <div class="avatar" style="width:34px;height:34px;padding:0;overflow:hidden;background:var(--surface2);">
+                        <img src="{{ $currentUserPhotoUrl }}" alt="{{ $currentUser?->name ?? 'User' }}"
+                            style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    </div>
+                @else
+                    <div class="avatar" style="width:34px; height:34px;">
+                        {{ $currentUserInitial }}
+                    </div>
+                @endif
             </div>
         </div>
     </header>

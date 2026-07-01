@@ -18,10 +18,13 @@ use App\Models\Major;
 use App\Models\ClassGroup;
 use App\Models\TeacherAttendanceSession;
 use App\Models\TeacherSchedule;
+use App\Models\Photo;
 use App\Services\HruAttendanceAiAgentService;
 use App\Services\HruAttendanceAiAssistantService;
+use App\Services\GpaArchiveService;
 use App\Services\SemesterAttendanceScoreService;
 use App\Services\Chat\ChatService;
+use App\Services\PhotoService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use DB;
@@ -813,7 +816,7 @@ class AdminController extends Controller
         }
     }
 
-    public function endClassSchedule($classId)
+    public function endClassSchedule(Request $request, $classId)
     {
         $class = ClassRoom::with(['subject', 'teacher.user'])->findOrFail($classId);
 
@@ -833,6 +836,9 @@ class AdminController extends Controller
             if ($assignment->grading_status !== 'finalized') {
                 return response()->json(['success' => false, 'error' => 'Class results must be set to FINALIZED before ending the schedule.'], 400);
             }
+
+            // Keep permanent GPA/subject-grade history before sessions or class data are archived.
+            $gpaArchive = app(GpaArchiveService::class)->archiveAssignment($assignment, $request->user()?->id);
 
             // 3. Snapshot Stats (Prevent Data Loss)
             $sessions = \App\Models\AttendanceSession::where('class_id', $classId)
@@ -881,7 +887,8 @@ class AdminController extends Controller
             DB::commit();
             return response()->json([
                 'success' => true,
-                'message' => 'Class finalized and schedule purged. Final stats archived in semester records.'
+                'message' => 'Class finalized and schedule purged. Final stats and GPA history archived.',
+                'gpa_archive' => $gpaArchive,
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -1004,12 +1011,109 @@ class AdminController extends Controller
 
         $assignment->update($request->only(['admin_score', 'grading_status', 'grading_notes']));
 
+        $gpaArchive = null;
+        if ($assignment->grading_status === 'finalized') {
+            $gpaArchive = app(GpaArchiveService::class)->archiveAssignment($assignment, $request->user()?->id);
+        }
+
         ActivityLog::create([
             'action' => 'UPDATE',
             'target' => "semester_assignment#{$assignmentId}.score_updated"
         ]);
 
-        return response()->json(['success' => true, 'assignment' => $assignment]);
+        return response()->json([
+            'success' => true,
+            'assignment' => $assignment,
+            'gpa_archive' => $gpaArchive,
+        ]);
+    }
+
+    public function archiveSemesterGpa(Request $request, $assignmentId)
+    {
+        $assignment = SemesterAssignment::findOrFail($assignmentId);
+        $archive = app(GpaArchiveService::class)->archiveAssignment($assignment, $request->user()?->id);
+
+        $assignment->update([
+            'grading_status' => 'finalized',
+            'finalized_at' => $assignment->finalized_at ?: now(),
+        ]);
+
+        ActivityLog::create([
+            'action' => 'ARCHIVE',
+            'target' => "semester_assignment#{$assignmentId}.gpa_history"
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Semester GPA history archived successfully.',
+            'gpa_archive' => $archive,
+        ]);
+    }
+
+    public function studentGpaHistory($studentId)
+    {
+        $student = Student::findOrFail($studentId);
+        $histories = \App\Models\StudentSemesterGpaHistory::with('subjectGrades')
+            ->where('student_id', $student->id)
+            ->orderBy('academic_year')
+            ->orderBy('semester')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'student' => $student,
+            'histories' => $histories,
+        ]);
+    }
+
+    public function gpaTranscripts()
+    {
+        $histories = \App\Models\StudentSemesterGpaHistory::with('subjectGrades')
+            ->orderBy('student_name')
+            ->orderByDesc('academic_year')
+            ->orderByDesc('semester')
+            ->get()
+            ->groupBy('student_id')
+            ->map(function ($rows) {
+                $latest = $rows->first();
+                $previous = $rows->skip(1)->first();
+
+                return [
+                    'id' => $latest->student_id,
+                    'name' => $latest->student_name,
+                    'code' => $latest->student_code,
+                    'program' => $latest->major_name ?: 'General Program',
+                    'group' => $latest->class_group_name ?: 'Unassigned',
+                    'year' => $latest->year_level ? 'Year ' . $latest->year_level : 'N/A',
+                    'gpa' => (float) $latest->cumulative_gpa,
+                    'prev_gpa' => (float) ($previous?->cumulative_gpa ?? $latest->cumulative_gpa),
+                    'credits' => (float) $latest->cumulative_credits,
+                    'status' => $this->academicStanding((float) $latest->cumulative_gpa),
+                    'histories' => $rows->values(),
+                ];
+            })
+            ->values();
+
+        return view('admin.gpa_transcripts', [
+            'title' => 'GPA & Transcripts',
+            'students' => $histories,
+            'cohortAvg' => round($histories->avg('gpa') ?? 0, 2),
+            'warningCount' => $histories->where('status', 'Academic Warning')->count(),
+            'probationCount' => $histories->where('status', 'Probation')->count(),
+        ]);
+    }
+
+    private function academicStanding(float $gpa): string
+    {
+        if ($gpa >= 2.5) {
+            return 'Good Standing';
+        }
+
+        if ($gpa >= 2.0) {
+            return 'Academic Warning';
+        }
+
+        return 'Probation';
     }
 
     public function getGradingPreview($assignmentId)
@@ -1752,6 +1856,54 @@ class AdminController extends Controller
         }
     }
 
+    public function storeStudentPhotos(Request $request, $studentId, PhotoService $photos)
+    {
+        $student = Student::findOrFail($studentId);
+
+        $request->validate([
+            'photos' => 'required|array|min:1|max:12',
+            'photos.*' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'photo_type' => 'nullable|string|max:50',
+        ]);
+
+        $uploaded = $photos->storeMany(
+            $student,
+            $request->file('photos', []),
+            $request->user()?->id,
+            $request->input('photo_type', 'gallery')
+        );
+
+        ActivityLog::create([
+            'action' => 'UPLOAD',
+            'target' => "students#{$student->id}.photos.{$uploaded->count()}",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'photos' => $uploaded->values(),
+        ]);
+    }
+
+    public function deleteStudentPhoto($studentId, $photoId)
+    {
+        $student = Student::findOrFail($studentId);
+        $photo = $student->photos()->whereKey($photoId)->firstOrFail();
+        $wasPrimary = $photo->is_primary;
+
+        $photo->delete();
+
+        if ($wasPrimary) {
+            $student->photos()->latest()->first()?->update(['is_primary' => true]);
+        }
+
+        ActivityLog::create([
+            'action' => 'DELETE',
+            'target' => "students#{$student->id}.photos#{$photoId}",
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function deleteStudent($studentId)
     {
         $student = Student::with('user')->findOrFail($studentId);
@@ -1805,7 +1957,7 @@ class AdminController extends Controller
 
     public function listStudentAttendance($studentId)
     {
-        $student = Student::with(['user', 'major.department', 'group.major.department'])->findOrFail($studentId);
+        $student = Student::with(['user', 'major.department', 'group.major.department', 'photos'])->findOrFail($studentId);
 
         // Fetch the most recent 10 sessions for the student's group
         $sessions = AttendanceSession::whereHas('classRoom.groups', function ($q) use ($student) {
@@ -1873,7 +2025,16 @@ class AdminController extends Controller
                 'year_level' => $yearLevel,
                 'status' => $student->status ?? 'active',
                 'joined_at' => $student->created_at->format('M Y'),
-                'attendance_rate' => $rate
+                'attendance_rate' => $rate,
+                'primary_photo_url' => $student->photos->firstWhere('is_primary', true)?->url,
+                'photos' => $student->photos->map(fn (Photo $photo) => [
+                    'id' => $photo->id,
+                    'url' => $photo->url,
+                    'photo_type' => $photo->photo_type,
+                    'original_name' => $photo->original_name,
+                    'is_primary' => $photo->is_primary,
+                    'created_at' => $photo->created_at?->format('M d, Y'),
+                ])->values(),
             ],
             'summary' => [
                 'present' => $presentCount,
@@ -2390,6 +2551,55 @@ class AdminController extends Controller
         } finally {
             fclose($handle);
         }
+    }
+
+    public function importStudentPhotos(Request $request, PhotoService $photos)
+    {
+        $request->validate([
+            'images' => 'required|array|min:1|max:250',
+            'images.*' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+        ]);
+
+        $files = collect($request->file('images', []))->filter();
+        $studentsByCode = Student::query()
+            ->select(['id', 'student_code'])
+            ->get()
+            ->keyBy(fn (Student $student) => strtolower(trim($student->student_code)));
+
+        $imported = 0;
+        $skipped = [];
+
+        foreach ($files as $file) {
+            $originalName = $file->getClientOriginalName();
+            $studentCode = trim(pathinfo($originalName, PATHINFO_FILENAME));
+            $student = $studentsByCode->get(strtolower($studentCode));
+
+            if (!$student) {
+                $skipped[] = [
+                    'file' => $originalName,
+                    'reason' => "No student found with code {$studentCode}.",
+                ];
+                continue;
+            }
+
+            $photos->store($student, $file, $request->user()?->id, 'profile', true);
+            $imported++;
+        }
+
+        ActivityLog::create([
+            'action' => 'IMPORT',
+            'target' => "students.photo_import.{$imported}",
+        ]);
+
+        return response()->json([
+            'success' => $imported > 0,
+            'imported_count' => $imported,
+            'skipped_count' => count($skipped),
+            'skipped' => array_slice($skipped, 0, 50),
+            'message' => $imported > 0
+                ? "Imported {$imported} student photo(s)."
+                : 'No photos were imported.',
+        ], $imported > 0 ? 200 : 422);
     }
 
     public function exportClasses()
